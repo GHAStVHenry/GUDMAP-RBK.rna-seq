@@ -25,14 +25,25 @@ outDir = params.outDir
         file bdbag
 
     output:
-        file("*") into dataPaths
+        file("**/*.R*.fastq.gz") into fastqPaths
+        file("**/File.csv") into filePaths
+        file("**/Experiment Settings.csv") into experimentSettingsPaths
+        file("**/Experiment.csv") into experimentPaths
 
     script:
         """
         hostname
         ulimit -a
+        study=\$(echo "${bdbag}" | cut -d'.' -f1)
+        echo LOG: \${study}
         unzip ${bdbag}
-        python3 ${baseDir}/scripts/modifyFetch.py -f \$(echo "${bdbag}" | cut -d'.' -f1)
-        bdbag --materialize "\$(echo "${bdbag}" | cut -d'.' -f1)"
+        echo LOG: bdgag unzipped
+        python3 ${baseDir}/scripts/modifyFetch.py --fetchFile \${study}
+        echo LOG: fetch file filtered for only .fastq.gz
+        #bdbag --materialize "\$(echo "${bdbag}" | cut -d'.' -f1)"
+        sh ${baseDir}/scripts/bdbagFetch.sh \${study}
+        echo LOG: bdbag fetched
+        sh ${baseDir}/scripts/renameFastq.sh \${study}
+        echo LOG: fastq.gz files renamed to replicate RID
         """
  }
