@@ -19,7 +19,7 @@ outDir = params.outDir
  */
  process getData {
      publishDir "${outDir}/temp/getData", mode: "symlink"
-     conda "${baseDir}/conf/conda.env.bdbag.yml"
+//     conda "${baseDir}/conf/conda.env.bdbag.yml"
 
      input:
         file bdbag
