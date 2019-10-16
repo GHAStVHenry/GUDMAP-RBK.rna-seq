@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import pandas as pd
 
@@ -9,9 +11,9 @@ def get_args():
 
 def main():
     args = get_args()
-    fetch = pd.read_csv(args.fetchFile+"/fetch.txt",sep="\t",header=None)
-    fetch_filtered = fetch[fetch[2].str[-9:]==".fastq.gz"]
-    fetch_filtered.to_csv(args.fetchFile+"/fetch.txt",sep="\t",header=False,index=False)
+    fetchFile = pd.read_csv(args.fetchFile+"/fetch.txt",sep="\t",header=None)
+    fetchFile_filtered = fetchFile[fetchFile[2].str[-9:]==".fastq.gz"]
+    fetchFile_filtered.to_csv(args.fetchFile+"/fetch.txt",sep="\t",header=False,index=False)
 
 if __name__ == '__main__':
     main()
