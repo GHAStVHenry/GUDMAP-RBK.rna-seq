@@ -1,9 +1,10 @@
+<!--
 |*master*|*develop*|
 |:-:|:-:|
 |[![Build Status](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/badges/master/build.svg)](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/commits/master)|[![Build Status](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/badges/develop/build.svg)](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/commits/develop)|
 
 [![DOI]()]()
-
+-->
 GUDMAP/RBK RNA-Seq Pipeline
 ===========================
 
