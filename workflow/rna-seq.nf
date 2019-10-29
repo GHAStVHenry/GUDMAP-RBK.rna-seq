@@ -8,7 +8,6 @@ params.outDir = "${baseDir}/../output"
 
 // Parse input variables
 deriva = file(params.deriva)
-deriva.copyTo('~/.bdbag/deriva-cookies.txt')
 bdbag = Channel
   .fromPath(params.bdbag)
   .ifEmpty { exit 1, "bdbag zip file not found: ${params.bdbag}" }
@@ -35,6 +34,8 @@ process splitData {
     """
     hostname
     ulimit -a
+    ln -sf `readlink -e ${deriva}` ~/.bdbag/deriva-cookies.txt
+    echo LOG: deriva cookie linked
     study=`echo "${bdbag}" | cut -d'.' -f1`
     echo LOG: \${study}
     unzip ${bdbag}
