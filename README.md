@@ -17,7 +17,7 @@ To Run:
 * Available parameters:
 * FULL EXAMPLE:
   ```
-  nextflow run workflow/main.nf
+  nextflow run workflow/rna-seq.nf
   ```
 * Design example:
 
