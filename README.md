@@ -34,7 +34,7 @@ This worklow is was developed by [Bioinformatic Core Facility (BICF), Department
 PI
 --
 Venkat S. Malladi\
-*Director*\
+*Faculty Associate & Director*\
 Bioinformatics Core Facility\
 UT Southwestern Medical Center\
 <a href="https://orcid.org/0000-0002-0144-0564" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0002-0144-0564</a>\
@@ -57,5 +57,11 @@ UT Southwestern Medical Center\
 <a href="https://orcid.org/0000-0001-5902-3299" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0001-5902-3299</a>\
 [johnathan.gesell@utsouthwestern.edu](mailto:jonathn.gesell@utsouthwestern.edu)
 
+Jeremy A. Mathews\
+*Computational Intern*\
+Bioinformatics Core Facility\
+UT Southwestern Medical Center\
+<a href="https://orcid.org/0000-0002-2931-1430" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0002-2931-1430</a>\
+[jeremy.mathews@utsouthwestern.edu](mailto:jeremy.mathews@utsouthwestern.edu)
 
 Please cite in publications: Pipeline was developed by BICF from funding provided by **Cancer Prevention and Research Institute of Texas (RP150596)**.

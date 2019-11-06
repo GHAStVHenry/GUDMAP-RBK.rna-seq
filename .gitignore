@@ -297,7 +297,6 @@ $RECYCLE.BIN/
 
 # nextflow analysis folders/files
 /test_data/*
-/workflow/docker/images/*
 /workflow/.nextflow/*
 /workflow/work/*
 /workflow/output/*
