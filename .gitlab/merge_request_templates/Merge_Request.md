@@ -9,4 +9,9 @@ These are the most common things requested on pull requests (PRs).
  - [ ] `README.md` is updated
  - [ ] `LICENSE.md` is updated with new contributors
 
+
+* [ ] **Close issue**\
+Closes #
+
 /cc @ghenry @venkat.malladi
+/assign @ghenry
