@@ -1,0 +1,16 @@
+before_script:
+  - module add  python/3.6.1-2-anaconda
+  - pip install --user pytest-pythonpath==0.7.1 pytest-cov==2.5.1
+  - module load singularity/3.0.2
+  - ln -sfn /project/BICF/BICF_Core/shared/gudmap/cookies/deriva-cookies.txt ./test_data/
+  - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/File_Q-Y53P.zip ./test_data/
+
+stages:
+  - unit
+
+unit:
+  stage: unit
+  script:
+  - singularity run 'docker://bicf/bdbag:1.0' bdbag --materialize ./test_data/File_Q-Y53P.zip
+  - singularity run 'docker://bicf/bdbag:1.0' bdbag --validate full ./test_data/File_Q-Y53P/
+  - singularity run 'docker://bicf/bdbag:1.0' bdbag --validate completeness ./test_data/File_Q-Y53P/
