@@ -16,3 +16,4 @@ unit:
   - singularity run 'docker://bicf/bdbag:1.0' bdbag --validate completeness ./test_data/File_Q-Y53P/
   - find ./test_data/File_Q-Y53P/ -type f -print0 | xargs -0 md5sum > test.md5
   - md5sum -c test.md5
+  - assert $(md5sum test_data/File_Q-Y53P/data/assets/Study/Q-Y4H0/Experiment/Q-Y4BY/Replicate/Q-Y5F8/hMARIS_SIX2+_RiboDep#1.gene.rpkm.txt | awk '{ print $1 }') == $(cat test_data/File_Q-Y53P/data/File.csv | cut -d ',' -f10 | tail -1)
