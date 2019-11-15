@@ -14,3 +14,5 @@ unit:
   - singularity run 'docker://bicf/bdbag:1.0' bdbag --materialize ./test_data/File_Q-Y53P.zip
   - singularity run 'docker://bicf/bdbag:1.0' bdbag --validate full ./test_data/File_Q-Y53P/
   - singularity run 'docker://bicf/bdbag:1.0' bdbag --validate completeness ./test_data/File_Q-Y53P/
+  - find ./test_data/File_Q-Y53P/ -type f -print0 | xargs -0 md5sum > test.md5
+  - md5sum -c test.md5
