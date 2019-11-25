@@ -12,6 +12,6 @@ unit:
   stage: unit
   script:
   - singularity run 'docker://bicf/bdbag:1.0' bdbag --materialize ./test_data/File_Q-Y53P.zip
-  - if [ $(singularity run 'docker://bicf/bdbag:1.0' bdbag --validate completeness ./test_data/File_Q-Y53P/ 2>&1 | tail -3 | head -n 1 | cut -c 34-) != "The directory ./test_data/File_Q-Y53P is a valid bag structure" ]; then exit 21; fi;
-  - if [ $(singularity run 'docker://bicf/bdbag:1.0' bdbag --validate full ./test_data/File_Q-Y53P/ 2>&1 | tail -3 | head -n 1 | cut -c 34-) != "Bag ./test_data/File_Q-Y53P is valid" ]; then exit 21; fi;
-  - if [ $(md5sum test_data/File_Q-Y53P/data/assets/Study/Q-Y4H0/Experiment/Q-Y4BY/Replicate/Q-Y5F8/hMARIS_SIX2+_RiboDep#1.gene.rpkm.txt | awk '{ print $1 }') != $(cat test_data/File_Q-Y53P/data/File.csv | cut -d ',' -f10 | tail -1) ]; then exit 21; fi;
+  - if [[ $(singularity run 'docker://bicf/bdbag:1.0' bdbag --validate completeness ./test_data/File_Q-Y53P/ 2>&1 | tail -3 | head -n 1 | cut -c 34-) != "The directory ./test_data/File_Q-Y53P is a valid bag structure" ]]; then exit 21; fi;
+  - if [[ $(singularity run 'docker://bicf/bdbag:1.0' bdbag --validate full ./test_data/File_Q-Y53P/ 2>&1 | tail -3 | head -n 1 | cut -c 34-) != "Bag ./test_data/File_Q-Y53P is valid" ]]; then exit 21; fi;
+  - if [[ $(md5sum test_data/File_Q-Y53P/data/assets/Study/Q-Y4H0/Experiment/Q-Y4BY/Replicate/Q-Y5F8/hMARIS_SIX2+_RiboDep#1.gene.rpkm.txt | awk '{ print $1 }') != $(cat test_data/File_Q-Y53P/data/File.csv | cut -d ',' -f10 | tail -1) ]]; then exit 21; fi;
