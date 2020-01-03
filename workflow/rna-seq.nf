@@ -3,6 +3,8 @@
 // Define input variables
 params.deriva = "/project/BICF/BICF_Core/shared/gudmap/cookies/deriva-cookies.txt"
 params.bdbag = "${baseDir}/../test_data/Study_Q-Y4H0.zip"
+params.spikein = "false"
+params.species = "human"
 
 params.outDir = "${baseDir}/../output"
 
@@ -92,7 +94,7 @@ process trimData {
     set repID, reads from trimming
 
   output:
-    path ("*_val_{1,2}.fq.gz", type: 'file', maxDepth: '0')
+    set repID, path ("*_val_{1,2}.fq.gz", type: 'file', maxDepth: '0') into aligning
 
   script:
     """
@@ -100,3 +102,15 @@ process trimData {
     trim_galore --gzip --max_n 1 --paired --basename \${rep} -j `nproc` ${reads[0]} ${reads[1]} 1>>\${rep}.trimData.log 2>>\${rep}.trimData.err;
     """
 }
+
+/*
+ * alignReads: aligns the reads to a reference database
+*/
+process alignReads {
+  tag "align-${repID}"
+  publishDir "${outDir}/tempOut/aligned", mode: "symlink"
+
+  input:
+    set repID, fqs from aligning
+
+  
