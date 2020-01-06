@@ -18,6 +18,29 @@ outDir = params.outDir
 logsDir = "${outDir}/Logs"
 
 /*
+ * Pass in programs from the scripts directory, and any default files for later
+ */
+
+
+/*
+ *Checking the species and spike-in status
+ */
+if (params.spikein) {
+  if (params.species == "human") {
+    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12-S/hisat2")
+  } else if (params.species == "mouse") {
+    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6-S/hisat2")
+  } 
+} else if (params.species == "mouse") {
+  reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6/hisat2")
+} else if (params.species == "human") {
+  reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12/hisat2")
+} else {
+  print ("Warning: Reference genome not specified, defaulting to GRCm38.P6 with NO spike-in")
+  reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6/hisat2")
+}
+
+/*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
  */
 process splitData {
@@ -112,5 +135,13 @@ process alignReads {
 
   input:
     set repID, fqs from aligning
+    file reference
 
-  
+  output:
+    set repID, file ("${repID}.aln.gz"), file ("${repID}.unal.gz"), file ("${repID}.sam")
+
+  script:
+    """
+    hisat2 -p `nproc` --add-chrname --mm --al-gz ${repID}.aln.gz --un-gz ${repID}.unal.gz -S ${repID}.sam -x ${reference}/genome -1 ${fqs[0]} -2 ${fqs[1]}
+    """  
+}  
