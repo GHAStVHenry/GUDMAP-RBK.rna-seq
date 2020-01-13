@@ -1,16 +1,21 @@
 #!/usr/bin/env nextflow
 
 // Define input variables
-params.deriva = "/project/BICF/BICF_Core/shared/gudmap/cookies/deriva-cookies.txt"
-params.bdbag = "${baseDir}/../test_data/Study_Q-Y4H0.zip"
+params.deriva = "/project/BICF/BICF_Core/shared/gudmap/cookies/credential.json"
+params.bdbag = "/project/BICF/BICF_Core/shared/gudmap/cookies/deriva-cookies.txt"
+params.repRID = "16-1ZX4"
+//params.bdbag = "${baseDir}/../test_data/Study_Q-Y4H0.zip"
 
 params.outDir = "${baseDir}/../output"
 
 // Parse input variables
 deriva = file(params.deriva, checkIfExists: 'true')
-bdbag = Channel
-  .fromPath(params.bdbag)
-  .ifEmpty { exit 1, "bdbag zip file not found: ${params.bdbag}" }
+bdbag = file(params.bdbag, checkIfExists: 'true')
+//bdbag = Channel
+//  .fromPath(params.bdbag)
+//  .ifEmpty { exit 1, "bdbag zip file not found: ${params.bdbag}" }
+
+repRID = params.repRID
 
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
@@ -18,6 +23,7 @@ logsDir = "${outDir}/Logs"
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
  */
+ /*
 process splitData {
   tag "${bdbag.baseName}"
   executor 'local'
@@ -52,6 +58,30 @@ process splitData {
     echo "LOG: bag recreated with replicate split fetch file" >> ${bdbag.baseName}.splitData.err
     """
 }
+*/
+
+
+/*
+ * getData: get bagit file from consortium
+ */
+process getBag {
+  tag "${repRID}"
+  publishDir "${logsDir}/getBag", mode: 'symlink', pattern: "${rep.baseName}.getBag.err"
+
+  input:
+    path deriva
+    val repRID
+
+  output:
+    file 
+
+  script:
+    """
+    hostname >>${rep.baseName}.getData.err
+    ulimit -a >>${rep.baseName}.getData.err
+    """
+}
+
 
 /*
  * getData: fetch study files from consortium with downloaded bdbag.zip
