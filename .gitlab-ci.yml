@@ -2,15 +2,32 @@ before_script:
   - module add  python/3.6.1-2-anaconda
   - pip install --user pytest-pythonpath==0.7.1 pytest-cov==2.5.1
   - module load singularity/3.0.2
-  - ln -sfn /project/BICF/BICF_Core/shared/gudmap/cookies/deriva-cookies.txt ./test_data/
-  - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/File_Q-Y53P.zip ./test_data/
+  - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/ ./test_data/
 
 stages:
   - unit
 
-unit:
+getBag:
   stage: unit
   script:
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.1' bdbag --materialize ./test_data/File_Q-Y53P.zip
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.1' bdbag --validate full ./test_data/File_Q-Y53P/
-  - if [[ $(md5sum test_data/File_Q-Y53P/data/assets/Study/Q-Y4H0/Experiment/Q-Y4BY/Replicate/Q-Y5F8/hMARIS_SIX2+_RiboDep#1.gene.rpkm.txt | awk '{ print $1 }') != $(cat test_data/File_Q-Y53P/data/File.csv | cut -d ',' -f10 | tail -1) ]]; then exit 21; fi;
+  - ln -sf `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.1' deriva-download-cli dev.gudmap.org --catalog 2 ./workflow/conf/replicate_export_config.json . rid=16-1ZX4
+
+getData:
+  stage: unit
+  script:
+  - ln -sf `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+  - unzip ./test_data/bagit/Replicate_16-1ZX4
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.1' sh ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4
+
+trimData_se:
+  tage: unit
+  script:
+  - if [ `nproc` -gt 8 ]; then ncore=8; else ncore=`nproc`; fi
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --basename 16-1ZX4 -j ${ncore} ./test_data/fastq/16-1ZX4.R1.fastq.gz
+
+trimData_pe:
+  tage: unit
+  script:
+  - if [ `nproc` -gt 8 ]; then ncore=8; else ncore=`nproc`; fi
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --paired --basename Q-Y5JA -j ${ncore} ./test_data/fastq/Q-Y5JA.R1.fastq.gz ./test_data/fastq/Q-Y5JA.R2.fastq.gz
