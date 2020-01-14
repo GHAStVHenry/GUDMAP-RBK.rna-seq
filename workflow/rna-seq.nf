@@ -64,11 +64,12 @@ process getData {
 
   input:
     val repRID_getData
+    executor 'local'
     path cookies, stageAs: 'deriva-cookies.txt' from bdbag
     path bagit
 
   output:
-    path ("**/*.R{1,2}.fastq.gz") into fastqs
+    path ("*.R{1,2}.fastq.gz") into fastqs
 
   script:
     """
@@ -81,7 +82,7 @@ process getData {
     echo "LOG: \${replicate}" >>${repRID_getData}.getData.err
     unzip ${bagit} 2>>${repRID_getData}.getData.err
     echo "LOG: replicate bdbag unzipped" >>${repRID_getData}.getData.err
-    sh ${baseDir}/scripts/bdbagFetch.sh \${replicate} 2>>${repRID_getData}.getData.err
+    sh ${baseDir}/scripts/bdbagFetch.sh \${replicate} ${repRID_getData} 2>>${repRID_getData}.getData.err
     echo "LOG: replicate bdbag fetched" >>${repRID_getData}.getData.err
     """
 }
@@ -91,7 +92,6 @@ process getData {
 */
 process trimData {
   tag "${repRID_trimData}"
-  publishDir "${outDir}/tempOut/trimmed", mode: "symlink", pattern: "*_val_{1,2}.fq.gz"
   publishDir "${logsDir}/trimData", mode: 'symlink', pattern: "\${repRID_trimData}.trimData.*"
 
   input:
@@ -99,7 +99,8 @@ process trimData {
     file(fastq) from fastqs
 
   output:
-    path ("*_val_{1,2}.fq.gz", type: 'file', maxDepth: '0')
+    path ("*.fq.gz") into fastqs_trimmed
+    val ends
 
   script:
     """
@@ -109,10 +110,12 @@ process trimData {
     else
       ncore=`nproc`
     fi
-    if [ -z ${fastq[1]} ]
+    if [ '${fastq[1]}' == 'null' ]
     then
+      ends='se'
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID_trimData} -j \${ncore} ${fastq[0]} 1>>${repRID_trimData}.trimData.log 2>>${repRID_trimData}.trimData.err;
     else
+      ends='pe'
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID_trimData} -j \${ncore} ${fastq[0]} ${fastq[1]} 1>>${repRID_trimData}.trimData.log 2>>${repRID_trimData}.trimData.err;
     fi
     """
