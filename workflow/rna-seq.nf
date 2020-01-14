@@ -44,6 +44,7 @@ process getBag {
 
   output:
     path ("Replicate_*.zip") into bagit
+    file ("${repRID_getBag}.getBag.err")
 
   script:
     """
@@ -70,6 +71,11 @@ process getData {
 
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
+    file("**/File.csv") into fileMeta
+    file("**/Experiment Settings.csv") into experimentSettingsMeta
+    file("**/Experiment.csv") into experimentMeta
+    file ("${repRID_getData}.getData.err")
+
 
   script:
     """
@@ -101,6 +107,8 @@ process trimData {
   output:
     path ("*.fq.gz") into fastqs_trimmed
     val ends
+    file ("${repRID_trimData}.trimData.log")
+    file ("${repRID_trimData}.trimData.err")
 
   script:
     """
