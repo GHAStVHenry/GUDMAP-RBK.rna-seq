@@ -6,9 +6,9 @@ from io import StringIO
 import os
 
 test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
-                '/../../Replicate_16-1ZX4/'
+                '/../../'
 
 @pytest.mark.getData
 def test_getData():
-    assert os.path.exists(os.path.join(test_output_path, 'bagit.txt'))
-    assert os.path.exists(os.path.join(test_output_path, 'data/assets/Study/16-1ZWP/Experiment/16-1ZWR/Replicate/16-1ZX4/3_1_single.R1.fastq.gz'))
+    assert os.path.exists(os.path.join(test_output_path, 'Replicate_16-1ZX4/bagit.txt'))
+    assert os.path.exists(os.path.join(test_output_path, '16-1ZX4.R1.fastq.gz'))
