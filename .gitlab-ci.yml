@@ -12,13 +12,13 @@ stages:
 getBag:
   stage: unit
   script:
-  - ln -sfn ./test_data/auth/credential.json ~/.deriva/credential.json
+  - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
   - singularity run 'docker://bicf/gudmaprbkfilexfer:1.1' deriva-download-cli dev.gudmap.org --catalog 2 ./workflow/conf/replicate_export_config.json . rid=16-1ZX4
 
 getData:
   stage: unit
   script:
-  - ln -sfn ./test_data/auth/cookies.txt ~/.bdbag/deriva-cookies.txt
+  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bagit/Replicate_16-1ZX4
   - singularity run 'docker://bicf/gudmaprbkfilexfer:1.1' sh ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4
 
