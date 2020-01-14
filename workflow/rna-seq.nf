@@ -1,24 +1,36 @@
 #!/usr/bin/env nextflow
 
 // Define input variables
-params.deriva = "/project/BICF/BICF_Core/shared/gudmap/cookies/credential.json"
-params.bdbag = "/project/BICF/BICF_Core/shared/gudmap/cookies/deriva-cookies.txt"
-params.repRID = "16-1ZX4"
+params.deriva = "${baseDir}/../test_data/credential.json"
+params.bdbag = "${baseDir}/../test_data/cookies.txt"
+//params.repRID = "16-1ZX4"
+params.repRID = "Q-Y5JA"
 //params.bdbag = "${baseDir}/../test_data/Study_Q-Y4H0.zip"
 
 params.outDir = "${baseDir}/../output"
 
 // Parse input variables
-deriva = file(params.deriva, checkIfExists: 'true')
-bdbag = file(params.bdbag, checkIfExists: 'true')
+deriva = Channel
+  .fromPath(params.deriva)
+  .ifEmpty { exit 1, "deriva credential file not found: ${params.deriva}" }
+bdbag = Channel
+  .fromPath(params.bdbag)
+  .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
 //bdbag = Channel
 //  .fromPath(params.bdbag)
 //  .ifEmpty { exit 1, "bdbag zip file not found: ${params.bdbag}" }
 
-repRID = params.repRID
+Channel.from(params.repRID)
+  .into {
+    repRID_getBag
+    repRID_getData
+    repRID_trimData
+  }
 
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
+
+derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -65,48 +77,56 @@ process splitData {
  * getData: get bagit file from consortium
  */
 process getBag {
-  tag "${repRID}"
-  publishDir "${logsDir}/getBag", mode: 'symlink', pattern: "${rep.baseName}.getBag.err"
+  executor 'local'
+  tag "${repRID_getBag}"
+  publishDir "${logsDir}/getBag", mode: 'symlink', pattern: "${repRID_getBag}.getBag.err"
 
   input:
-    path deriva
-    val repRID
+    val repRID_getBag
+    path credential, stageAs: 'credential.json' from deriva
+    path derivaConfig
 
   output:
-    file 
+    path ("Replicate_*.zip") into bagit
 
   script:
     """
-    hostname >>${rep.baseName}.getData.err
-    ulimit -a >>${rep.baseName}.getData.err
+    hostname >>${repRID_getBag}.getBag.err
+    ulimit -a >>${repRID_getBag}.getBag.err
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json 2>>${repRID_getBag}.getBag.err
+    echo "LOG: deriva credentials linked" >>${repRID_getBag}.getBag.err
+    deriva-download-cli dev.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID_getBag} 2>>${repRID_getBag}.getBag.err
     """
 }
-
 
 /*
  * getData: fetch study files from consortium with downloaded bdbag.zip
  */
 process getData {
-  tag "${rep.baseName}"
-  publishDir "${logsDir}/getData", mode: 'symlink', pattern: "${rep.baseName}.getData.err"
+  tag "${repRID_getData}"
+  publishDir "${logsDir}/getData", mode: 'symlink', pattern: "${repRID_getData}.getData.err"
 
   input:
-    each rep from bdbagSplit
+    val repRID_getData
+    path cookies, stageAs: 'deriva-cookies.txt' from bdbag
+    path bagit
 
   output:
-    set val ("${rep.baseName}"), file ("*.R{1,2}.fastq.gz") into trimming
+    path ("**/*.R{1,2}.fastq.gz") into fastqs
 
   script:
     """
-    hostname >>${rep.baseName}.getData.err
-    ulimit -a >>${rep.baseName}.getData.err
+    hostname >>${repRID_getData}.getData.err
+    ulimit -a >>${repRID_getData}.getData.err
     export https_proxy=\${http_proxy}
-    replicate=\$(basename "${rep}" | cut -d '.' -f1)
-    echo "LOG: \${replicate}" >>${rep.baseName}.getData.err
-    unzip ${rep} 2>>${rep.baseName}.getData.err
-    echo "LOG: replicate bdbag unzipped" >>${rep.baseName}.getData.err
-    sh ${baseDir}/scripts/bdbagFetch.sh \${replicate} 2>>${rep.baseName}.getData.err
-    echo "LOG: replicate bdbag fetched" >>${rep.baseName}.getData.err
+    ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt >>${repRID_getData}.getData.err
+    echo "LOG: deriva cookie linked" >>${repRID_getData}.getData.err
+    replicate=\$(basename "${bagit}" | cut -d '.' -f1)
+    echo "LOG: \${replicate}" >>${repRID_getData}.getData.err
+    unzip ${bagit} 2>>${repRID_getData}.getData.err
+    echo "LOG: replicate bdbag unzipped" >>${repRID_getData}.getData.err
+    sh ${baseDir}/scripts/bdbagFetch.sh \${replicate} 2>>${repRID_getData}.getData.err
+    echo "LOG: replicate bdbag fetched" >>${repRID_getData}.getData.err
     """
 }
 
@@ -114,19 +134,30 @@ process getData {
  * trimData: trims any adapter or non-host sequences from the data
 */
 process trimData {
-  tag "trim-${repID}"
+  tag "${repRID_trimData}"
   publishDir "${outDir}/tempOut/trimmed", mode: "symlink", pattern: "*_val_{1,2}.fq.gz"
-  publishDir "${logsDir}/trimData", mode: 'symlink', pattern: "\${rep}.trimData.*"
+  publishDir "${logsDir}/trimData", mode: 'symlink', pattern: "\${repRID_trimData}.trimData.*"
 
   input:
-    set repID, reads from trimming
+    val repRID_trimData
+    file(fastq) from fastqs
 
   output:
     path ("*_val_{1,2}.fq.gz", type: 'file', maxDepth: '0')
 
   script:
     """
-    rep=`echo ${repID} | cut -f2- -d '_'`;
-    trim_galore --gzip --max_n 1 --paired --basename \${rep} -j `nproc` ${reads[0]} ${reads[1]} 1>>\${rep}.trimData.log 2>>\${rep}.trimData.err;
+    if [ `nproc` -gt 8 ]
+    then
+      ncore=8
+    else
+      ncore=`nproc`
+    fi
+    if [ -z ${fastq[1]} ]
+    then
+      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID_trimData} -j \${ncore} ${fastq[0]} 1>>${repRID_trimData}.trimData.log 2>>${repRID_trimData}.trimData.err;
+    else
+      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID_trimData} -j \${ncore} ${fastq[0]} ${fastq[1]} 1>>${repRID_trimData}.trimData.log 2>>${repRID_trimData}.trimData.err;
+    fi
     """
 }
