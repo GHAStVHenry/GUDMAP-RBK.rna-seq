@@ -19,3 +19,15 @@ getData:
   - ln -sf `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bagit/Replicate_16-1ZX4
   - singularity run 'docker://bicf/gudmaprbkfilexfer:1.1' sh ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4
+
+trimData_se:
+  tage: unit
+  script:
+  - if [ `nproc` -gt 8 ]; then ncore=8; else ncore=`nproc`; fi
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --basename 16-1ZX4 -j ${ncore} ./test_data/fastq/16-1ZX4.R1.fastq.gz
+
+  trimData_pe:
+  tage: unit
+  script:
+  - if [ `nproc` -gt 8 ]; then ncore=8; else ncore=`nproc`; fi
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --paired --basename Q-Y5JA -j ${ncore} ./test_data/fastq/Q-Y5JA.R1.fastq.gz ./test_data/fastq/Q-Y5JA.R2.fastq.gz
