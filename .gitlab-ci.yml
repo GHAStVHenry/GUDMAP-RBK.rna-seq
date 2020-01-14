@@ -3,6 +3,8 @@ before_script:
   - pip install --user pytest-pythonpath==0.7.1 pytest-cov==2.5.1
   - module load singularity/3.0.2
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
+  - mkdir -p ~/.deriva
+  - mkdir -p ~/.bdbag
 
 stages:
   - unit
