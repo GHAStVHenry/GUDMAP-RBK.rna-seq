@@ -50,6 +50,7 @@ process getBag {
     """
     hostname >>${repRID_getBag}.getBag.err
     ulimit -a >>${repRID_getBag}.getBag.err
+    export https_proxy=\${http_proxy}
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json 2>>${repRID_getBag}.getBag.err
     echo "LOG: deriva credentials linked" >>${repRID_getBag}.getBag.err
     deriva-download-cli dev.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID_getBag} 2>>${repRID_getBag}.getBag.err
