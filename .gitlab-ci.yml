@@ -8,6 +8,7 @@ before_script:
 
 stages:
   - unit
+  - integration
 
 getBag:
   stage: unit
@@ -37,3 +38,13 @@ trimData_pe:
   - if [ `nproc` -gt 8 ]; then ncore=8; else ncore=`nproc`; fi
   - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --paired --basename Q-Y5JA -j ${ncore} ./test_data/fastq/Q-Y5JA.R1.fastq.gz ./test_data/fastq/Q-Y5JA.R2.fastq.gz
   - pytest -m trimData_pe
+
+integration_se:
+  stage: integration
+  script:
+  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4
+
+integration_pe:
+  stage: integration
+  script:
+  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA
