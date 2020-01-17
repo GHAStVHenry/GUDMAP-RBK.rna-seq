@@ -1,8 +1,7 @@
-<!--
 |*master*|*develop*|
 |:-:|:-:|
 |[![Build Status](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/badges/master/build.svg)](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/commits/master)|[![Build Status](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/badges/develop/build.svg)](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/commits/develop)|
-
+<!--
 [![DOI]()]()
 -->
 GUDMAP/RBK RNA-Seq Pipeline
@@ -10,16 +9,19 @@ GUDMAP/RBK RNA-Seq Pipeline
 
 Introduction
 ------------
-
+This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub.
 
 To Run:
 -------
 * Available parameters:
+  * *--deriva* active ```credential.json``` file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
+  * *--bdbag* active ```cookies.txt``` file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
+  * *--repRID* mRNA-seq replicate RID\
+  note: once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)
 * FULL EXAMPLE:
   ```
-  nextflow run workflow/rna-seq.nf
+  nextflow run workflow/rna-seq.nf --deriva ./data/credential.json --bdbag ./data/cookies.txt --repRID Q-Y5JA
   ```
-* Design example:
 
 
 
