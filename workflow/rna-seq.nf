@@ -46,8 +46,12 @@ process getBag {
     hostname >>${repRID}.getBag.err
     ulimit -a >>${repRID}.getBag.err
     export https_proxy=\${http_proxy}
+
+    # link credential file for authentication
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json 2>>${repRID}.getBag.err
     echo "LOG: deriva credentials linked" >>${repRID}.getBag.err
+
+    # deriva-download replicate RID
     deriva-download-cli dev.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID} 2>>${repRID}.getBag.err
     """
 }
@@ -77,12 +81,20 @@ process getData {
     hostname >>${repRID}.getData.err
     ulimit -a >>${repRID}.getData.err
     export https_proxy=\${http_proxy}
+    
+    # link deriva cookie for authentication
     ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt >>${repRID}.getData.err
     echo "LOG: deriva cookie linked" >>${repRID}.getData.err
+    
+    # get bagit basename
     replicate=\$(basename "${bagit}" | cut -d '.' -f1)
     echo "LOG: \${replicate}" >>${repRID}.getData.err
+    
+    # unzip bagit
     unzip ${bagit} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag unzipped" >>${repRID}.getData.err
+    
+    # bagit fetch fastq's only and rename by repRID
     sh bdbagFetch.sh \${replicate} ${repRID} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag fetched" >>${repRID}.getData.err
     """
@@ -106,12 +118,17 @@ process trimData {
 
   script:
     """
+    hostname >>${repRID}.trimData.err
+    ulimit -a >>${repRID}.trimData.err
+
     if [ `nproc` -gt 8 ]
     then
       ncore=8
     else
       ncore=`nproc`
     fi
+
+    # trim fastqs
     if [ '${fastq[1]}' == 'null' ]
     then
       ends='se'
