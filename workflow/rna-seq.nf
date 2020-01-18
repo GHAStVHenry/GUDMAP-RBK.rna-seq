@@ -20,6 +20,7 @@ Channel.from(params.repRID)
   .into {
     repRID_getBag
     repRID_getData
+    repRID_parseMetadata
     repRID_trimData
   }
 
@@ -33,7 +34,6 @@ derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
  * getData: get bagit file from consortium
  */
 process getBag {
-  executor 'local'
   tag "${repRID_getBag}"
   publishDir "${logsDir}/getBag", mode: 'symlink', pattern: "${repRID_getBag}.getBag.err"
 
@@ -66,7 +66,6 @@ process getData {
 
   input:
     val repRID_getData
-    executor 'local'
     path cookies, stageAs: 'deriva-cookies.txt' from bdbag
     path bagit
 
@@ -76,7 +75,6 @@ process getData {
     file("**/Experiment Settings.csv") into experimentSettingsMeta
     file("**/Experiment.csv") into experimentMeta
     file ("${repRID_getData}.getData.err")
-
 
   script:
     """
@@ -92,6 +90,29 @@ process getData {
     sh ${baseDir}/scripts/bdbagFetch.sh \${replicate} ${repRID_getData} 2>>${repRID_getData}.getData.err
     echo "LOG: replicate bdbag fetched" >>${repRID_getData}.getData.err
     """
+}
+
+/*
+ * parseMetadata: parses metadata to extract experiment parameters
+*/
+process parseMetadata {
+  tag "${repRID_parseMetadata}"
+  publishDir "${logsDir}/parseMetadata", mode: 'symlink', pattern: "${repRID_parseMetadata}.parseMetadata.err"
+
+  input:
+    val repRID_parseMetadata
+    file fileMeta
+    file experimentSettingsMeta
+    file experimentMeta
+
+  output:
+
+  script:
+    """
+    hostname >>${repRID_parseMetadata}.parseMetadata.err
+    ulimit -a >>${repRID_parseMetadata}.parseMetadata.err
+    """
+
 }
 
 /*
