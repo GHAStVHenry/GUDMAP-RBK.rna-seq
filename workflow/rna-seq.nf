@@ -15,7 +15,6 @@ deriva = Channel
 bdbag = Channel
   .fromPath(params.bdbag)
   .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
-
 repRID = params.repRID
 
 outDir = params.outDir
@@ -30,7 +29,7 @@ derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 process getBag {
   executor 'local'
   tag "${repRID}"
-  publishDir "${logsDir}/getBag", mode: 'symlink', pattern: "${repRID}.getBag.err"
+  publishDir "${logsDir}/getBag", mode: 'copy', pattern: "${repRID}.getBag.err"
 
   input:
     path credential, stageAs: 'credential.json' from deriva
@@ -56,7 +55,7 @@ process getBag {
  */
 process getData {
   tag "${repRID}"
-  publishDir "${logsDir}/getData", mode: 'symlink', pattern: "${repRID}.getData.err"
+  publishDir "${logsDir}/getData", mode: 'copy', pattern: "${repRID}.getData.err"
 
   input:
     executor 'local'
@@ -92,7 +91,7 @@ process getData {
 */
 process trimData {
   tag "${repRID}"
-  publishDir "${logsDir}/trimData", mode: 'symlink', pattern: "\${repRID}.trimData.*"
+  publishDir "${logsDir}/trimData", mode: 'copy', pattern: "\${repRID}.trimData.*"
 
   input:
     file(fastq) from fastqs
