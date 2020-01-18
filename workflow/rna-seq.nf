@@ -27,7 +27,6 @@ derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
  * getData: get bagit file from consortium
  */
 process getBag {
-  executor 'local'
   tag "${repRID}"
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.getBag.err"
 
@@ -58,7 +57,6 @@ process getData {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.getData.err"
 
   input:
-    executor 'local'
     path cookies, stageAs: 'deriva-cookies.txt' from bdbag
     path bagit
 
