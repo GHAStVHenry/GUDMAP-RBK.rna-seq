@@ -23,6 +23,9 @@ logsDir = "${outDir}/Logs"
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 
+// Define script files
+script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
+
 /*
  * getData: get bagit file from consortium
  */
@@ -57,6 +60,7 @@ process getData {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.getData.err"
 
   input:
+    path script_bdbagFetch
     path cookies, stageAs: 'deriva-cookies.txt' from bdbag
     path bagit
 
@@ -79,7 +83,7 @@ process getData {
     echo "LOG: \${replicate}" >>${repRID}.getData.err
     unzip ${bagit} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag unzipped" >>${repRID}.getData.err
-    sh ${baseDir}/scripts/bdbagFetch.sh \${replicate} ${repRID} 2>>${repRID}.getData.err
+    sh bdbagFetch.sh \${replicate} ${repRID} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag fetched" >>${repRID}.getData.err
     """
 }
