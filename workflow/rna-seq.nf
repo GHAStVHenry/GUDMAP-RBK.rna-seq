@@ -111,6 +111,7 @@ process parseMetadata {
     """
     hostname >>${repRID_parseMetadata}.parseMetadata.err
     ulimit -a >>${repRID_parseMetadata}.parseMetadata.err
+    python ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m ${fileMeta} -p repRID
     """
 
 }

@@ -14,14 +14,19 @@ def get_args():
 
 def main():
     args = get_args()
-    metaFile = pd.read_csv(args.metaFile,sep="\t",header=None)
+    metaFile = pd.read_csv(args.metaFile,sep=",",header=0)
     if (args.parameter == "repRID"):
         if (len(metaFile.Replicate_RID.unique()) > 1):
-            #ERROR
-        if not (metaFile.Replicate_RID == arg$repRID):
-            #ERROR
-        if (len(fileFile[fileFile["File_Type"] == "FastQ"].RID) > 2):
-            #ERROR
+            print("There are multiple replicate RID's in the metadata: " + " ".join(metaFile.Replicate_RID.unique()))
+            exit(1)
+        if not (metaFile.Replicate_RID.unique() == args.repRID):
+            print("Replicate RID in metadata does not match run parameters: " + metaFile.Replicate_RID.unique() + " vs " + args.repRID)
+            exit(1)
+        else:
+            print(metaFile["Replicate_RID"].unique())
+        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) > 2):
+            print("There are more then 2 fastq's in the metadata: " + " ".join(metaFile[metaFile["File_Type"] == "FastQ"].RID))
+            exit(1)
 
 
 if __name__ == '__main__':
