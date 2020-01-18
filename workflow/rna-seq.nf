@@ -121,21 +121,14 @@ process trimData {
     hostname >>${repRID}.trimData.err
     ulimit -a >>${repRID}.trimData.err
 
-    if [ `nproc` -gt 8 ]
-    then
-      ncore=8
-    else
-      ncore=`nproc`
-    fi
-
     # trim fastqs
     if [ '${fastq[1]}' == 'null' ]
     then
       ends='se'
-      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j \${ncore} ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
+      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     else
       ends='pe'
-      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j \${ncore} ${fastq[0]} ${fastq[1]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
+      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     fi
     """
 }
