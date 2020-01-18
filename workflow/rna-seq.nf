@@ -29,7 +29,7 @@ derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 process getBag {
   executor 'local'
   tag "${repRID}"
-  publishDir "${logsDir}/getBag", mode: 'copy', pattern: "${repRID}.getBag.err"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.getBag.err"
 
   input:
     path credential, stageAs: 'credential.json' from deriva
@@ -55,7 +55,7 @@ process getBag {
  */
 process getData {
   tag "${repRID}"
-  publishDir "${logsDir}/getData", mode: 'copy', pattern: "${repRID}.getData.err"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.getData.err"
 
   input:
     executor 'local'
@@ -91,7 +91,7 @@ process getData {
 */
 process trimData {
   tag "${repRID}"
-  publishDir "${logsDir}/trimData", mode: 'copy', pattern: "\${repRID}.trimData.*"
+  publishDir "${logsDir}", mode: 'copy', pattern: "\${repRID}.trimData.*"
 
   input:
     file(fastq) from fastqs
