@@ -2,7 +2,7 @@
 
 import argparse
 import pandas as pd
-
+import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def get_args():
