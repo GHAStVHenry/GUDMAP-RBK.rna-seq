@@ -116,6 +116,7 @@ process parseMetadata {
 
   output:
     val ends
+    val endsManual
     val stranded
     val spike
     val specie
@@ -133,6 +134,15 @@ process parseMetadata {
     ends=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p ends)
     echo "LOG: endedness metadata parsed: \${ends}" >>${repRID}.parseMetadata.err
     
+    # Manually get endness
+    endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
+    echo "LOG: endedness manually detected: \${ends}" >>${repRID}.parseMetadata.err
+    if [ \${ends} == "uk" ]
+    then
+      ends=\${endsManual}
+      echo "LOG: endness metadata overwitten my manually detected" >>${repRID}.parseMetadata.err
+    fi
+
     # Get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
     echo "LOG: strandedness metadata parsed: \${stranded}" >>${repRID}.parseMetadata.err

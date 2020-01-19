@@ -33,10 +33,18 @@ def main():
             ends = "se"
         elif (metaFile.Paired_End.unique() == "Paired End"):
             ends = "pe"
+        elif (metaFile.Paired_End.unique() == ""):
+            ends = "uk"
         else:
             print("Ends metadata not match expected options: " + metaFile.Paired_End.unique())
             exit(1)
         print(ends)
+    if (args.parameter == "endsManual"):
+        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 1):
+            endsManual = "se"
+        elif (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 2):
+            endsManual = "pe"
+        print(endsManual)
     if (args.parameter == "stranded"):
         if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
             stranded = "stranded"
