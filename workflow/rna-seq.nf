@@ -140,7 +140,7 @@ process parseMetadata {
     echo "LOG: endedness manually detected: \${endsManual}" >>${repRID}.parseMetadata.err
     
     
-    if [ \${endsMeta} == "uk" ]
+    if [ '\${endsMeta}' == "uk" ]
     then
       ends=\${endsManual}
       echo "LOG: manual detected endness used" >>${repRID}.parseMetadata.err
