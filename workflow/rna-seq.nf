@@ -117,7 +117,7 @@ process parseMetadata {
     ulimit -a >>${repRID_parseMetadata}.parseMetadata.err
 
     # Check replicate RID metadata
-    rep=\$(python ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m "${fileMeta}" -p repRID)
+    rep=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m "${fileMeta}" -p repRID)
     echo "LOG: replicate RID metadata parsed: \${rep}" >>${repRID_parseMetadata}.parseMetadata.err
     
     # Get endedness metadata
