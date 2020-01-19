@@ -164,7 +164,6 @@ process trimData {
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
-    val ends
     file ("${repRID}.trimData.log")
     file ("${repRID}.trimData.err")
 
