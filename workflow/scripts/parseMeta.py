@@ -25,7 +25,7 @@ def main():
         else:
             rep=metaFile["Replicate_RID"].unique()[0]
             print(rep)
-        if (len(metaFile[metaFile["File_Type"] == "FastQ"].all()) > 2):
+        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) > 2):
             print("There are more then 2 fastq's in the metadata: " + " ".join(metaFile[metaFile["File_Type"] == "FastQ"].RID))
             exit(1)
     if (args.parameter == "ends"):
