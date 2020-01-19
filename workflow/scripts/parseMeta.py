@@ -37,9 +37,9 @@ def main():
             ends = "uk"
         print(ends)
     if (args.parameter == "endsManual"):
-        if (len(metaFile[metaFile["File_Type"] == "FastQ"].all()) == 1):
+        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 1):
             endsManual = "se"
-        elif (len(metaFile[metaFile["File_Type"] == "FastQ"].all()) == 2):
+        elif (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 2):
             endsManual = "pe"
         print(endsManual)
     if (args.parameter == "stranded"):
