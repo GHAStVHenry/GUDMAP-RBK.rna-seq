@@ -189,10 +189,8 @@ process trimData {
     # trim fastqs
     if [ '${ends_trimData}' == 'se' ]
     then
-      ends='se'
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     else
-      ends='pe'
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     fi
     """
