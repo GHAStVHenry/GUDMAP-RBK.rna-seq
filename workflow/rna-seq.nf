@@ -95,7 +95,7 @@ process getData {
     echo "LOG: replicate bdbag unzipped" >>${repRID}.getData.err
     
     # bagit fetch fastq's only and rename by repRID
-    sh bdbagFetch.sh \${replicate} ${repRID} 2>>${repRID}.getData.err
+    sh ${script_bdbagFetch} \${replicate} ${repRID} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag fetched" >>${repRID}.getData.err
     """
 }
@@ -108,7 +108,7 @@ process parseMetadata {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.parseMetadata.err"
 
   input:
-    path pscript_arseMeta
+    path script_parseMeta
     val repRID
     path fileMeta
     path experimentSettingsMeta
@@ -126,23 +126,23 @@ process parseMetadata {
     ulimit -a >>${repRID}.parseMetadata.err
 
     # Check replicate RID metadata
-    rep=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID} -m "${fileMeta}" -p repRID)
+    rep=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p repRID)
     echo "LOG: replicate RID metadata parsed: \${rep}" >>${repRID}.parseMetadata.err
     
     # Get endedness metadata
-    ends=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID} -m "${experimentSettingsMeta}" -p ends)
+    ends=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p ends)
     echo "LOG: endedness metadata parsed: \${ends}" >>${repRID}.parseMetadata.err
     
     # Get strandedness metadata
-    stranded=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
+    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
     echo "LOG: strandedness metadata parsed: \${stranded}" >>${repRID}.parseMetadata.err
     
     # Get spike-in metadata
-    spike=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
+    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
     echo "LOG: spike-in metadata parsed: \${spike}" >>${repRID}.parseMetadata.err
     
     # Get species metadata
-    specie=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID} -m "${experimentMeta}" -p specie)
+    specie=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p specie)
     echo "LOG: species metadata parsed: \${specie}" >>${repRID}.parseMetadata.err
     """
 }
