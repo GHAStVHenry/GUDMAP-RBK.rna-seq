@@ -139,14 +139,13 @@ process parseMetadata {
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
     echo "LOG: endedness manually detected: \${endsManual}" >>${repRID}.parseMetadata.err
     
-    
     if [ '\${endsMeta}' == 'uk' ]
     then
       ends=\${endsManual}
-      echo "LOG: manual detected endness used" >>${repRID}.parseMetadata.err
+      echo "LOG: manual detected endness used: \${ends}" >>${repRID}.parseMetadata.err
     else
       ends=\${endsMeta}
-      echo "LOG: metadata endness used" >>${repRID}.parseMetadata.err
+      echo "LOG: metadata endness used: \${ends}" >>${repRID}.parseMetadata.err
     fi
 
     # Get strandedness metadata
