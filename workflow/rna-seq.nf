@@ -25,6 +25,7 @@ derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
+script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 
 /*
  * getData: get bagit file from consortium
@@ -107,6 +108,7 @@ process parseMetadata {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.parseMetadata.err"
 
   input:
+    path pscript_arseMeta
     val repRID
     path fileMeta
     path experimentSettingsMeta
