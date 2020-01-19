@@ -25,7 +25,7 @@ def main():
         else:
             rep=metaFile["Replicate_RID"].unique()[0]
             print(rep)
-        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) > 2):
+        if (len(metaFile[metaFile["File_Type"] == "FastQ"].all()) > 2):
             print("There are more then 2 fastq's in the metadata: " + " ".join(metaFile[metaFile["File_Type"] == "FastQ"].RID))
             exit(1)
     if (args.parameter == "ends"):
@@ -37,9 +37,9 @@ def main():
             ends = "uk"
         print(ends)
     if (args.parameter == "endsManual"):
-        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 1):
+        if (len(metaFile[metaFile["File_Type"] == "FastQ"].all()) == 1):
             endsManual = "se"
-        elif (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 2):
+        elif (len(metaFile[metaFile["File_Type"] == "FastQ"].all()) == 2):
             endsManual = "pe"
         print(endsManual)
     if (args.parameter == "stranded"):

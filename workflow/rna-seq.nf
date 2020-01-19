@@ -115,8 +115,9 @@ process parseMetadata {
     path experimentMeta
 
   output:
-    val ends
+    val endsMeta
     val endsManual
+    val ends
     val stranded
     val spike
     val specie
