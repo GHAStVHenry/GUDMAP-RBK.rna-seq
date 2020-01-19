@@ -137,7 +137,7 @@ process parseMetadata {
     
     # Manually get endness
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
-    echo "LOG: endedness manually detected: \${ends}" >>${repRID}.parseMetadata.err
+    echo "LOG: endedness manually detected: \${endsManual}" >>${repRID}.parseMetadata.err
     
     
     if [ \${endsMeta} == "uk" ]
