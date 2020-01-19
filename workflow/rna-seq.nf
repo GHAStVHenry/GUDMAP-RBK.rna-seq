@@ -163,9 +163,7 @@ process parseMetadata {
     """
 }
 
-ends.set {
-  ends_trimData
-}
+ends_trimData = ends
 
 /*
  * trimData: trims any adapter or non-host sequences from the data
