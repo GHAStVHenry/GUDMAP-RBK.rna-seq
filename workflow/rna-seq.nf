@@ -97,23 +97,49 @@ process getData {
 */
 process parseMetadata {
   tag "${repRID_parseMetadata}"
-  publishDir "${logsDir}/parseMetadata", mode: 'symlink', pattern: "${repRID_parseMetadata}.parseMetadata.err"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID_parseMetadata}.parseMetadata.err"
 
   input:
     val repRID_parseMetadata
-    file fileMeta
-    file experimentSettingsMeta
-    file experimentMeta
+    path fileMeta
+    path experimentSettingsMeta
+    path experimentMeta
 
   output:
+    val ends
+    val stranded
+    val spike
+    val specie
 
   script:
     """
     hostname >>${repRID_parseMetadata}.parseMetadata.err
     ulimit -a >>${repRID_parseMetadata}.parseMetadata.err
-    python ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m ${fileMeta} -p repRID
-    """
 
+    # Check replicate RID metadata
+    rep=\$(python ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m "${fileMeta}" -p repRID)
+    echo "LOG: replicate RID metadata parsed: \${rep}" >>${repRID_parseMetadata}.parseMetadata.err
+    
+    # Get endedness metadata
+    ends=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m "${experimentSettingsMeta}" -p ends)
+    echo "LOG: endedness metadata parsed: \${ends}" >>${repRID_parseMetadata}.parseMetadata.err
+    
+    # Get strandedness metadata
+    stranded=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m "${experimentSettingsMeta}" -p stranded)
+    echo "LOG: strandedness metadata parsed: \${stranded}" >>${repRID_parseMetadata}.parseMetadata.err
+    
+    # Get spike-in metadata
+    spike=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m "${experimentSettingsMeta}" -p spike)
+    echo "LOG: spike-in metadata parsed: \${spike}" >>${repRID_parseMetadata}.parseMetadata.err
+    
+    # Get species metadata
+    specie=\$(python3 ${baseDir}/scripts/parseMeta.py -r ${repRID_parseMetadata} -m "${experimentMeta}" -p specie)
+    echo "LOG: species metadata parsed: \${specie}" >>${repRID_parseMetadata}.parseMetadata.err
+    """
+}
+
+ends.set {
+  ends_trimData
 }
 
 /*
@@ -126,10 +152,10 @@ process trimData {
   input:
     val repRID_trimData
     file(fastq) from fastqs
+    val ends_trimData
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
-    val ends
     file ("${repRID_trimData}.trimData.log")
     file ("${repRID_trimData}.trimData.err")
 
@@ -141,12 +167,10 @@ process trimData {
     else
       ncore=`nproc`
     fi
-    if [ '${fastq[1]}' == 'null' ]
+    if [ '${ends_trimData}' == 'se' ]
     then
-      ends='se'
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID_trimData} -j \${ncore} ${fastq[0]} 1>>${repRID_trimData}.trimData.log 2>>${repRID_trimData}.trimData.err;
     else
-      ends='pe'
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID_trimData} -j \${ncore} ${fastq[0]} ${fastq[1]} 1>>${repRID_trimData}.trimData.log 2>>${repRID_trimData}.trimData.err;
     fi
     """

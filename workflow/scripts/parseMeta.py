@@ -23,11 +23,47 @@ def main():
             print("Replicate RID in metadata does not match run parameters: " + metaFile.Replicate_RID.unique() + " vs " + args.repRID)
             exit(1)
         else:
-            print(metaFile["Replicate_RID"].unique())
+            rep=metaFile["Replicate_RID"].unique()[0]
+            print(rep)
         if (len(metaFile[metaFile["File_Type"] == "FastQ"]) > 2):
             print("There are more then 2 fastq's in the metadata: " + " ".join(metaFile[metaFile["File_Type"] == "FastQ"].RID))
             exit(1)
-
+    if (args.parameter == "ends"):
+        if (metaFile.Paired_End.unique() == "Single End"):
+            ends = "se"
+        elif (metaFile.Paired_End.unique() == "Paired End"):
+            ends = "pe"
+        else:
+            print("Ends metadata not match expected options: " + metaFile.Paired_End.unique())
+            exit(1)
+        print(ends)
+    if (args.parameter == "stranded"):
+        if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
+            stranded = "stranded"
+        elif (metaFile.Has_Strand_Specific_Information.unique() == "no"):
+            stranded = "unstranded"
+        else:
+            print("Stranded metadata not match expected options: " + metaFile.Has_Strand_Specific_Information.unique())
+            exit(1)
+        print(stranded)
+    if (args.parameter == "spike"):
+        if (metaFile.Used_Spike_Ins.unique() == "yes"):
+            spike = "yes"
+        elif (metaFile.Used_Spike_Ins.unique() == "no"):
+            spike = "no"
+        else:
+            print("Spike-ins metadata not match expected options: " + metaFile.Used_Spike_Ins.unique())
+            exit(1)
+        print(spike)
+    if (args.parameter == "specie"):
+        if (metaFile.Species.unique() == "Mus musculus"):
+            specie = "Mus musculus"
+        elif (metaFile.Species.unique() == "Homo sapiens"):
+            specie = "Homo sapiens"
+        else:
+            print("Species metadata not match expected options: " + metaFile.Species.unique())
+            exit(1)
+        print(specie)
 
 if __name__ == '__main__':
     main()
