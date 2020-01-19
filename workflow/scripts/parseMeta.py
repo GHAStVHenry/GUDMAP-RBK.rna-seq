@@ -3,6 +3,8 @@
 import argparse
 import pandas as pd
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--repRID',help="The replicate RID.",required=True)
