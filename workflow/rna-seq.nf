@@ -131,16 +131,21 @@ process parseMetadata {
     echo "LOG: replicate RID metadata parsed: \${rep}" >>${repRID}.parseMetadata.err
     
     # Get endedness metadata
-    ends=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p ends)
-    echo "LOG: endedness metadata parsed: \${ends}" >>${repRID}.parseMetadata.err
+    endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p ends)
+    echo "LOG: endedness metadata parsed: \${endsMeta}" >>${repRID}.parseMetadata.err
     
     # Manually get endness
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
     echo "LOG: endedness manually detected: \${ends}" >>${repRID}.parseMetadata.err
-    if [ \${ends} == "uk" ]
+    
+    
+    if [ \${endsMeta} == "uk" ]
     then
       ends=\${endsManual}
-      echo "LOG: endness metadata overwitten my manually detected" >>${repRID}.parseMetadata.err
+      echo "LOG: manual detected endness used" >>${repRID}.parseMetadata.err
+    else
+      ends=\${endsMeta}
+      echo "LOG: metadata endness used" >>${repRID}.parseMetadata.err
     fi
 
     # Get strandedness metadata
