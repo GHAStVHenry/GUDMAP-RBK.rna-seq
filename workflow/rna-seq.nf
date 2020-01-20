@@ -1,8 +1,8 @@
 #!/usr/bin/env nextflow
 
 // Define input variables
-params.deriva = "${baseDir}/../test_data/credential.json"
-params.bdbag = "${baseDir}/../test_data/cookies.txt"
+params.deriva = "${baseDir}/../test_data/auth/credential.json"
+params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
 
@@ -115,12 +115,7 @@ process parseMetadata {
     path experimentMeta
 
   output:
-    val endsMeta
-    val endsManual
-    val ends
-    val stranded
-    val spike
-    val specie
+    path 'design.csv' into metadata
 
   script:
     """
@@ -132,21 +127,12 @@ process parseMetadata {
     echo "LOG: replicate RID metadata parsed: \${rep}" >>${repRID}.parseMetadata.err
     
     # Get endedness metadata
-    endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p ends)
+    endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p endsMeta)
     echo "LOG: endedness metadata parsed: \${endsMeta}" >>${repRID}.parseMetadata.err
     
     # Manually get endness
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
     echo "LOG: endedness manually detected: \${endsManual}" >>${repRID}.parseMetadata.err
-    
-    if [ '\${endsMeta}' == 'uk' ]
-    then
-      ends=\${endsManual}
-      echo "LOG: manual detected endness used: \${ends}" >>${repRID}.parseMetadata.err
-    else
-      ends=\${endsMeta}
-      echo "LOG: metadata endness used: \${ends}" >>${repRID}.parseMetadata.err
-    fi
 
     # Get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
@@ -157,12 +143,18 @@ process parseMetadata {
     echo "LOG: spike-in metadata parsed: \${spike}" >>${repRID}.parseMetadata.err
     
     # Get species metadata
-    specie=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p specie)
-    echo "LOG: species metadata parsed: \${specie}" >>${repRID}.parseMetadata.err
+    species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
+    echo "LOG: species metadata parsed: \${species}" >>${repRID}.parseMetadata.err
+
+    # Save design file
+    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
     """
 }
 
-ends_trimData = ends
+metadata.splitCsv(sep: ',', header: false).into {
+  metadata_trimData
+  metadata_qc
+}
 
 /*
  * trimData: trims any adapter or non-host sequences from the data
@@ -173,7 +165,7 @@ process trimData {
 
   input:
     file(fastq) from fastqs
-    val ends_trimData
+    tuple val(rep), val(endsMeta), val(endsManual), val(stranded), val(spike), val(species) from metadata_trimData
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
@@ -186,7 +178,7 @@ process trimData {
     ulimit -a >>${repRID}.trimData.err
 
     # trim fastqs
-    if [ '${ends_trimData}' == 'se' ]
+    if [ '${endsManual}' == 'se' ]
     then
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     else

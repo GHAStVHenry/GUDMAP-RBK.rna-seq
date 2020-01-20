@@ -17,6 +17,8 @@ def get_args():
 def main():
     args = get_args()
     metaFile = pd.read_csv(args.metaFile,sep=",",header=0)
+
+    # Check replicate RID metadata from 'File.csv'
     if (args.parameter == "repRID"):
         if (len(metaFile.Replicate_RID.unique()) > 1):
             print("There are multiple replicate RID's in the metadata: " + " ".join(metaFile.Replicate_RID.unique()))
@@ -30,20 +32,26 @@ def main():
         if (len(metaFile[metaFile["File_Type"] == "FastQ"]) > 2):
             print("There are more then 2 fastq's in the metadata: " + " ".join(metaFile[metaFile["File_Type"] == "FastQ"].RID))
             exit(1)
-    if (args.parameter == "ends"):
+    
+    # Get endedness metadata from 'Experiment Settings.csv'
+    if (args.parameter == "endsMeta"):
         if (metaFile.Paired_End.unique() == "Single End"):
-            ends = "se"
+            endsMeta = "se"
         elif (metaFile.Paired_End.unique() == "Paired End"):
-            ends = "pe"
+            endsMeta = "pe"
         else:
-            ends = "uk"
-        print(ends)
+            endsMeta = "uk"
+        print(endsMeta)
+    
+    # Manually get endness count from 'File.csv'
     if (args.parameter == "endsManual"):
         if (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 1):
             endsManual = "se"
         elif (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 2):
             endsManual = "pe"
         print(endsManual)
+    
+    # Get strandedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "stranded"):
         if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
             stranded = "stranded"
@@ -53,6 +61,8 @@ def main():
             print("Stranded metadata not match expected options: " + metaFile.Has_Strand_Specific_Information.unique())
             exit(1)
         print(stranded)
+    
+    # Get spike-in metadata from 'Experiment Settings.csv'
     if (args.parameter == "spike"):
         if (metaFile.Used_Spike_Ins.unique() == "yes"):
             spike = "yes"
@@ -62,15 +72,17 @@ def main():
             print("Spike-ins metadata not match expected options: " + metaFile.Used_Spike_Ins.unique())
             exit(1)
         print(spike)
-    if (args.parameter == "specie"):
+
+    # Get species metadata from 'Experiment.csv'
+    if (args.parameter == "species"):
         if (metaFile.Species.unique() == "Mus musculus"):
-            specie = "Mus musculus"
+            species = "Mus musculus"
         elif (metaFile.Species.unique() == "Homo sapiens"):
-            specie = "Homo sapiens"
+            species = "Homo sapiens"
         else:
             print("Species metadata not match expected options: " + metaFile.Species.unique())
             exit(1)
-        print(specie)
+        print(species)
 
 if __name__ == '__main__':
     main()
