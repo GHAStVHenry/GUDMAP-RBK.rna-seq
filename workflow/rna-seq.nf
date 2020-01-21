@@ -165,6 +165,13 @@ metadata.splitCsv(sep: ',', header: false).separate(
   spike,
   species
 )
+endsManual.into {
+  endsManual_trimData
+  endsManual_alignReads
+}
+stranded.into {
+  stranded_alignReads
+}
 
 // Exit with no species
 if (species == "") {
@@ -187,10 +194,6 @@ if (spike) {
   }
 }
 
-
-
-
-
 /*
  * trimData: trims any adapter or non-host sequences from the data
 */
@@ -199,6 +202,7 @@ process trimData {
   publishDir "${logsDir}", mode: 'copy', pattern: "\${repRID}.trimData.*"
 
   input:
+    val endsManual_trimData
     file(fastq) from fastqs
 
   output:
@@ -212,7 +216,7 @@ process trimData {
     ulimit -a >>${repRID}.trimData.err
 
     # trim fastqs
-    if [ '${endsManual}' == 'se' ]
+    if [ '${endsManual_trimData}' == 'se' ]
     then
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     else
@@ -229,6 +233,8 @@ process alignReads {
   publishDir "${outDir}/aligned", mode: "copy"
 
   input:
+    val endsManual_alignReads
+    val stranded_alignReads
     path fqs from fastqs_trimmed
 
   output:
@@ -236,7 +242,7 @@ process alignReads {
 
   script:
     """
-    if [ "${endsManual}" == 'pe' ]; then
+    if [ "${endsManual_alignReads}" == 'pe' ]; then
     hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2> ${repRID}.align.err;
     else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -U ${fqs[0]} 1>${repRID}.align.out 2> ${repRID}.align.err;
     fi;
