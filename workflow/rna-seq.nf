@@ -157,6 +157,7 @@ endsManual = Channel.create()
 stranded = Channel.create()
 spike = Channel.create()
 species = Channel.create()
+reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12/hisat2")
 metadata.splitCsv(sep: ',', header: false).separate(
   rep,
   endsMeta,
