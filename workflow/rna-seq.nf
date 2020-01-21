@@ -5,7 +5,6 @@ params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
-
 params.outDir = "${baseDir}/../output"
 
 // Parse input variables
@@ -23,8 +22,8 @@ logsDir = "${outDir}/Logs"
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 
 // Define script files
-script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
-script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
+script_bdbagFetch = file ("${baseDir}/scripts/bdbagFetch.sh")
+script_parseMeta = file ("${baseDir}/scripts/parseMeta.py")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -157,7 +156,6 @@ endsManual = Channel.create()
 stranded = Channel.create()
 spike = Channel.create()
 species = Channel.create()
-reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12/hisat2")
 metadata.splitCsv(sep: ',', header: false).separate(
   rep,
   endsMeta,
@@ -166,6 +164,8 @@ metadata.splitCsv(sep: ',', header: false).separate(
   spike,
   species
 )
+
+rep.subscribe { println "$it" }
 endsManual.into {
   endsManual_trimData
   endsManual_alignReads
@@ -183,15 +183,15 @@ if (species == "") {
 // Setting references
 if (spike) {
   if (species == "Homo sapiens") {
-    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12-S/hisat2")
+    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12-S/hisat2")
   } else if (species == "Mus musculus") {
-    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6-S/hisat2")
+    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6-S/hisat2")
   }
 } else {
   if (species == "Homo sapiens") {
-    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12/hisat2")
+    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12/hisat2")
   } else if (species == "Mus musculus") {
-    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6/hisat2")
+    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2")
   }
 }
 
