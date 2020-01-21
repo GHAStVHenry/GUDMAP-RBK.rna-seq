@@ -1,8 +1,8 @@
 #!/usr/bin/env nextflow
 
 // Define input variables
-params.deriva = "${baseDir}/../test_data/credential.json"
-params.bdbag = "${baseDir}/../test_data/cookies.txt"
+params.deriva = "${baseDir}/../test_data/auth/credential.json"
+params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
 
@@ -25,6 +25,7 @@ derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
+script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 
 /*
  * getData: get bagit file from consortium
@@ -75,7 +76,6 @@ process getData {
     file("**/Experiment.csv") into experimentMeta
     file ("${repRID}.getData.err")
 
-
   script:
     """
     hostname >>${repRID}.getData.err
@@ -95,9 +95,65 @@ process getData {
     echo "LOG: replicate bdbag unzipped" >>${repRID}.getData.err
     
     # bagit fetch fastq's only and rename by repRID
-    sh bdbagFetch.sh \${replicate} ${repRID} 2>>${repRID}.getData.err
+    sh ${script_bdbagFetch} \${replicate} ${repRID} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag fetched" >>${repRID}.getData.err
     """
+}
+
+/*
+ * parseMetadata: parses metadata to extract experiment parameters
+*/
+process parseMetadata {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.parseMetadata.err"
+
+  input:
+    path script_parseMeta
+    val repRID
+    path fileMeta
+    path experimentSettingsMeta
+    path experimentMeta
+
+  output:
+    path 'design.csv' into metadata
+
+  script:
+    """
+    hostname >>${repRID}.parseMetadata.err
+    ulimit -a >>${repRID}.parseMetadata.err
+
+    # Check replicate RID metadata
+    rep=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p repRID)
+    echo "LOG: replicate RID metadata parsed: \${rep}" >>${repRID}.parseMetadata.err
+    
+    # Get endedness metadata
+    endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p endsMeta)
+    echo "LOG: endedness metadata parsed: \${endsMeta}" >>${repRID}.parseMetadata.err
+    
+    # Manually get endness
+    endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
+    echo "LOG: endedness manually detected: \${endsManual}" >>${repRID}.parseMetadata.err
+
+    # Get strandedness metadata
+    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
+    echo "LOG: strandedness metadata parsed: \${stranded}" >>${repRID}.parseMetadata.err
+    
+    # Get spike-in metadata
+    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
+    echo "LOG: spike-in metadata parsed: \${spike}" >>${repRID}.parseMetadata.err
+    
+    # Get species metadata
+    species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
+    echo "LOG: species metadata parsed: \${species}" >>${repRID}.parseMetadata.err
+
+    # Save design file
+    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
+    """
+}
+
+metadata.splitCsv(sep: ',', header: false).into {
+  metadata_trimData
+  metadata_qc
 }
 
 /*
@@ -109,10 +165,10 @@ process trimData {
 
   input:
     file(fastq) from fastqs
+    tuple val(rep), val(endsMeta), val(endsManual), val(stranded), val(spike), val(species) from metadata_trimData
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
-    val ends
     file ("${repRID}.trimData.log")
     file ("${repRID}.trimData.err")
 
@@ -122,12 +178,10 @@ process trimData {
     ulimit -a >>${repRID}.trimData.err
 
     # trim fastqs
-    if [ '${fastq[1]}' == 'null' ]
+    if [ '${endsManual}' == 'se' ]
     then
-      ends='se'
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     else
-      ends='pe'
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     fi
     """
