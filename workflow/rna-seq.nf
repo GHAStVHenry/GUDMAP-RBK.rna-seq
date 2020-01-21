@@ -42,7 +42,30 @@ if (params.spikein) {
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 
 /*
- * getData: get bagit file from consortium
+ * Pass in programs from the scripts directory, and any default files for later
+ */
+
+
+/*
+ *Checking the species and spike-in status
+ */
+if (params.spikein) {
+  if (params.species == "human") {
+    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12-S/hisat2")
+  } else if (params.species == "mouse") {
+    reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6-S/hisat2")
+  } 
+} else if (params.species == "mouse") {
+  reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6/hisat2")
+} else if (params.species == "human") {
+  reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCh38.p12/hisat2")
+} else {
+  print ("Warning: Reference genome not specified, defaulting to GRCm38.P6 with NO spike-in")
+  reference = file ("/project/BICF/BICF_Core/s181706/github/gudmap/rna-seq/References/GRCm38.P6/hisat2")
+}
+
+/*
+ * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
  */
 process getBag {
   executor 'local'
@@ -158,4 +181,3 @@ process alignReads {
     samtools sort -@ `nproc` -O BAM ${repRID}.bam 1>${repRID}.align.out 2> ${repRID}.align.err;
     """
 }
-
