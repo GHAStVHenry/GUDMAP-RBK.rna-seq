@@ -6,6 +6,7 @@ params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
 params.outDir = "${baseDir}/../output"
+params.reference = "/project/BICF/BICF_Core/shared/gudmap/references"
 
 // Parse input variables
 deriva = Channel
@@ -16,6 +17,7 @@ bdbag = Channel
   .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
 repRID = params.repRID
 outDir = params.outDir
+reference = params.reference
 logsDir = "${outDir}/Logs"
 
 // Define fixed files
@@ -144,8 +146,27 @@ process parseMetadata {
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
     echo "LOG: species metadata parsed: \${species}" >>${repRID}.parseMetadata.err
 
+    #Set the correct Reference Directory
+    if [ "\${spike}" == 'yes' ]; then
+      if [ "\${species}" == 'Homo sapiens' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12-S/hisat2/genome";
+        echo "LOG: Referece set to Homo sapiens with spike-in." >>${repRID}.parseMetadata.err;
+      elif [ "\${species}" == 'Mus musculus' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6-S/hisat2/genome";
+        echo "LOG: Referece set to Mus musculus with spike-in." >>${repRID}.parseMetadata.err;
+      fi;
+    else
+      if [ "\${species}" == 'Homo sapiens' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12/hisat2/genome";
+        echo "LOG: Referece set to Homo sapiens without spike-in." >>${repRID}.parseMetadata.err;
+      elif [ "\${species}" == 'Mus musculus' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2/genome";
+        echo "LOG: Referece set to Mus musculus without spike-in." >>${repRID}.parseMetadata.err;
+      fi;
+    fi;
+    
     # Save design file
-    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
+    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${referenceDir}" > design.csv
     """
 }
 
@@ -156,17 +177,16 @@ endsManual = Channel.create()
 stranded = Channel.create()
 spike = Channel.create()
 species = Channel.create()
-reference = Channel.create()
+referenceDir = Channel.create()
 metadata.splitCsv(sep: ',', header: false).separate(
   rep,
   endsMeta,
   endsManual,
   stranded,
   spike,
-  species
+  species,
+  referenceDir
 )
-
-rep.subscribe { println "$it" }
 endsManual.into {
   endsManual_trimData
   endsManual_alignReads
@@ -174,30 +194,9 @@ endsManual.into {
 stranded.into {
   stranded_alignReads
 }
-
-// Exit with no species
-if (species == "") {
-  print ("ERROR: Reference genome not specified")
-  exit 1
+referenceDir.into {
+  referenceDir_alignReads
 }
-
-spike.subscribe { println "$it"}
-
-// Setting references
-if (spike == 'yes') {
-  if (species == "Homo sapiens") {
-    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12-S/hisat2")
-  } else if (species == "Mus musculus") {
-    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6-S/hisat2")
-  }
-} else {
-  if (species == "Homo sapiens") {
-    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12/hisat2")
-  } else if (species == "Mus musculus") {
-    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2")
-  }
-}
-//reference.subscribe { println "$it" }
 
 /*
  * trimData: trims any adapter or non-host sequences from the data
@@ -241,7 +240,7 @@ process alignReads {
     val endsManual_alignReads
     val stranded_alignReads
     path fqs from fastqs_trimmed
-    val reference
+    val referenceDir_alignReads
 
   output:
     set repRID, file ("${repRID}.unal.gz"), file ("${repRID}.bam"), file ("${repRID}.bai")
@@ -249,8 +248,8 @@ process alignReads {
   script:
     """
     if [ "${endsManual_alignReads}" == 'pe' ]; then
-    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome ${stranded_alignReads} -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
-    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} --no-mixed --no-discordant -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
     fi;
     samtools view -1 --threads `nproc` -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools sort -@ `nproc` -O BAM  -o ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
