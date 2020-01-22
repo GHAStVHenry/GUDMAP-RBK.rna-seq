@@ -197,7 +197,7 @@ if (spike == 'yes') {
     reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2")
   }
 }
-reference.subscribe { println "$it }
+reference.subscribe { println "$it" }
 
 /*
  * trimData: trims any adapter or non-host sequences from the data
