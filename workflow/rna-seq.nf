@@ -22,8 +22,8 @@ logsDir = "${outDir}/Logs"
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 
 // Define script files
-script_bdbagFetch = file ("${baseDir}/scripts/bdbagFetch.sh")
-script_parseMeta = file ("${baseDir}/scripts/parseMeta.py")
+script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
+script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -156,6 +156,7 @@ endsManual = Channel.create()
 stranded = Channel.create()
 spike = Channel.create()
 species = Channel.create()
+reference = Channel.create()
 metadata.splitCsv(sep: ',', header: false).separate(
   rep,
   endsMeta,
@@ -180,20 +181,23 @@ if (species == "") {
   exit 1
 }
 
+spike.subscribe { println "$it"}
+
 // Setting references
-if (spike) {
+if (spike == 'yes') {
   if (species == "Homo sapiens") {
-    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12-S/hisat2")
+    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12-S/hisat2")
   } else if (species == "Mus musculus") {
-    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6-S/hisat2")
+    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6-S/hisat2")
   }
 } else {
   if (species == "Homo sapiens") {
-    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12/hisat2")
+    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12/hisat2")
   } else if (species == "Mus musculus") {
-    reference = file ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2")
+    reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2")
   }
 }
+reference.subscribe { println "$it }
 
 /*
  * trimData: trims any adapter or non-host sequences from the data
@@ -237,6 +241,7 @@ process alignReads {
     val endsManual_alignReads
     val stranded_alignReads
     path fqs from fastqs_trimmed
+    val reference
 
   output:
     set repRID, file ("${repRID}.unal.gz"), file ("${repRID}.bam"), file ("${repRID}.bai")
@@ -244,10 +249,10 @@ process alignReads {
   script:
     """
     if [ "${endsManual_alignReads}" == 'pe' ]; then
-    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2> ${repRID}.align.err;
-    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -U ${fqs[0]} 1>${repRID}.align.out 2> ${repRID}.align.err;
+    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
     fi;
-    samtools view -1 --threads `nproc` -o ${repRID}.bam ${repRID}.sam 1>${repRID}.align.out 2> ${repRID}.align.err;
-    samtools sort -@ `nproc` -O BAM ${repRID}.bam 1>${repRID}.align.out 2> ${repRID}.align.err;
+    samtools view -1 --threads `nproc` -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools sort -@ `nproc` -O BAM  -o ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     """
 }
