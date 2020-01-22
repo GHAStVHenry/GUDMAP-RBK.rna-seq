@@ -54,9 +54,12 @@ def main():
     # Get strandedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "stranded"):
         if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
-            stranded = "stranded"
+            if endsManual == "se":
+                stranded = "--rna-strandness F"
+            else:
+                stranded = "--rna-strandness FR"
         elif (metaFile.Has_Strand_Specific_Information.unique() == "no"):
-            stranded = "unstranded"
+            stranded = ""
         else:
             print("Stranded metadata not match expected options: " + metaFile.Has_Strand_Specific_Information.unique())
             exit(1)

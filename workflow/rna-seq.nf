@@ -197,7 +197,7 @@ if (spike == 'yes') {
     reference = Channel.fromPath ("/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2")
   }
 }
-reference.subscribe { println "$it" }
+//reference.subscribe { println "$it" }
 
 /*
  * trimData: trims any adapter or non-host sequences from the data
@@ -249,8 +249,8 @@ process alignReads {
   script:
     """
     if [ "${endsManual_alignReads}" == 'pe' ]; then
-    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
-    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome ${stranded_alignReads} -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${reference}/genome ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
     fi;
     samtools view -1 --threads `nproc` -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools sort -@ `nproc` -O BAM  -o ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
