@@ -17,6 +17,7 @@ def get_args():
 def main():
     args = get_args()
     metaFile = pd.read_csv(args.metaFile,sep=",",header=0)
+    endsManual = ""
 
     # Check replicate RID metadata from 'File.csv'
     if (args.parameter == "repRID"):
