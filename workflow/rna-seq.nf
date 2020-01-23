@@ -17,7 +17,7 @@ bdbag = Channel
   .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
 repRID = params.repRID
 outDir = params.outDir
-reference = params.reference
+referenceBase = file ("${params.reference}")
 logsDir = "${outDir}/Logs"
 
 // Define fixed files
@@ -203,7 +203,7 @@ referenceDir.into {
 */
 process trimData {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "\${repRID}.trimData.*"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.trimData.*"
 
   input:
     val endsManual_trimData
@@ -234,7 +234,8 @@ process trimData {
 */
 process alignReads {
   tag "align-${repRID}"
-  publishDir "${outDir}/aligned", mode: "copy"
+  publishDir "${outDir}/aligned", mode: "copy", pattern: "${repRID}.{unal,sorted}.{gz,bam,bai}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.align.{out,err}"
 
   input:
     val endsManual_alignReads
@@ -244,6 +245,7 @@ process alignReads {
 
   output:
     set repRID, file ("${repRID}.unal.gz"), file ("${repRID}.sorted.bam"), file ("${repRID}.sorted.bai")
+    set repRID, file ("${repRID}.align.out"), file ("${repRID}.align.err")
 
   script:
     """
