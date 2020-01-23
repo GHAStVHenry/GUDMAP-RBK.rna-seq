@@ -243,7 +243,7 @@ process alignReads {
     val referenceDir_alignReads
 
   output:
-    set repRID, file ("${repRID}.unal.gz"), file ("${repRID}.bam"), file ("${repRID}.bai")
+    set repRID, file ("${repRID}.unal.gz"), file ("${repRID}.sorted.bam"), file ("${repRID}.sorted.bai")
 
   script:
     """
@@ -252,6 +252,7 @@ process alignReads {
     else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
     fi;
     samtools view -1 --threads `nproc` -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
-    samtools sort -@ `nproc` -O BAM  -o ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
     """
 }
