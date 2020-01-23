@@ -233,7 +233,7 @@ process trimData {
  * alignReads: aligns the reads to a reference database
 */
 process alignReads {
-  tag "align-${repRID}"
+  tag "${repRID}"
   publishDir "${outDir}/aligned", mode: "copy", pattern: "${repRID}.{unal,sorted}.{gz,bam,bai}"
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.align.{out,err}"
 
@@ -253,7 +253,7 @@ process alignReads {
     hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} --no-mixed --no-discordant -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
     else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
     fi;
-    samtools view -1 --threads `nproc` -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
     """
