@@ -6,9 +6,9 @@ import os
 import utils
 
 data_output_path = os.path.dirname(os.path.abspath(__file__)) + \
-	'/../../output/aligned'
+	'/../../'
 logs_output_path = os.path.dirname(os.path.abspath(__file__)) + \
-	'/../../output/Logs'
+	'/../../'
 
 @pytest.mark.alignData
 def test_alignData_se():
