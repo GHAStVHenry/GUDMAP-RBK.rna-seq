@@ -4,12 +4,14 @@
 <!--
 [![DOI]()]()
 -->
-GUDMAP/RBK RNA-Seq Pipeline
+RNA-Seq Analytic Pipeline for GUDMAP/RBK
 ===========================
 
 Introduction
 ------------
 This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub.
+
+![flowchart](docs/RNA-Seq%20Pipeline%20Design%20Flowchart.jpg "Flowchart")
 
 To Run:
 -------
