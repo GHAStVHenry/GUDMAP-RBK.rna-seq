@@ -16,9 +16,7 @@ def test_alignData_se():
 	assert os.path.exists(os.path.join(data_output_path, '16-1ZX4.unal.gz'))
 	assert utils.count_lines(os.path.join(data_output_path, '16-1ZX4.unal.gz')) == 3070528
 	assert os.path.exists(os.path.join(data_output_path, '16-1ZX4.sorted.bam'))
-	assert utils.count_lines(os.path.join(data_output_path, '16-1ZX4.sorted.bam')) == 3829750
 	assert os.path.exists(os.path.join(data_output_path, '16-1ZX4.sorted.bai'))
-	assert utils.count_lines(os.path.join(data_output_path, '16-1ZX4.sorted.bai')) == 13112
 
 
 @pytest.mark.alignData
@@ -26,9 +24,7 @@ def test_alignData_pe():
 	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.unal.gz'))
 	assert utils.count_lines(os.path.join(data_output_path, 'Q-Y5JA.unal.gz')) == 0
 	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.bam'))
-	assert utils.count_lines(os.path.join(data_output_path, 'Q-Y5JA.sorted.bam')) == 4743572
 	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.bai'))
-	assert utils.count_lines(os.path.join(data_output_path, 'Q-Y5JA.sorted.bai')) == 10415
 
 
 @pytest.mark.alignLogs
