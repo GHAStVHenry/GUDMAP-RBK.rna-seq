@@ -5,8 +5,8 @@ params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
-
 params.outDir = "${baseDir}/../output"
+params.reference = "/project/BICF/BICF_Core/shared/gudmap/references"
 
 // Parse input variables
 deriva = Channel
@@ -16,8 +16,8 @@ bdbag = Channel
   .fromPath(params.bdbag)
   .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
 repRID = params.repRID
-
 outDir = params.outDir
+referenceBase = file ("${params.reference}")
 logsDir = "${outDir}/Logs"
 
 // Define fixed files
@@ -28,7 +28,7 @@ script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 
 /*
- * getData: get bagit file from consortium
+ * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
  */
 process getBag {
   tag "${repRID}"
@@ -146,14 +146,56 @@ process parseMetadata {
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
     echo "LOG: species metadata parsed: \${species}" >>${repRID}.parseMetadata.err
 
+    #Set the correct Reference Directory
+    if [ "\${spike}" == 'yes' ]; then
+      if [ "\${species}" == 'Homo sapiens' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12-S/hisat2/genome";
+        echo "LOG: Referece set to Homo sapiens with spike-in." >>${repRID}.parseMetadata.err;
+      elif [ "\${species}" == 'Mus musculus' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6-S/hisat2/genome";
+        echo "LOG: Referece set to Mus musculus with spike-in." >>${repRID}.parseMetadata.err;
+      fi;
+    else
+      if [ "\${species}" == 'Homo sapiens' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12/hisat2/genome";
+        echo "LOG: Referece set to Homo sapiens without spike-in." >>${repRID}.parseMetadata.err;
+      elif [ "\${species}" == 'Mus musculus' ]; then
+        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2/genome";
+        echo "LOG: Referece set to Mus musculus without spike-in." >>${repRID}.parseMetadata.err;
+      fi;
+    fi;
+    
     # Save design file
-    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
+    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${referenceDir}" > design.csv
     """
 }
 
-metadata.splitCsv(sep: ',', header: false).into {
-  metadata_trimData
-  metadata_qc
+// Split metadata into separate channels
+rep = Channel.create()
+endsMeta = Channel.create()
+endsManual = Channel.create()
+stranded = Channel.create()
+spike = Channel.create()
+species = Channel.create()
+referenceDir = Channel.create()
+metadata.splitCsv(sep: ',', header: false).separate(
+  rep,
+  endsMeta,
+  endsManual,
+  stranded,
+  spike,
+  species,
+  referenceDir
+)
+endsManual.into {
+  endsManual_trimData
+  endsManual_alignReads
+}
+stranded.into {
+  stranded_alignReads
+}
+referenceDir.into {
+  referenceDir_alignReads
 }
 
 /*
@@ -161,11 +203,11 @@ metadata.splitCsv(sep: ',', header: false).into {
 */
 process trimData {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "\${repRID}.trimData.*"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.trimData.*"
 
   input:
+    val endsManual_trimData
     file(fastq) from fastqs
-    tuple val(rep), val(endsMeta), val(endsManual), val(stranded), val(spike), val(species) from metadata_trimData
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
@@ -178,11 +220,41 @@ process trimData {
     ulimit -a >>${repRID}.trimData.err
 
     # trim fastqs
-    if [ '${endsManual}' == 'se' ]
+    if [ '${endsManual_trimData}' == 'se' ]
     then
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     else
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
     fi
+    """
+}
+
+/*
+ * alignReads: aligns the reads to a reference database
+*/
+process alignReads {
+  tag "${repRID}"
+  publishDir "${outDir}/aligned", mode: "copy", pattern: "${repRID}.{unal,sorted}.{gz,bam,bai}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.align.{out,err}"
+
+  input:
+    val endsManual_alignReads
+    val stranded_alignReads
+    path fqs from fastqs_trimmed
+    val referenceDir_alignReads
+
+  output:
+    set repRID, file ("${repRID}.unal.gz"), file ("${repRID}.sorted.bam"), file ("${repRID}.sorted.bai")
+    set repRID, file ("${repRID}.align.out"), file ("${repRID}.align.err")
+
+  script:
+    """
+    if [ "${endsManual_alignReads}" == 'pe' ]; then
+    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} --no-mixed --no-discordant -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    fi;
+    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
     """
 }
