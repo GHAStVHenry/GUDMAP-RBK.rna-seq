@@ -244,17 +244,45 @@ process alignReads {
     val referenceDir_alignReads
 
   output:
-    set repRID, file ("${repRID}.unal.gz"), file ("${repRID}.sorted.bam"), file ("${repRID}.sorted.bai")
-    set repRID, file ("${repRID}.align.out"), file ("${repRID}.align.err")
+    tuple repRID, file ("${repRID}.unal.gz"), file ("${repRID}.sorted.bam"), file ("${repRID}.sorted.bai") into dedupReads
+    tuple repRID, file ("${repRID}.align.out"), file ("${repRID}.align.err")
 
   script:
     """
+    hostname >${repRID}.align.err
+    ulimit -a >>${repRID}.align.err
+
+    # align reads
     if [ "${endsManual_alignReads}" == 'pe' ]; then
-    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} --no-mixed --no-discordant -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>${repRID}.align.err;
-    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>${repRID}.align.err;
+    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} --no-mixed --no-discordant -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>>${repRID}.align.err;
+    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>>${repRID}.align.err;
     fi;
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    """
+}
+
+/*
+ *dedupReads: mark the duplicate reads, specifically focused on PCR or optical duplicates
+*/
+process dedupReads {
+  tag "${repRID}"
+  publishDir "${outDir}/deduped", mode: 'copy', pattern: "${repRID}.deduped.{bam,Metrics.txt}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.dedup.{out,err}"
+
+  input:
+    tuple repRID, file (unal), file (sortedBam), file (sortedBai) from dedupReads
+
+  output:
+    tuple repRID, file ("${repRID}.deduped.bam"), file ("${repRID}.deduped.Metrics.txt")
+
+  script:
+    """
+    hostname >${repRID}.dedup.err
+    ulimit -a >>${repRID}.dedup.err
+
+    #Remove duplicated reads
+    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${sortedBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }
