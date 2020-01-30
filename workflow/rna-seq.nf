@@ -6,7 +6,7 @@ params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
 params.refVersion = "0.0.1"
-params.refMuVersion = "38.p6"
+params.refMuVersion = "38.P6"
 params.refHuVersion = "38.p12"
 params.outDir = "${baseDir}/../output"
 
