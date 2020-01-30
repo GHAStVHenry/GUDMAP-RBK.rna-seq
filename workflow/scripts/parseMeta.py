@@ -10,6 +10,7 @@ def get_args():
     parser.add_argument('-r', '--repRID',help="The replicate RID.",required=True)
     parser.add_argument('-m', '--metaFile',help="The metadata file to extract.",required=True)
     parser.add_argument('-p', '--parameter',help="The parameter to extract.",required=True)
+    parser.add_argument('-e', '--endsManual',help="The endness.",required=False)
     args = parser.parse_args()
     return args
 
@@ -55,9 +56,9 @@ def main():
     # Get strandedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "stranded"):
         if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
-            if endsManual == "se":
+            if (args.endsManual=="se"):
                 stranded = "--rna-strandness F"
-            else:
+            elif (args.endsManual=="pe"):
                 stranded = "--rna-strandness FR"
         elif (metaFile.Has_Strand_Specific_Information.unique() == "no"):
             stranded = ""
