@@ -70,4 +70,3 @@ integration_pe:
   stage: integration
   script:
   - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA
-/
