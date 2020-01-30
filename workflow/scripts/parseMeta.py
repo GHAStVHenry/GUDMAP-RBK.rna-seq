@@ -55,9 +55,9 @@ def main():
     # Get strandedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "stranded"):
         if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
-            if endsManual == "se":
+            if (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 1):
                 stranded = "--rna-strandness F"
-            else:
+            elif (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 2):
                 stranded = "--rna-strandness FR"
         elif (metaFile.Has_Strand_Specific_Information.unique() == "no"):
             stranded = ""
