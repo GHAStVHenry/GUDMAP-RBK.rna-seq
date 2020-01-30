@@ -234,7 +234,7 @@ process getRef {
 */
 process trimData {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.trimData.*"
+  publishDir "${logsDir}", mode: "copy", pattern: "*.trimData.*"
 
   input:
     val endsManual_trimData
@@ -266,7 +266,6 @@ process trimData {
 */
 process alignData {
   tag "${repRID}"
-  publishDir "${outDir}/alignData", mode: "copy", pattern: "*.{bam,bai}"
   publishDir "${logsDir}", mode: "copy", pattern: "*.align.{out,err}"
 
   input:
