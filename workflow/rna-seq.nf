@@ -144,7 +144,7 @@ process parseMetadata {
     echo "LOG: strandedness metadata parsed: \${stranded}" >>${repRID}.parseMetadata.err
     
     # Get spike-in metadata
-    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
+    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike -e \${endsManual})
     echo "LOG: spike-in metadata parsed: \${spike}" >>${repRID}.parseMetadata.err
     
     # Get species metadata
