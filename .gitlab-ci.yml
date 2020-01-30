@@ -55,6 +55,12 @@ alignReads:
   - singularity run 'docker://bicf/gudmaprbkaligner:2.0.0' samtools index -@ `nproc` -b 16-1ZX4.sorted.bam 16-1ZX4.sorted.bai
   - pytest -m alignData
 
+dedupReads:
+  stage: unit
+  script:
+  - singularity run 'docker://bicf/picard2.21.7:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=${sortedBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true
+  - pytest -m dedupData
+
 integration_se:
   stage: integration
   script:
