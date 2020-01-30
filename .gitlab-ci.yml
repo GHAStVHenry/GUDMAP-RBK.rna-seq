@@ -38,14 +38,14 @@ parseMetadata:
 getRef:
   stage: unit
   script:
-  - singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/mouse/0.0.1/GRCm38.p6
+  - singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/mouse/0.0.1/GRCm38.P6
   - singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/human/0.0.1/GRCh38.p12
 
 trimData:
   stage: unit
   script:
-  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --basename 16-1ZX4 -j `nproc` ./test_data/fastq/small/16-1ZX4.R1.fastq.gz
-  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --paired --basename Q-Y5JA -j `nproc` ./test_data/fastq/small/Q-Y5JA.R1.fastq.gz ./test_data/fastq/small/Q-Y5JA.R2.fastq.gz
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --basename Q-Y5JA_1M.se -j `nproc` ./test_data/fastq/small/Q-Y5JA_1M.R1.fastq.gz
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --paired --basename Q-Y5JA_1M.pe -j `nproc` ./test_data/fastq/small/Q-Y5JA_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5JA_1M.R2.fastq.gz
   - pytest -m trimData
 
 alignData:
@@ -70,3 +70,4 @@ integration_pe:
   stage: integration
   script:
   - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA
+/
