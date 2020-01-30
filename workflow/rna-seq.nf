@@ -140,11 +140,11 @@ process parseMetadata {
     echo "LOG: endedness manually detected: \${endsManual}" >>${repRID}.parseMetadata.err
 
     # Get strandedness metadata
-    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
+    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded -e \${endsManual})
     echo "LOG: strandedness metadata parsed: \${stranded}" >>${repRID}.parseMetadata.err
     
     # Get spike-in metadata
-    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike -e \${endsManual})
+    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
     echo "LOG: spike-in metadata parsed: \${spike}" >>${repRID}.parseMetadata.err
     
     # Get species metadata
