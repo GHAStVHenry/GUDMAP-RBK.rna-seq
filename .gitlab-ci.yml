@@ -58,7 +58,8 @@ alignReads:
 dedupReads:
   stage: unit
   script:
-  - singularity run 'docker://bicf/picard2.21.7:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=${sortedBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true
+  - singularity run 'docker://bicf/picard2.21.7:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=Q-Y5JA.sorted.bam O=Q-Y5JA.deduped.bam M=Q-Y5JA.deduped.Metrics.txt REMOVE_DUPLICATES=true
+  - singularity run 'docker://bicf/picard2.21.7:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=16-1ZX4.sorted.bam O=16-1ZX4.deduped.bam M=16-1ZX4.deduped.Metrics.txt REMOVE_DUPLICATES=true
   - pytest -m dedupData
 
 integration_se:
