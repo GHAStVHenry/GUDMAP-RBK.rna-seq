@@ -5,8 +5,10 @@ params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
+params.refVersion = "0.0.1"
+params.refMuVersion = "38.P6"
+params.refHuVersion = "38.p12"
 params.outDir = "${baseDir}/../output"
-params.reference = "/project/BICF/BICF_Core/shared/gudmap/references"
 
 // Parse input variables
 deriva = Channel
@@ -16,12 +18,15 @@ bdbag = Channel
   .fromPath(params.bdbag)
   .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
 repRID = params.repRID
+refVersion = params.refVersion
+refMuVersion = params.refMuVersion
+refHuVersion = params.refHuVersion
 outDir = params.outDir
-referenceBase = file ("${params.reference}")
 logsDir = "${outDir}/Logs"
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
+referenceBase = "s3://bicf-references"
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
@@ -32,15 +37,15 @@ script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
  */
 process getBag {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.getBag.err"
+  publishDir "${logsDir}", mode: "copy", pattern: "*.getBag.err"
 
   input:
-    path credential, stageAs: 'credential.json' from deriva
+    path credential, stageAs: "credential.json" from deriva
     path derivaConfig
 
   output:
     path ("Replicate_*.zip") into bagit
-    file ("${repRID}.getBag.err")
+    path ("${repRID}.getBag.err")
 
   script:
     """
@@ -62,19 +67,19 @@ process getBag {
  */
 process getData {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.getData.err"
+  publishDir "${logsDir}", mode: "copy", pattern: "*.getData.err"
 
   input:
     path script_bdbagFetch
-    path cookies, stageAs: 'deriva-cookies.txt' from bdbag
+    path cookies, stageAs: "deriva-cookies.txt" from bdbag
     path bagit
 
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
-    file("**/File.csv") into fileMeta
-    file("**/Experiment Settings.csv") into experimentSettingsMeta
-    file("**/Experiment.csv") into experimentMeta
-    file ("${repRID}.getData.err")
+    path ("**/File.csv") into fileMeta
+    path ("**/Experiment Settings.csv") into experimentSettingsMeta
+    path ("**/Experiment.csv") into experimentMeta
+    path ("${repRID}.getData.err")
 
   script:
     """
@@ -87,14 +92,14 @@ process getData {
     echo "LOG: deriva cookie linked" >>${repRID}.getData.err
     
     # get bagit basename
-    replicate=\$(basename "${bagit}" | cut -d '.' -f1)
+    replicate=\$(basename "${bagit}" | cut -d "." -f1)
     echo "LOG: \${replicate}" >>${repRID}.getData.err
     
     # unzip bagit
     unzip ${bagit} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag unzipped" >>${repRID}.getData.err
     
-    # bagit fetch fastq's only and rename by repRID
+    # bagit fetch fastq"s only and rename by repRID
     sh ${script_bdbagFetch} \${replicate} ${repRID} 2>>${repRID}.getData.err
     echo "LOG: replicate bdbag fetched" >>${repRID}.getData.err
     """
@@ -105,7 +110,7 @@ process getData {
 */
 process parseMetadata {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.parseMetadata.err"
+  publishDir "${logsDir}", mode: "copy", pattern: "*.parseMetadata.err"
 
   input:
     path script_parseMeta
@@ -115,7 +120,7 @@ process parseMetadata {
     path experimentMeta
 
   output:
-    path 'design.csv' into metadata
+    path "design.csv" into metadata
 
   script:
     """
@@ -135,7 +140,7 @@ process parseMetadata {
     echo "LOG: endedness manually detected: \${endsManual}" >>${repRID}.parseMetadata.err
 
     # Get strandedness metadata
-    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
+    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded -e \${endsManual})
     echo "LOG: strandedness metadata parsed: \${stranded}" >>${repRID}.parseMetadata.err
     
     # Get spike-in metadata
@@ -146,27 +151,8 @@ process parseMetadata {
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
     echo "LOG: species metadata parsed: \${species}" >>${repRID}.parseMetadata.err
 
-    #Set the correct Reference Directory
-    if [ "\${spike}" == 'yes' ]; then
-      if [ "\${species}" == 'Homo sapiens' ]; then
-        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12-S/hisat2/genome";
-        echo "LOG: Referece set to Homo sapiens with spike-in." >>${repRID}.parseMetadata.err;
-      elif [ "\${species}" == 'Mus musculus' ]; then
-        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6-S/hisat2/genome";
-        echo "LOG: Referece set to Mus musculus with spike-in." >>${repRID}.parseMetadata.err;
-      fi;
-    else
-      if [ "\${species}" == 'Homo sapiens' ]; then
-        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12/hisat2/genome";
-        echo "LOG: Referece set to Homo sapiens without spike-in." >>${repRID}.parseMetadata.err;
-      elif [ "\${species}" == 'Mus musculus' ]; then
-        referenceDir="/project/BICF/BICF_Core/shared/gudmap/references/GRCm38.P6/hisat2/genome";
-        echo "LOG: Referece set to Mus musculus without spike-in." >>${repRID}.parseMetadata.err;
-      fi;
-    fi;
-    
     # Save design file
-    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${referenceDir}" > design.csv
+    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
     """
 }
 
@@ -177,25 +163,71 @@ endsManual = Channel.create()
 stranded = Channel.create()
 spike = Channel.create()
 species = Channel.create()
-referenceDir = Channel.create()
-metadata.splitCsv(sep: ',', header: false).separate(
+metadata.splitCsv(sep: ",", header: false).separate(
   rep,
   endsMeta,
   endsManual,
   stranded,
   spike,
-  species,
-  referenceDir
+  species
 )
 endsManual.into {
   endsManual_trimData
-  endsManual_alignReads
+  endsManual_alignData
 }
 stranded.into {
-  stranded_alignReads
+  stranded_alignData
 }
-referenceDir.into {
-  referenceDir_alignReads
+spike.into{
+  spike_getRef
+}
+species.into {
+  species_getRef
+}
+
+/*
+  * getRef: Dowloads appropriate reference
+*/
+process getRef {
+  tag "${species_getRef}"
+  publishDir "${logsDir}", mode: "copy", pattern: "*.getRef.err"
+
+  input:
+    val referenceBase
+    val refVersion
+    val refMuVersion
+    val refHuVersion
+    val spike_getRef
+    val species_getRef
+
+  output:
+    path ("*")  into reference
+  
+  script:
+    """
+    hostname >>${repRID}.getRef.err
+    ulimit -a >>${repRID}.getRef.err
+    export https_proxy=\${http_proxy}
+
+    # retreive appropriate reference from S3 bucket
+    if [ "${species_getRef}" == "Mus musculus" ]
+    then
+      references=\$(echo ${referenceBase}/mouse/${refVersion}/GRCm${refMuVersion})
+    elif [ '${species_getRef}' == "Homo sapiens" ]
+    then
+      references=\$(echo ${referenceBase}/human/${refVersion}/GRCh${refHuVersion})
+    else
+      exit 1
+    fi
+    if [ "${spike_getRef}" == "yes" ]
+    then
+      references=\$(echo \${reference}-S/)
+    elif [ "${spike_getRef}" == "no" ]
+    then
+      reference=\$(echo \${references}/)
+    fi
+    aws s3 cp "\${references}" ./ --recursive >>${repRID}.getRef.err
+    """
 }
 
 /*
@@ -203,16 +235,16 @@ referenceDir.into {
 */
 process trimData {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.trimData.*"
+  publishDir "${logsDir}", mode: "copy", pattern: "*.trimData.*"
 
   input:
     val endsManual_trimData
-    file(fastq) from fastqs
+    path (fastq) from fastqs
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
-    file ("${repRID}.trimData.log")
-    file ("${repRID}.trimData.err")
+    path ("${repRID}.trimData.log")
+    path ("${repRID}.trimData.err")
 
   script:
     """
@@ -220,32 +252,34 @@ process trimData {
     ulimit -a >>${repRID}.trimData.err
 
     # trim fastqs
-    if [ '${endsManual_trimData}' == 'se' ]
+    if [ "${endsManual_trimData}" == "se" ]
     then
-      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
-    else
-      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err;
+      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err
+    elif [ "${endsManual_trimData}" == "pe" ]
+    then
+      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>>${repRID}.trimData.log 2>>${repRID}.trimData.err
     fi
     """
 }
 
 /*
- * alignReads: aligns the reads to a reference database
+ * alignData: aligns the reads to a reference database
 */
-process alignReads {
+process alignData {
   tag "${repRID}"
-  publishDir "${outDir}/aligned", mode: "copy", pattern: "${repRID}.{unal,sorted}.{gz,bam,bai}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.align.{out,err}"
+  publishDir "${logsDir}", mode: "copy", pattern: "*.align.{out,err}"
 
   input:
-    val endsManual_alignReads
-    val stranded_alignReads
-    path fqs from fastqs_trimmed
-    val referenceDir_alignReads
+    val endsManual_alignData
+    val stranded_alignData
+    path fastq from fastqs_trimmed
+    path reference
 
   output:
-    tuple repRID, file ("${repRID}.unal.gz"), file ("${repRID}.sorted.bam"), file ("${repRID}.sorted.bai") into dedupReads
-    tuple repRID, file ("${repRID}.align.out"), file ("${repRID}.align.err")
+    path ("${repRID}.sorted.bam") into rawBam
+    path ("${repRID}.sorted.bai") into rawBai
+    path ("${repRID}.align.out")
+    path ("${repRID}.align.err")
 
   script:
     """
@@ -253,10 +287,15 @@ process alignReads {
     ulimit -a >>${repRID}.align.err
 
     # align reads
-    if [ "${endsManual_alignReads}" == 'pe' ]; then
-    hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} --no-mixed --no-discordant -1 ${fqs[0]} -2 ${fqs[1]} 1>${repRID}.align.out 2>>${repRID}.align.err;
-    else hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x ${referenceDir_alignReads} ${stranded_alignReads} -U ${fqs[0]} 1>${repRID}.align.out 2>>${repRID}.align.err;
-    fi;
+    if [ "${endsManual_alignData}" == "se" ]
+    then
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} -U ${fastq[0]} 1>${repRID}.align.out 2>${repRID}.align.err
+    elif [ "${endsManual_alignData}" == "pe" ]
+    then
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} 1>${repRID}.align.out 2>${repRID}.align.err
+    fi
+    
+    # convert sam to bam and sort and index
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
@@ -266,16 +305,18 @@ process alignReads {
 /*
  *dedupReads: mark the duplicate reads, specifically focused on PCR or optical duplicates
 */
-process dedupReads {
+process dedupData {
   tag "${repRID}"
-  publishDir "${outDir}/deduped", mode: 'copy', pattern: "${repRID}.deduped.{bam,Metrics.txt}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.dedup.{out,err}"
+  publishDir "${outDir}/bam", mode: 'copy', pattern: "*.deduped.bam"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.dedup.{out,err}"
 
   input:
-    tuple repRID, file (unal), file (sortedBam), file (sortedBai) from dedupReads
+    path rawBam
 
   output:
-    tuple repRID, file ("${repRID}.deduped.bam"), file ("${repRID}.deduped.Metrics.txt")
+    path ("${repRID}.deduped.bam") into dedupBam
+    path ("${repRID}.dedup.out")
+    path ("${repRID}.dedup.err")
 
   script:
     """
@@ -283,6 +324,6 @@ process dedupReads {
     ulimit -a >>${repRID}.dedup.err
 
     #Remove duplicated reads
-    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${sortedBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${rawBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }
