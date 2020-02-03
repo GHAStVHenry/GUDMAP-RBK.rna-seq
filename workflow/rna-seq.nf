@@ -209,6 +209,7 @@ process getRef {
     ulimit -a >>${repRID}.getRef.err
     export https_proxy=\${http_proxy}
 
+    # retreive appropriate reference from S3 bucket
     if [ "${species_getRef}" == "Mus musculus" ]
     then
       references=\$(echo ${referenceBase}/mouse/${refVersion}/GRCm${refMuVersion})
@@ -275,14 +276,17 @@ process alignData {
     path reference
 
   output:
-    path ("${repRID}.unal.gz")
-    path ("${repRID}.sorted.bam")
-    path ("${repRID}.sorted.bai")
+    path ("${repRID}.sorted.bam") into rawBam
+    path ("${repRID}.sorted.bai") into rawBai
     path ("${repRID}.align.out")
     path ("${repRID}.align.err")
 
   script:
     """
+    hostname >${repRID}.align.err
+    ulimit -a >>${repRID}.align.err
+
+    # align reads
     if [ "${endsManual_alignData}" == "se" ]
     then
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} -U ${fastq[0]} 1>${repRID}.align.out 2>${repRID}.align.err
@@ -290,8 +294,36 @@ process alignData {
     then
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} 1>${repRID}.align.out 2>${repRID}.align.err
     fi
-    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err
-    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err
-    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err
+    
+    # convert sam to bam and sort and index
+    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    """
+}
+
+/*
+ *dedupReads: mark the duplicate reads, specifically focused on PCR or optical duplicates
+*/
+process dedupData {
+  tag "${repRID}"
+  publishDir "${outDir}/bam", mode: 'copy', pattern: "*.deduped.bam"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.dedup.{out,err}"
+
+  input:
+    path rawBam
+
+  output:
+    path ("${repRID}.deduped.bam") into dedupBam
+    path ("${repRID}.dedup.out")
+    path ("${repRID}.dedup.err")
+
+  script:
+    """
+    hostname >${repRID}.dedup.err
+    ulimit -a >>${repRID}.dedup.err
+
+    #Remove duplicated reads
+    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${rawBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }

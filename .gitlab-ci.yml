@@ -61,6 +61,12 @@ alignData:
   - singularity run 'docker://bicf/gudmaprbkaligner:2.0.0' samtools index -@ `nproc` -b Q-Y5JA_1M.pe.sorted.bam Q-Y5JA_1M.pe.sorted.bai
   - pytest -m alignData
 
+dedupData:
+  stage: unit
+  script:
+  - singularity exec 'docker://bicf/picard2.21.7:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=./test_data/bam/small/Q-Y5JA_1M.se.sorted.bam O=Q-Y5JA_1M.se.deduped.bam M=Q-Y5JA_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
+  - pytest -m dedupData
+
 integration_se:
   stage: integration
   script:
