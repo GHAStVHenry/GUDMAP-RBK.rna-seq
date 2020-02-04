@@ -339,6 +339,7 @@ process dedupData {
 */
 process fastqc {
   tag "${repRID}"
+  publishDir "${outDir}/fastqc", mode: 'copy', pattern: "*_fastqc.zip"
   publishDir "${logsDir}", mode: 'copy', pattern: "*.fastq.err"
 
   input:
