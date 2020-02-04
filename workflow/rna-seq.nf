@@ -354,6 +354,6 @@ process fastqc {
     ulimit -a >>${repRID}.fastqc.err
 
     # run fastqc
-    fastqc *.fastq.gz >>${repRID}.fastqc.err
+    fastqc *.fastq.gz -o . >>${repRID}.fastqc.err
     """
 }

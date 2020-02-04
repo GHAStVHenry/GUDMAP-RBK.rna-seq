@@ -70,7 +70,7 @@ dedupData:
 fastqc:
   stage: unit
   script:
-  - singularity run 'docker://bicf/fastqc:2.0.0' ./test_data/fastq/small/Q-Y5JA_1M.R1.fastq.gz .
+  - singularity run 'docker://bicf/fastqc:2.0.0' ./test_data/fastq/small/Q-Y5JA_1M.R1.fastq.gz -o .
   - pytest -m fastqc
 
 integration_se:
