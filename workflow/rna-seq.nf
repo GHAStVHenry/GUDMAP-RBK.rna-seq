@@ -105,6 +105,12 @@ process getData {
     """
 }
 
+// Split fastq's
+fastqs.into {
+  fastqs_trimData
+  fastqs_fastqc
+}
+
 /*
  * parseMetadata: parses metadata to extract experiment parameters
 */
@@ -239,7 +245,7 @@ process trimData {
 
   input:
     val endsManual_trimData
-    path (fastq) from fastqs
+    path (fastq) from fastqs_trimData
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
@@ -303,7 +309,7 @@ process alignData {
 }
 
 /*
- *dedupReads: mark the duplicate reads, specifically focused on PCR or optical duplicates
+ *dedupData: mark the duplicate reads, specifically focused on PCR or optical duplicates
 */
 process dedupData {
   tag "${repRID}"
@@ -323,7 +329,30 @@ process dedupData {
     hostname >${repRID}.dedup.err
     ulimit -a >>${repRID}.dedup.err
 
-    #Remove duplicated reads
+    # remove duplicated reads
     java -jar /picard/build/libs/picard.jar MarkDuplicates I=${rawBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    """
+}
+
+/*
+ *fastqc: run fastqc on untrimmed fastq's
+*/
+process fastqc {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.fastq.err"
+
+  input:
+    path (fastq) from fastqs_fastqc
+
+  output:
+    path ("*_fastqc.zip") into fastqc
+
+  script:
+    """
+    hostname >${repRID}.fastqc.err
+    ulimit -a >>${repRID}.fastqc.err
+
+    # run fastqc
+    fastqc *.fastq.gz >>${repRID}.fastqc.err
     """
 }
