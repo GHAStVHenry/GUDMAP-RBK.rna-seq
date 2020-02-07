@@ -69,7 +69,7 @@ dedupData:
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools index -@ `nproc` -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bai
   - pytest -m dedupData
   
-makeBigWig
+makeBigWig:
   stage: unit
   script:
   - singularity run 'docker://bicf/deeptools3.3:2.0.0' bamCoverage -p `nproc` -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -o ./test_data/bam/small/Q-Y5JA_1M.se.bw
