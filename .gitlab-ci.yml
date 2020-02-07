@@ -72,7 +72,7 @@ dedupData:
 makeBigWig
   stage: unit
   script:
-  - singularity run 'docker://bicf/deeptools3.3:2.0.0' bamCoverage -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -o ./test_data/bam/small/Q-Y5JA_1M.se.bw
+  - singularity run 'docker://bicf/deeptools3.3:2.0.0' bamCoverage -p `nproc` -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -o ./test_data/bam/small/Q-Y5JA_1M.se.bw
   - pytest -m makeBigWig
 
 fastqc:
