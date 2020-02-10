@@ -1,5 +1,13 @@
 #!/usr/bin/env nextflow
 
+//  ########  ####  ######  ######## 
+//  ##     ##  ##  ##    ## ##       
+//  ##     ##  ##  ##       ##       
+//  ########   ##  ##       ######   
+//  ##     ##  ##  ##       ##       
+//  ##     ##  ##  ##    ## ##       
+//  ########  ####  ######  ##       
+
 // Define input variables
 params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
