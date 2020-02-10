@@ -33,7 +33,7 @@ logsDir = "${outDir}/Logs"
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
-#referenceBase = "s3://bicf-references"
+//referenceBase = "s3://bicf-references"
 referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 
 // Define script files
@@ -364,26 +364,5 @@ process fastqc {
 
     # run fastqc
     fastqc *.fastq.gz -o . >>${repRID}.fastqc.err
-    """
-}
-
-/*
- *rseqc: run RSeQC to collect qc stats and infer experimental settings
-*/
-process rseqc {
-  tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "*.rseqc.err"
-
-  input:
-
-  output:
-
-  script:
-    """
-    hostname >${repRID}.rseqc.err
-    ulimit -a >>${repRID}.rseqc.err
-
-    # run 
-    #infer_experiment.py -r
     """
 }
