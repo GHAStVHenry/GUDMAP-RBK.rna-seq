@@ -13,9 +13,8 @@ params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
-params.refVersion = "0.0.1"
-params.refMuVersion = "38.P6"
-params.refHuVersion = "38.p12"
+params.refMuVersion = "38.p6.vM22"
+params.refHuVersion = "38.p12.v31"
 params.outDir = "${baseDir}/../output"
 
 // Parse input variables
@@ -34,7 +33,8 @@ logsDir = "${outDir}/Logs"
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
-referenceBase = "s3://bicf-references"
+#referenceBase = "s3://bicf-references"
+referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
@@ -226,10 +226,10 @@ process getRef {
     # retreive appropriate reference from S3 bucket
     if [ "${species_getRef}" == "Mus musculus" ]
     then
-      references=\$(echo ${referenceBase}/mouse/${refVersion}/GRCm${refMuVersion})
+      references=\$(echo ${referenceBase}/mouse/GRCm${refMuVersion})
     elif [ '${species_getRef}' == "Homo sapiens" ]
     then
-      references=\$(echo ${referenceBase}/human/${refVersion}/GRCh${refHuVersion})
+      references=\$(echo ${referenceBase}/human/GRCh${refHuVersion})
     else
       exit 1
     fi
@@ -240,7 +240,8 @@ process getRef {
     then
       reference=\$(echo \${references}/)
     fi
-    aws s3 cp "\${references}" ./ --recursive >>${repRID}.getRef.err
+    #aws s3 cp "\${references}" ./ --recursive >>${repRID}.getRef.err
+    cp "\${references}" ./ --recursive >>${repRID}.getRef.err
     """
 }
 
@@ -363,5 +364,26 @@ process fastqc {
 
     # run fastqc
     fastqc *.fastq.gz -o . >>${repRID}.fastqc.err
+    """
+}
+
+/*
+ *rseqc: run RSeQC to collect qc stats and infer experimental settings
+*/
+process rseqc {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.rseqc.err"
+
+  input:
+
+  output:
+
+  script:
+    """
+    hostname >${repRID}.rseqc.err
+    ulimit -a >>${repRID}.rseqc.err
+
+    # run 
+    #infer_experiment.py -r
     """
 }
