@@ -1,12 +1,19 @@
 #!/usr/bin/env nextflow
 
+//  ########  ####  ######  ######## 
+//  ##     ##  ##  ##    ## ##       
+//  ##     ##  ##  ##       ##       
+//  ########   ##  ##       ######   
+//  ##     ##  ##  ##       ##       
+//  ##     ##  ##  ##    ## ##       
+//  ########  ####  ######  ##       
+
 // Define input variables
 params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
-params.refVersion = "0.0.1"
-params.refMuVersion = "38.P6.vM22"
+params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.outDir = "${baseDir}/../output"
 
@@ -18,15 +25,15 @@ bdbag = Channel
   .fromPath(params.bdbag)
   .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
 repRID = params.repRID
-refVersion = params.refVersion
-refMuVersion = params.refMuVersion
+refMoVersion = params.refMoVersion
 refHuVersion = params.refHuVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
-referenceBase = "s3://bicf-references"
+//referenceBase = "s3://bicf-references"
+referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
@@ -186,9 +193,11 @@ stranded.into {
 }
 spike.into{
   spike_getRef
+  spike_rseqc
 }
 species.into {
   species_getRef
+  species_rseqc
 }
 
 /*
@@ -199,10 +208,6 @@ process getRef {
   publishDir "${logsDir}", mode: "copy", pattern: "*.getRef.err"
 
   input:
-    val referenceBase
-    val refVersion
-    val refMuVersion
-    val refHuVersion
     val spike_getRef
     val species_getRef
 
@@ -215,13 +220,13 @@ process getRef {
     ulimit -a >>${repRID}.getRef.err
     export https_proxy=\${http_proxy}
 
-    # retreive appropriate reference from S3 bucket
+    # run set the reference name
     if [ "${species_getRef}" == "Mus musculus" ]
     then
-      references=\$(echo ${referenceBase}/mouse/${refVersion}/GRCm${refMuVersion})
+      references=\$(echo ${referenceBase}/GRCm${refMoVersion})
     elif [ '${species_getRef}' == "Homo sapiens" ]
     then
-      references=\$(echo ${referenceBase}/human/${refVersion}/GRCh${refHuVersion})
+      references=\$(echo ${referenceBase}/GRCh${refHuVersion})
     else
       exit 1
     fi
@@ -232,7 +237,17 @@ process getRef {
     then
       reference=\$(echo \${references}/)
     fi
-    aws s3 cp "\${references}" ./ --recursive >>${repRID}.getRef.err
+
+    # retreive appropriate reference appropriate location
+    if [ ${referenceBase} == "s3://bicf-references" ]
+    then
+      aws s3 cp "\${references}" /hisat2 ./ --recursive >>${repRID}.getRef.err
+      aws s3 cp "\${references}" /bed ./ --recursive >>${repRID}.getRef.err
+    elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
+    then
+      cp -R "\${references}"/hisat2 ./ >>${repRID}.getRef.err
+      cp -R "\${references}"/bed ./ >>${repRID}.getRef.err
+    fi
     """
 }
 
@@ -268,6 +283,11 @@ process trimData {
     """
 }
 
+reference.into {
+  reference_alignData
+  reference_rseqc
+}
+
 /*
  * alignData: aligns the reads to a reference database
 */
@@ -279,7 +299,7 @@ process alignData {
     val endsManual_alignData
     val stranded_alignData
     path fastq from fastqs_trimmed
-    path reference
+    path reference_alignData
 
   output:
     path ("${repRID}.sorted.bam") into rawBam
