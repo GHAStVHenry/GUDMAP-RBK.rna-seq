@@ -340,7 +340,7 @@ process dedupData {
     path rawBam
 
   output:
-    path ("${repRID}.deduped.bam") into dedupBam
+    tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bai") into dedupBam
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
 
@@ -351,6 +351,8 @@ process dedupData {
 
     # remove duplicated reads
     java -jar /picard/build/libs/picard.jar MarkDuplicates I=${rawBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }
 
@@ -375,5 +377,24 @@ process fastqc {
 
     # run fastqc
     fastqc *.fastq.gz -o . >>${repRID}.fastqc.err
+    """
+}
+
+/*
+ *Make BigWig files for later processes
+*/
+process makeBigWig {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
+
+  input:
+    set val (repRID), path (inBam), path (inBai) from dedupBam
+
+  output:
+    path ("${repRID}.bw")
+
+  script:
+    """
+    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
     """
 }
