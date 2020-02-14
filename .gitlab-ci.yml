@@ -23,7 +23,7 @@ getData:
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bagit/Replicate_16-1ZX4
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' sh ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' sh ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4 TEST
   - pytest -m getData
 
 parseMetadata:
@@ -38,8 +38,12 @@ parseMetadata:
 getRef:
   stage: unit
   script:
-  - singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/mouse/0.0.1/GRCm38.P6
-  - singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/human/0.0.1/GRCh38.p12
+  - #singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/mouse/0.0.1/GRCm38.P6
+  - #singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/human/0.0.1/GRCh38.p12
+  - mkdir -p hu
+  - mkdir -p mo
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
 
 trimData:
   stage: unit
