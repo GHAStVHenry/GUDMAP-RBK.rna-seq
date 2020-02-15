@@ -1,5 +1,5 @@
 before_script:
-  - module add  python/3.6.1-2-anaconda
+  - module add  python/3.6.4-anaconda
   - pip install --user pytest-pythonpath==0.7.1 pytest-cov==2.5.1
   - module load singularity/3.0.2
   - module load nextflow/19.09.0
@@ -23,7 +23,7 @@ getData:
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bagit/Replicate_16-1ZX4
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' sh ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4 TEST
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' bash ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4 TEST
   - pytest -m getData
 
 parseMetadata:
