@@ -22,8 +22,8 @@ getData:
   stage: unit
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - unzip ./test_data/bagit/Replicate_16-1ZX4
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' bash ./workflow/scripts/bdbagFetch.sh Replicate_16-1ZX4 16-1ZX4 TEST
+  - unzip ./test_data/bagit/Study_Q-Y4H0.zip
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' bash ./workflow/scripts/bdbagFetch.sh Study_Q-Y4H0 Q-Y4H0 TEST
   - pytest -m getData
 
 parseMetadata:
