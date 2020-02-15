@@ -112,7 +112,7 @@ process getData {
     """
 }
 
-// Split fastq's
+// Replicate raw fastqs for multiple process inputs
 fastqs.into {
   fastqs_trimData
   fastqs_fastqc
@@ -184,6 +184,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
   spike,
   species
 )
+// Replicate metadata for multiple process inputs
 endsManual.into {
   endsManual_trimData
   endsManual_alignData
@@ -283,6 +284,7 @@ process trimData {
     """
 }
 
+// Replicate reference for multiple process inputs
 reference.into {
   reference_alignData
   reference_rseqc
@@ -356,6 +358,31 @@ process dedupData {
     """
 }
 
+// Replicate dedup bam/bai for multiple process inputs
+dedupBam.into {
+  dedupBam_makeBigWig
+  dedupBam_rseqc
+}
+
+/*
+ *Make BigWig files for output
+*/
+process makeBigWig {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
+
+  input:
+    set val (repRID), path (inBam), path (inBai) from dedupBam_makeBigWig
+
+  output:
+    path ("${repRID}.bw")
+
+  script:
+    """
+    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
+    """
+}
+
 /*
  *fastqc: run fastqc on untrimmed fastq's
 */
@@ -381,20 +408,44 @@ process fastqc {
 }
 
 /*
- *Make BigWig files for later processes
+ *rseqc: run RSeQC to collect stats and infer experimental metadata
 */
-process makeBigWig {
+process rseqc {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.rseqc.err"
 
   input:
-    set val (repRID), path (inBam), path (inBai) from dedupBam
+  path reference_rseqc
+  set val (repRID), path (inBam), path (inBai) from dedupBam_rseqc
+  val species_rseqc
+  val spike_rseqc
 
   output:
-    path ("${repRID}.bw")
 
   script:
     """
-    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
+    hostname >${repRID}.rseqc.err
+    ulimit -a >>${repRID}.rseqc.err
+
+    # run set the reference (bed) name
+    if [ "${species_rseqc}" == "Mus musculus" ]
+    then
+      reference=\$(echo m${refMoVersion})
+    elif [ "${species_rseqc}" == "Homo sapiens" ]
+    then
+      reference=\$(echo h${refHuVersion})
+    fi
+    if [ "${spike_rseqc}" == "yes" ]
+    then
+      reference=\$(echo \${reference}-S)
+    elif [ "${spike_rseqc}" == "no" ]
+    then
+      reference=\$(echo \${reference})
+    fi
+    reference=\$(echo GRC\${reference})
+
+    # infer experimental setting from dedup bam
+    echo \${reference}
+    infer_experiment.py -r "./bed/\${reference}.bed" -i "${inBam}" >${repRID}.rseqc.log
     """
 }
