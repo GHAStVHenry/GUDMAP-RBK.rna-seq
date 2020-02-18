@@ -1,7 +1,7 @@
 # Summary
 
 
-# Setps to reproduce
+# Steps to reproduce
 
 
 # Observed bug behavoir
@@ -18,4 +18,4 @@
 
 
 /label ~bug ~"To Do"
-/cc @ghenry @venkat.malladi @s181706 @s189701
+/cc @ghenry @venkat.malladi @s181706
