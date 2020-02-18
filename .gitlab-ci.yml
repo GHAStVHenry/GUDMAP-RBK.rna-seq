@@ -38,8 +38,10 @@ parseMetadata:
 getRef:
   stage: unit
   script:
-  - singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/mouse/0.0.1/GRCm38.P6
-  - singularity run 'docker://bicf/awscli:1.1' aws s3 ls s3://bicf-references/human/0.0.1/GRCh38.p12
+  - mkdir -p hu
+  - mkdir -p mo
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
 
 trimData:
   stage: unit
