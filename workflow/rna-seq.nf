@@ -193,11 +193,9 @@ stranded.into {
 }
 spike.into{
   spike_getRef
-  spike_rseqc
 }
 species.into {
   species_getRef
-  species_rseqc
 }
 
 /*
@@ -285,7 +283,6 @@ process trimData {
 
 reference.into {
   reference_alignData
-  reference_rseqc
 }
 
 /*
