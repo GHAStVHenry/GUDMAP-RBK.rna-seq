@@ -5,7 +5,7 @@
 [![DOI]()]()
 -->
 RNA-Seq Analytic Pipeline for GUDMAP/RBK
-===========================
+========================================
 
 Introduction
 ------------
@@ -89,3 +89,9 @@ UT Southwestern Medical Center\
 [jeremy.mathews@utsouthwestern.edu](mailto:jeremy.mathews@utsouthwestern.edu)
 
 Please cite in publications: Pipeline was developed by BICF from funding provided by **Cancer Prevention and Research Institute of Texas (RP150596)**.
+
+<hr>
+Pipeline Directed Acyclic Graph
+-------------------------------
+
+![dag](docs/dag.png "DAG")
