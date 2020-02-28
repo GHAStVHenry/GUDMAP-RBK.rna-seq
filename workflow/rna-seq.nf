@@ -38,6 +38,7 @@ referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
+script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -305,7 +306,7 @@ process alignData {
 
   output:
     path ("${repRID}.sorted.bam") into rawBam
-    path ("${repRID}.sorted.bai") into rawBai
+    path ("${repRID}.sorted.bam.bai") into rawBai
     path ("${repRID}.align.out")
     path ("${repRID}.align.err")
 
@@ -326,7 +327,7 @@ process alignData {
     # convert sam to bam and sort and index
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
-    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bam.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
     """
 }
 
@@ -342,7 +343,7 @@ process dedupData {
     path rawBam
 
   output:
-    tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bai") into dedupBam
+    tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
 
@@ -354,7 +355,7 @@ process dedupData {
     # remove duplicated reads
     java -jar /picard/build/libs/picard.jar MarkDuplicates I=${rawBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
-    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }
 
@@ -410,11 +411,12 @@ process fastqc {
 /*
  *rseqc: run RSeQC to collect stats and infer experimental metadata
 */
-process rseqc {
+process inferMetadata {
   tag "${repRID}"
   publishDir "${logsDir}", mode: 'copy', pattern: "*.rseqc.err"
 
   input:
+  path script_inferMeta
   path reference_rseqc
   set val (repRID), path (inBam), path (inBai) from dedupBam_rseqc
   val species_rseqc
@@ -427,25 +429,50 @@ process rseqc {
     hostname >${repRID}.rseqc.err
     ulimit -a >>${repRID}.rseqc.err
 
-    # run set the reference (bed) name
-    if [ "${species_rseqc}" == "Mus musculus" ]
-    then
-      reference=\$(echo m${refMoVersion})
-    elif [ "${species_rseqc}" == "Homo sapiens" ]
-    then
-      reference=\$(echo h${refHuVersion})
-    fi
-    if [ "${spike_rseqc}" == "yes" ]
-    then
-      reference=\$(echo \${reference}-S)
-    elif [ "${spike_rseqc}" == "no" ]
-    then
-      reference=\$(echo \${reference})
-    fi
-    reference=\$(echo GRC\${reference})
-
     # infer experimental setting from dedup bam
-    echo \${reference}
-    infer_experiment.py -r "./bed/\${reference}.bed" -i "${inBam}" >${repRID}.rseqc.log
+    infer_experiment.py -r ./bed/genome.bed -i "${inBam}" >${repRID}.rseqc.log
+
+    endness=`bash inferMeta.sh endness ${repRID}.rseqc.log`
+    fail=`bash inferMeta.sh fail ${repRID}.rseqc.log`
+    echo \${endness}
+    echo \${fail}
+    if [ \${endness} == "PairEnd" ] 
+    then
+      percentF=`bash inferMeta.sh pef ${repRID}.rseqc.log`
+      percentR=`bash inferMeta.sh per ${repRID}.rseqc.log`
+      inner_distance.py -i "${inBam}" -o ${repRID}.insertSize -r ./bed/genome.bed
+      junction_saturation.py -i "${inBam}" -r ./bed/genome.bed -o ${repRID}.junctionSaturation
+    elif [ \${endness} == "SingleEnd" ]
+    then
+      percentF=`bash inferMeta.sh sef ${repRID}.rseqc.log`
+      percentR=`bash inferMeta.sh ser ${repRID}.rseqc.log`
+    fi
+    if [ \$percentF > 0.25 ] && [ \$percentR < 0.25 ]
+    then
+      if [ \$endness == "PairEnd" ]
+      then
+        strategy="1++,1--,2+-,2-+"
+      else
+        strategy="++,--"
+      fi
+    elif [ \$percentR > 0.25 ] && [ \$percentF < 0.25 ]
+    then
+      if [ \$endness == "PairEnd" ]
+      then
+        strategy="1+-,1-+,2++,2--"
+      else
+        strategy="+-,-+"
+      fi
+    else
+      strategy="us"
+    fi
+    if [ \$strategy != "us" ]
+    then
+      FPKM_count.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed -d \$strategy
+      RPKM_saturation.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed -d \$strategy
+    else
+      FPKM_count.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed
+      RPKM_saturation.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed
+    fi
     """
 }
