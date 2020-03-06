@@ -210,7 +210,9 @@ process getRef {
     val species_getRef
 
   output:
-    path ("*")  into reference
+    path ("hisat2") type 'dir' into reference
+    path ("bed") type 'dir' into bedFile
+    tuple val ("${refRID}"), path ("genome.fna"), path ("genome.gtf") into featureCountsRef
   
   script:
     """
@@ -241,10 +243,14 @@ process getRef {
     then
       aws s3 cp "\${references}" /hisat2 ./ --recursive >>${repRID}.getRef.err
       aws s3 cp "\${references}" /bed ./ --recursive >>${repRID}.getRef.err
+      aws s3 cp "\${references}" /*.fna --recursive >>${repRID}.getRef.err
+      aws s3 cp "\${references}" /*.gtf --recursive >>${repRID}.getRef.err
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
-      cp -R "\${references}"/hisat2 ./ >>${repRID}.getRef.err
-      cp -R "\${references}"/bed ./ >>${repRID}.getRef.err
+      ln -s "\${references}"/hisat2 >>${repRID}.getRef.err
+      ln -s "\${references}"/bed >>${repRID}.getRef.err
+      ln -s "\${references}"/genome.fna >>${repRID}.getRef.err
+      ln -s "\${references}"/genome.gtf >>${repRID}.getRef.err
     fi
     """
 }
@@ -338,6 +344,7 @@ process dedupData {
 
   output:
     tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bai") into dedupBam
+    tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bai") into featureCountsIn
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
 
@@ -385,7 +392,7 @@ process makeBigWig {
   publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
 
   input:
-    set val (repRID), path (inBam), path (inBai) from dedupBam
+    tuple val (repRID), path (inBam), path (inBai) from dedupBam
 
   output:
     path ("${repRID}.bw")
@@ -393,5 +400,26 @@ process makeBigWig {
   script:
     """
     bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
+    """
+}
+
+/*
+ *Run featureCounts and get the counts, tpm, and fpkm
+*/
+process makeFeatureCounts {
+  tag "${repRID}"
+  publishDir "${outDir}/featureCounts", mode: 'copy', pattern: "${repRID}*.featureCounts*"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.makeFetureCounts.{out,err}"
+
+  input:
+    tuple val (repRID1), path (bam), path (bai) from featureCountsIn
+    tuple val (repRID2), path (genome), path (gtf) from featureCountsRef
+
+  output:
+    tuple val ("${repRID}"), path ("${repRID}.featureCounts.summary"), path ("${repRID}.featureCounts"), path ("${bam}.featureCounts.sam") into featureCountsOut
+
+  script:
+    """
+    featureCounts -R SAM -p -G ${genome} -T `nproc` -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam
     """
 }
