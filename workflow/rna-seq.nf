@@ -336,7 +336,7 @@ process alignData {
  *dedupData: mark the duplicate reads, specifically focused on PCR or optical duplicates
 */
 process dedupData {
-  tag "${repRID}"git reset --soft HEAD^
+  tag "${repRID}"
   publishDir "${outDir}/bam", mode: 'copy', pattern: "*.deduped.bam"
   publishDir "${logsDir}", mode: 'copy', pattern: "*.dedup.{out,err}"
 
@@ -404,3 +404,25 @@ process makeBigWig {
     """
 }
 
+/*
+ *Run featureCounts and get the counts, tpm, and fpkm
+*/
+process makeFeatureCounts {
+  tag "${repRID}"
+  publishDir "${outDir}/featureCounts", mode: 'copy', pattern: "${repRID}*.featureCounts*"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.makeFetureCounts.{out,err}"
+
+  input:
+    path script_calculateTPM
+    tuple val (repRID1), path (bam), path (bai) from featureCountsIn
+    tuple val (repRID2), path (genome), path (gtf) from featureCountsRef
+
+  output:
+    tuple val ("${repRID}"), path ("${repRID}.featureCounts.summary"), path ("${repRID}.featureCounts"), path ("${bam}.featureCounts.sam") into featureCountsOut
+
+  script:
+    """
+    featureCounts -R SAM -p -G ${genome} -T `nproc` -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam
+    Rscript calculateTPM.R --count "${repRID}.featureCounts"
+    """
+}
