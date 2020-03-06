@@ -38,6 +38,7 @@ referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
+script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -335,7 +336,7 @@ process alignData {
  *dedupData: mark the duplicate reads, specifically focused on PCR or optical duplicates
 */
 process dedupData {
-  tag "${repRID}"
+  tag "${repRID}"git reset --soft HEAD^
   publishDir "${outDir}/bam", mode: 'copy', pattern: "*.deduped.bam"
   publishDir "${logsDir}", mode: 'copy', pattern: "*.dedup.{out,err}"
 
@@ -412,6 +413,7 @@ process makeFeatureCounts {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.makeFetureCounts.{out,err}"
 
   input:
+    path script_calculateTPM
     tuple val (repRID1), path (bam), path (bai) from featureCountsIn
     tuple val (repRID2), path (genome), path (gtf) from featureCountsRef
 
@@ -421,5 +423,6 @@ process makeFeatureCounts {
   script:
     """
     featureCounts -R SAM -p -G ${genome} -T `nproc` -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam
+    Rscript calculateTPM.R --count "${repRID}.featureCounts"
     """
 }
