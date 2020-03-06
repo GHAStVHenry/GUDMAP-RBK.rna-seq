@@ -1,6 +1,5 @@
 gc()
 library(optparse)
-library(edgeR)
 
 option_list=list(
   make_option("--count",action="store",type='character',help="Count File")
