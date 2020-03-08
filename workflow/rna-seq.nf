@@ -362,6 +362,49 @@ process dedupData {
 }
 
 /*
+ *makeBigWig: make bigwig file
+*/
+process makeBigWig {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
+
+  input:
+    tuple val (repRID), path (inBam), path (inBai) from dedupBam
+
+  output:
+    path ("${repRID}.bw")
+
+  script:
+    """
+    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
+    """
+}
+
+/*
+ *Run featureCounts and get the counts, tpm
+*/
+process makeFeatureCounts {
+  tag "${repRID}"
+  publishDir "${outDir}/featureCounts", mode: 'copy', pattern: "${repRID}*.featureCounts*"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.makeFetureCounts.{out,err}"
+
+  input:
+    path script_calculateTPM
+    tuple val (repRID1), path (bam), path (bai) from featureCountsIn
+    tuple val (repRID2), path (genome), path (gtf) from featureCountsRef
+
+  output:
+    tuple val ("${repRID}"), path ("${repRID}.featureCounts.summary"), path ("${repRID}.featureCounts"), path ("${bam}.featureCounts.sam") into featureCountsOut
+
+  script:
+    """
+    featureCounts -R SAM -p -G ${genome} -T `nproc` -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam
+    Rscript calculateTPM.R --count "${repRID}.featureCounts"
+    """
+}
+
+
+/*
  *fastqc: run fastqc on untrimmed fastq's
 */
 process fastqc {
@@ -382,47 +425,5 @@ process fastqc {
 
     # run fastqc
     fastqc *.fastq.gz -o . >>${repRID}.fastqc.err
-    """
-}
-
-/*
- *Make BigWig files for later processes
-*/
-process makeBigWig {
-  tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
-
-  input:
-    tuple val (repRID), path (inBam), path (inBai) from dedupBam
-
-  output:
-    path ("${repRID}.bw")
-
-  script:
-    """
-    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
-    """
-}
-
-/*
- *Run featureCounts and get the counts, tpm, and fpkm
-*/
-process makeFeatureCounts {
-  tag "${repRID}"
-  publishDir "${outDir}/featureCounts", mode: 'copy', pattern: "${repRID}*.featureCounts*"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.makeFetureCounts.{out,err}"
-
-  input:
-    path script_calculateTPM
-    tuple val (repRID1), path (bam), path (bai) from featureCountsIn
-    tuple val (repRID2), path (genome), path (gtf) from featureCountsRef
-
-  output:
-    tuple val ("${repRID}"), path ("${repRID}.featureCounts.summary"), path ("${repRID}.featureCounts"), path ("${bam}.featureCounts.sam") into featureCountsOut
-
-  script:
-    """
-    featureCounts -R SAM -p -G ${genome} -T `nproc` -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam
-    Rscript calculateTPM.R --count "${repRID}.featureCounts"
     """
 }
