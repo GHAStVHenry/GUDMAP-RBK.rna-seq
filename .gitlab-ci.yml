@@ -81,7 +81,7 @@ makeFeatureCounts:
   stage: unit
   script:
   - singularity run 'docker://bicf/subread2:2.0.0' featureCounts -R SAM -p -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -T `nproc` -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -o Q-Y5JA_1M.se.featureCounts ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam 
-  - singularity run 'docker://bicf/subread2:2.0.0' Rscript calculateTPM.R --count Q-Y5JA_1M.se.featureCounts
+  - singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5JA_1M.se.featureCounts
   - pytest -m makeFeatureCounts
 
 fastqc:
