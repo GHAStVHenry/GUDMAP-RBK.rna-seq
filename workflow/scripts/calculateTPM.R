@@ -8,11 +8,9 @@ opt=parse_args(OptionParser(option_list=option_list))
 rm(option_list)
 
 if (!("count" %in% names(opt))){
-  print("No count file passed, exiting.")
-  exit()
+  stop("No count file passed, exiting.")
 } else if (!file.exists(opt$count)) {
-  print("No count file passed, exiting.")
-  exit()
+  stop("No count file passed, exiting.")
 }
 
 repRID <- basename(gsub(".featureCounts","",opt$count))
