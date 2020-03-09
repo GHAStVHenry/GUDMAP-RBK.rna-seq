@@ -17,9 +17,10 @@ if (!("count" %in% names(opt))){
 
 repRID <- basename(gsub(".featureCounts","",opt$count))
 
-count <- read.delim(opt$count, comment.char="#")
+count <- read.delim(opt$count, comment.char="#") # if featureCounts file changes structure, be sure to update count and Length columns below
+colnames(count)[7] <- "count"
 
-rpk <- count$Q.Y5JA.sorted.deduped.bam/count$Length/1000
+rpk <- count$count/count$Length/1000
 
 scale <- sum(rpk)/1000000
 
