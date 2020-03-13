@@ -421,7 +421,8 @@ process inferMetadata {
   set val (repRID), path (inBam), path (inBai) from dedupBam_rseqc
 
   output:
-  path "infer.csv" into inferMetadata
+  path "infer.csv" into inferedMetadata
+  path "${inBam.baseName}.tin.xls" into tin
 
 
   script:
@@ -470,31 +471,7 @@ process inferMetadata {
     # calcualte TIN values per feature
     tin.py -i "${inBam}" -r ./bed/genome.bed
 
-    # aggregate infered metadata (including generate TIN stats)
-    Rscript aggregateInference.R --endness "\${endness}" --stranded "\${stranded}" --strategy "\${strategy}" --percentF \${percentF} --percentR \${percentR} --percentFail \${fail} --tin "${inBam.baseName}.tin.xls"
+    # write infered metadata to file
+    echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${percentFail} > infer.csv
     """
 }
-
-// Split infered metadata into separate channels
-endsMetaI = Channel.create()
-strandedI = Channel.create()
-strategyI = Channel.create()
-percentFI = Channel.create()
-percentRI = Channel.create()
-percentFailI = Channel.create()
-tinMinI = Channel.create()
-tinMedI = Channel.create()
-tinMaxI = Channel.create()
-tinSDI = Channel.create()
-inferMetadata.splitCsv(sep: ",", header: false).separate(
-  endsMetaI,
-  strandedI,
-  strategyI,
-  percentFI,
-  percentRI,
-  percentFailI,
-  tinMinI,
-  tinMedI,
-  tinMaxI,
-  tinSDI
-)
