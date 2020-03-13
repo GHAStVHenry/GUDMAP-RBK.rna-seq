@@ -20,4 +20,4 @@ def test_alignData_se():
 def test_alignData_pe():
 	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA_1M.pe.unal.gz'))
 	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA_1M.pe.sorted.bam'))
-	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA_1M.pe.sorted.bai'))
+	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA_1M.pe.sorted.bam.bai'))
