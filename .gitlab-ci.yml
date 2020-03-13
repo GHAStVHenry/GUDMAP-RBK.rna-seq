@@ -86,7 +86,7 @@ fastqc:
 inferMetadata:
   stage: unit
   script:
-  - singularity run 'docker://bicf/rseqc3.0:2.0.0' tin.py -i /test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed
+  - singularity run 'docker://bicf/rseqc3.0:2.0.0' tin.py -i ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed
   - pytest -m inferMetadata
 
 integration_se:
