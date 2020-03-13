@@ -39,6 +39,7 @@ referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
+script_aggregateInference = Channel.fromPath("${baseDir}/scripts/aggregateInference.R")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -195,11 +196,9 @@ stranded.into {
 }
 spike.into{
   spike_getRef
-  spike_rseqc
 }
 species.into {
   species_getRef
-  species_rseqc
 }
 
 /*
@@ -417,12 +416,13 @@ process inferMetadata {
 
   input:
   path script_inferMeta
+  path script_aggregateInference
   path reference_rseqc
   set val (repRID), path (inBam), path (inBai) from dedupBam_rseqc
-  val species_rseqc
-  val spike_rseqc
 
   output:
+  path "infer.csv" into inferMetadata
+
 
   script:
     """
@@ -434,29 +434,28 @@ process inferMetadata {
 
     endness=`bash inferMeta.sh endness ${repRID}.rseqc.log`
     fail=`bash inferMeta.sh fail ${repRID}.rseqc.log`
-    echo \${endness}
-    echo \${fail}
     if [ \${endness} == "PairEnd" ] 
     then
       percentF=`bash inferMeta.sh pef ${repRID}.rseqc.log`
       percentR=`bash inferMeta.sh per ${repRID}.rseqc.log`
       inner_distance.py -i "${inBam}" -o ${repRID}.insertSize -r ./bed/genome.bed
-      junction_saturation.py -i "${inBam}" -r ./bed/genome.bed -o ${repRID}.junctionSaturation
     elif [ \${endness} == "SingleEnd" ]
     then
       percentF=`bash inferMeta.sh sef ${repRID}.rseqc.log`
       percentR=`bash inferMeta.sh ser ${repRID}.rseqc.log`
     fi
-    if [ \$percentF > 0.25 ] && [ \$percentR < 0.25 ]
+    if [ \$percentF -gt 0.25 ] && [ \$percentR -lt 0.25 ]
     then
+      stranded="forward"
       if [ \$endness == "PairEnd" ]
       then
         strategy="1++,1--,2+-,2-+"
       else
         strategy="++,--"
       fi
-    elif [ \$percentR > 0.25 ] && [ \$percentF < 0.25 ]
+    elif [ \$percentR -gt 0.25 ] && [ \$percentF -lt 0.25 ]
     then
+      stranded="reverse"
       if [ \$endness == "PairEnd" ]
       then
         strategy="1+-,1-+,2++,2--"
@@ -464,15 +463,38 @@ process inferMetadata {
         strategy="+-,-+"
       fi
     else
+      stranded="unstranded"
       strategy="us"
     fi
-    if [ \$strategy != "us" ]
-    then
-      FPKM_count.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed -d \$strategy
-      RPKM_saturation.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed -d \$strategy
-    else
-      FPKM_count.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed
-      RPKM_saturation.py -i "${inBam}" -o ${repRID}.rpkmCount -r ./bed/genome.bed
-    fi
+
+    # calcualte TIN values per feature
+    tin.py -i "${inBam}" -r ./bed/genome.bed
+
+    # aggregate infered metadata (including generate TIN stats)
+    Rscript aggregateInference.R --endness "\${endness}" --stranded "\${stranded}" --strategy "\${strategy}" --percentF \${percentF} --percentR \${percentR} --percentFail \${fail} --tin "${inBam.baseName}.tin.xls"
     """
 }
+
+// Split infered metadata into separate channels
+endsMetaI = Channel.create()
+strandedI = Channel.create()
+strategyI = Channel.create()
+percentFI = Channel.create()
+percentRI = Channel.create()
+percentFailI = Channel.create()
+tinMinI = Channel.create()
+tinMedI = Channel.create()
+tinMaxI = Channel.create()
+tinSDI = Channel.create()
+inferMetadata.splitCsv(sep: ",", header: false).separate(
+  endsMetaI,
+  strandedI,
+  strategyI,
+  percentFI,
+  percentRI,
+  percentFailI,
+  tinMinI,
+  tinMedI,
+  tinMaxI,
+  tinSDI
+)
