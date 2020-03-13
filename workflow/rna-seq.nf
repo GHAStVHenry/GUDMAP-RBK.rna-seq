@@ -304,8 +304,7 @@ process alignData {
     path reference_alignData
 
   output:
-    path ("${repRID}.sorted.bam") into rawBam
-    path ("${repRID}.sorted.bam.bai") into rawBai
+    tuple val ("${repRID}"), path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
     path ("${repRID}.align.out")
     path ("${repRID}.align.err")
 
@@ -330,6 +329,12 @@ process alignData {
     """
 }
 
+// Replicate rawBam for multiple process inputs
+rawBam.into {
+  rawBam_dedupData
+  rawBam_inferMetadata
+}
+
 /*
  *dedupData: mark the duplicate reads, specifically focused on PCR or optical duplicates
 */
@@ -339,7 +344,7 @@ process dedupData {
   publishDir "${logsDir}", mode: 'copy', pattern: "*.dedup.{out,err}"
 
   input:
-    path rawBam
+    set val (repRID), path (inBam), path (inBai) from rawBam_dedupData
 
   output:
     tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
@@ -352,7 +357,7 @@ process dedupData {
     ulimit -a >>${repRID}.dedup.err
 
     # remove duplicated reads
-    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${rawBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${inBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
@@ -361,7 +366,6 @@ process dedupData {
 // Replicate dedup bam/bai for multiple process inputs
 dedupBam.into {
   dedupBam_makeBigWig
-  dedupBam_rseqc
 }
 
 /*
@@ -415,14 +419,14 @@ process inferMetadata {
   publishDir "${logsDir}", mode: 'copy', pattern: "*.rseqc.err"
 
   input:
-  path script_inferMeta
-  path script_aggregateInference
-  path reference_rseqc
-  set val (repRID), path (inBam), path (inBai) from dedupBam_rseqc
+    path script_inferMeta
+    path script_aggregateInference
+    path reference_rseqc
+    set val (repRID), path (inBam), path (inBai) from rawBam_inferMetadata
 
   output:
-  path "infer.csv" into inferedMetadata
-  path "${inBam.baseName}.tin.xls" into tin
+    path "infer.csv" into inferedMetadata
+    path "${inBam.baseName}.tin.xls" into tin
 
 
   script:
@@ -472,6 +476,6 @@ process inferMetadata {
     tin.py -i "${inBam}" -r ./bed/genome.bed
 
     # write infered metadata to file
-    echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${percentFail} > infer.csv
+    echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv
     """
 }
