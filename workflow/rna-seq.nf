@@ -427,6 +427,7 @@ process inferMetadata {
   output:
     path "infer.csv" into inferedMetadata
     path "${inBam.baseName}.tin.xls" into tin
+    path "${repRID}.insertSize.inner_distance_freq.txt" optional true into innerDistance
 
 
   script:
