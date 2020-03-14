@@ -265,7 +265,7 @@ process trimData {
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
-    path ("*._trimming_report.txt") into trimQC
+    path ("*_trimming_report.txt") into trimQC
     path ("${repRID}.trimData.log")
     path ("${repRID}.trimData.err")
 
