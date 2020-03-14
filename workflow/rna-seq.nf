@@ -265,6 +265,7 @@ process trimData {
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
+    path ("*._trimming_report.txt") into trimQC
     path ("${repRID}.trimData.log")
     path ("${repRID}.trimData.err")
 
@@ -305,6 +306,7 @@ process alignData {
 
   output:
     tuple val ("${repRID}"), path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
+    path ("*.alignSummary.txt") into alignQC
     path ("${repRID}.align.out")
     path ("${repRID}.align.err")
 
@@ -316,10 +318,10 @@ process alignData {
     # align reads
     if [ "${endsManual_alignData}" == "se" ]
     then
-      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} -U ${fastq[0]} 1>${repRID}.align.out 2>${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} -U ${fastq[0]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>${repRID}.align.out 2>${repRID}.align.err
     elif [ "${endsManual_alignData}" == "pe" ]
     then
-      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} 1>${repRID}.align.out 2>${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>${repRID}.align.out 2>${repRID}.align.err
     fi
     
     # convert sam to bam and sort and index
@@ -348,6 +350,7 @@ process dedupData {
 
   output:
     tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
+    path ("*.deduped.Metrics.txt") into alignQC
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
 
