@@ -350,7 +350,7 @@ process dedupData {
 
   output:
     tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
-    path ("*.deduped.Metrics.txt") into alignQC
+    path ("*.deduped.Metrics.txt") into dedupQC
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
 
