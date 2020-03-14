@@ -288,6 +288,7 @@ process trimData {
 // Replicate reference for multiple process inputs
 reference.into {
   reference_alignData
+  reference_inferMeta
 }
 
 /*
@@ -423,7 +424,7 @@ process inferMetadata {
   input:
     path script_inferMeta
     path script_aggregateInference
-    path reference_rseqc
+    path reference_inferMeta
     set val (repRID), path (inBam), path (inBai) from rawBam_inferMetadata
 
   output:
