@@ -97,4 +97,10 @@ integration_se:
 integration_pe:
   stage: integration
   script:
-  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA
+  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - dag.png
+    expire_in: 7 days
