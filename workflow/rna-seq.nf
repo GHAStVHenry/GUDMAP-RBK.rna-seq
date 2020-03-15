@@ -188,6 +188,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
 endsManual.into {
   endsManual_trimData
   endsManual_alignData
+  endsManual_featureCounts
 }
 stranded.into {
   stranded_alignData
@@ -392,14 +393,19 @@ process makeFeatureCounts {
     path script_calculateTPM
     tuple val (repRID1), path (bam), path (bai) from featureCountsIn
     tuple val (repRID2), path (genome), path (gtf) from featureCountsRef
+    val endsManual_featureCounts
 
   output:
     tuple val ("${repRID}"), path ("${repRID}.featureCounts.summary"), path ("${repRID}.featureCounts"), path ("${bam}.featureCounts.sam") into featureCountsOut
 
   script:
     """
-    featureCounts -R SAM -p -G ${genome} -T `nproc` -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam
-    Rscript calculateTPM.R --count "${repRID}.featureCounts"
+    if [ "${endsManual_featureCounts }" == "se" ]; then
+      featureCounts -R SAM -p -G ${genome} -T `nprioc` -s 1 -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam;
+    elif [ "${endsManual_featureCounts }" == "pe" ]; then
+      featureCounts -R SAM -p -G ${genome} -T `nproc` -s 1 -p -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam;
+    fi;
+    Rscript calculateTPM.R --count "${repRID}.featureCounts";
     """
 }
 
