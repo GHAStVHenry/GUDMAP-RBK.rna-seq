@@ -332,7 +332,6 @@ process alignData {
 // Replicate rawBam for multiple process inputs
 rawBam.into {
   rawBam_dedupData
-  rawBam_inferMetadata
 }
 
 /*
@@ -423,7 +422,7 @@ process inferMetadata {
   input:
     path script_inferMeta
     path reference_inferMeta
-    set val (repRID), path (inBam), path (inBai) from dedupBam_inferMetadata
+    set val (repRID), path (inBam), path (inBai) from dedupBam_inferMeta
 
   output:
     path "infer.csv" into inferedMetadata
