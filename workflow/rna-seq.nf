@@ -38,6 +38,7 @@ referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
+script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -112,7 +113,7 @@ process getData {
     """
 }
 
-// Split fastq's
+// Replicate raw fastqs for multiple process inputs
 fastqs.into {
   fastqs_trimData
   fastqs_fastqc
@@ -184,6 +185,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
   spike,
   species
 )
+// Replicate metadata for multiple process inputs
 endsManual.into {
   endsManual_trimData
   endsManual_alignData
@@ -262,6 +264,7 @@ process trimData {
 
   output:
     path ("*.fq.gz") into fastqs_trimmed
+    path ("*_trimming_report.txt") into trimQC
     path ("${repRID}.trimData.log")
     path ("${repRID}.trimData.err")
 
@@ -281,8 +284,10 @@ process trimData {
     """
 }
 
+// Replicate reference for multiple process inputs
 reference.into {
   reference_alignData
+  reference_inferMeta
 }
 
 /*
@@ -299,8 +304,8 @@ process alignData {
     path reference_alignData
 
   output:
-    path ("${repRID}.sorted.bam") into rawBam
-    path ("${repRID}.sorted.bai") into rawBai
+    tuple val ("${repRID}"), path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
+    path ("*.alignSummary.txt") into alignQC
     path ("${repRID}.align.out")
     path ("${repRID}.align.err")
 
@@ -312,17 +317,22 @@ process alignData {
     # align reads
     if [ "${endsManual_alignData}" == "se" ]
     then
-      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} -U ${fastq[0]} 1>${repRID}.align.out 2>${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} -U ${fastq[0]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>${repRID}.align.out 2>${repRID}.align.err
     elif [ "${endsManual_alignData}" == "pe" ]
     then
-      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} 1>${repRID}.align.out 2>${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>${repRID}.align.out 2>${repRID}.align.err
     fi
     
     # convert sam to bam and sort and index
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>>${repRID}.align.out 2>>${repRID}.align.err;
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>>${repRID}.align.out 2>>${repRID}.align.err;
-    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
+    samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bam.bai 1>>${repRID}.align.out 2>>${repRID}.align.err;
     """
+}
+
+// Replicate rawBam for multiple process inputs
+rawBam.into {
+  rawBam_dedupData
 }
 
 /*
@@ -334,10 +344,11 @@ process dedupData {
   publishDir "${logsDir}", mode: 'copy', pattern: "*.dedup.{out,err}"
 
   input:
-    path rawBam
+    set val (repRID), path (inBam), path (inBai) from rawBam_dedupData
 
   output:
-    tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bai") into dedupBam
+    tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
+    path ("*.deduped.Metrics.txt") into dedupQC
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
 
@@ -347,9 +358,34 @@ process dedupData {
     ulimit -a >>${repRID}.dedup.err
 
     # remove duplicated reads
-    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${rawBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${inBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
-    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    """
+}
+
+// Replicate dedup bam/bai for multiple process inputs
+dedupBam.into {
+  dedupBam_makeBigWig
+  dedupBam_inferMeta
+}
+
+/*
+ *Make BigWig files for output
+*/
+process makeBigWig {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
+
+  input:
+    set val (repRID), path (inBam), path (inBai) from dedupBam_makeBigWig
+
+  output:
+    path ("${repRID}.bw")
+
+  script:
+    """
+    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
     """
 }
 
@@ -378,20 +414,70 @@ process fastqc {
 }
 
 /*
- *Make BigWig files for later processes
+ *rseqc: run RSeQC to collect stats and infer experimental metadata
 */
-process makeBigWig {
+process inferMetadata {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
+  publishDir "${logsDir}", mode: 'copy', pattern: "*.rseqc.err"
 
   input:
-    set val (repRID), path (inBam), path (inBai) from dedupBam
+    path script_inferMeta
+    path reference_inferMeta
+    set val (repRID), path (inBam), path (inBai) from dedupBam_inferMeta
 
   output:
-    path ("${repRID}.bw")
+    path "infer.csv" into inferedMetadata
+    path "${inBam.baseName}.tin.xls" into tin
+    path "${repRID}.insertSize.inner_distance_freq.txt" optional true into innerDistance
+
 
   script:
     """
-    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw
+    hostname >${repRID}.rseqc.err
+    ulimit -a >>${repRID}.rseqc.err
+
+    # infer experimental setting from dedup bam
+    infer_experiment.py -r ./bed/genome.bed -i "${inBam}" >${repRID}.rseqc.log
+
+    endness=`bash inferMeta.sh endness ${repRID}.rseqc.log`
+    fail=`bash inferMeta.sh fail ${repRID}.rseqc.log`
+    if [ \${endness} == "PairEnd" ] 
+    then
+      percentF=`bash inferMeta.sh pef ${repRID}.rseqc.log`
+      percentR=`bash inferMeta.sh per ${repRID}.rseqc.log`
+      inner_distance.py -i "${inBam}" -o ${repRID}.insertSize -r ./bed/genome.bed
+    elif [ \${endness} == "SingleEnd" ]
+    then
+      percentF=`bash inferMeta.sh sef ${repRID}.rseqc.log`
+      percentR=`bash inferMeta.sh ser ${repRID}.rseqc.log`
+    fi
+    if [ \$percentF -gt 0.25 ] && [ \$percentR -lt 0.25 ]
+    then
+      stranded="forward"
+      if [ \$endness == "PairEnd" ]
+      then
+        strategy="1++,1--,2+-,2-+"
+      else
+        strategy="++,--"
+      fi
+    elif [ \$percentR -gt 0.25 ] && [ \$percentF -lt 0.25 ]
+    then
+      stranded="reverse"
+      if [ \$endness == "PairEnd" ]
+      then
+        strategy="1+-,1-+,2++,2--"
+      else
+        strategy="+-,-+"
+      fi
+    else
+      stranded="unstranded"
+      strategy="us"
+    fi
+
+    # calcualte TIN values per feature
+    tin.py -i "${inBam}" -r ./bed/genome.bed
+
+    # write infered metadata to file
+    echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv
     """
 }
