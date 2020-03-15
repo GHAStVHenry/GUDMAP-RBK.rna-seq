@@ -287,7 +287,6 @@ process trimData {
 // Replicate reference for multiple process inputs
 reference.into {
   reference_alignData
-  reference_inferMeta
 }
 
 /*
@@ -368,6 +367,7 @@ process dedupData {
 // Replicate dedup bam/bai for multiple process inputs
 dedupBam.into {
   dedupBam_makeBigWig
+  dedupBam_inferMeta
 }
 
 /*
@@ -423,7 +423,7 @@ process inferMetadata {
   input:
     path script_inferMeta
     path reference_inferMeta
-    set val (repRID), path (inBam), path (inBai) from rawBam_inferMetadata
+    set val (repRID), path (inBam), path (inBai) from dedupBam_inferMetadata
 
   output:
     path "infer.csv" into inferedMetadata
