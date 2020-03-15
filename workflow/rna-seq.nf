@@ -39,7 +39,6 @@ referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
-script_aggregateInference = Channel.fromPath("${baseDir}/scripts/aggregateInference.R")
 
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
@@ -423,7 +422,6 @@ process inferMetadata {
 
   input:
     path script_inferMeta
-    path script_aggregateInference
     path reference_inferMeta
     set val (repRID), path (inBam), path (inBai) from rawBam_inferMetadata
 
