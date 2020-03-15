@@ -287,6 +287,7 @@ process trimData {
 // Replicate reference for multiple process inputs
 reference.into {
   reference_alignData
+  reference_inferMeta
 }
 
 /*
