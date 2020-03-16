@@ -401,9 +401,9 @@ process makeFeatureCounts {
   script:
     """
     if [ "${endsManual_featureCounts }" == "se" ]; then
-      featureCounts -R SAM -p -G ${genome} -T `nproc` -s 1 -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam;
+      featureCounts -R SAM -p -G ${genome} -T `nproc` -s 1 -a ${gtf} -o ${repRID}.featureCounts -g 'gene_name' ${repRID}.sorted.deduped.bam;
     elif [ "${endsManual_featureCounts }" == "pe" ]; then
-      featureCounts -R SAM -p -G ${genome} -T `nproc` -s 1 -p -a ${gtf} -o ${repRID}.featureCounts ${repRID}.sorted.deduped.bam;
+      featureCounts -R SAM -p -G ${genome} -T `nproc` -s 1 -p -a ${gtf} -o ${repRID}.featureCounts -g 'gene_name' ${repRID}.sorted.deduped.bam;
     fi;
     Rscript calculateTPM.R --count "${repRID}.featureCounts";
     """
