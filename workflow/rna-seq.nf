@@ -304,7 +304,7 @@ process alignData {
     path reference_alignData
 
   output:
-    tuple val ("${repRID}"), path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
+    tuple path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
     path ("*.alignSummary.txt") into alignQC
     path ("${repRID}.align.out")
     path ("${repRID}.align.err")
@@ -344,10 +344,10 @@ process dedupData {
   publishDir "${logsDir}", mode: 'copy', pattern: "*.dedup.{out,err}"
 
   input:
-    set val (repRID), path (inBam), path (inBai) from rawBam_dedupData
+    set path (inBam), path (inBai) from rawBam_dedupData
 
   output:
-    tuple val ("${repRID}"), path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
+    tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai"), path ("${repRID}.sorted.deduped.*.bam") into dedupBam
     path ("*.deduped.Metrics.txt") into dedupQC
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
@@ -361,6 +361,11 @@ process dedupData {
     java -jar /picard/build/libs/picard.jar MarkDuplicates I=${inBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    # Split the deduped BAM file for multi-threaded tin calculation
+    for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
+      do
+      echo "echo \"LOG: splitting each chromosome into its own BAM file with Samtools\" >> ${repRID}.dedup.err; samtools view -b ${repRID}.sorted.deduped.bam \${i} > ${repRID}.sorted.deduped.\${i}.bam"
+    done | parallel -j `nproc` -k 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }
 
@@ -378,7 +383,7 @@ process makeBigWig {
   publishDir "${logsDir}", mode: 'copy', pattern: "*.makeBigWig.err"
 
   input:
-    set val (repRID), path (inBam), path (inBai) from dedupBam_makeBigWig
+    set path (inBam), path (inBai) from dedupBam_makeBigWig
 
   output:
     path ("${repRID}.bw")
@@ -423,7 +428,7 @@ process inferMetadata {
   input:
     path script_inferMeta
     path reference_inferMeta
-    set val (repRID), path (inBam), path (inBai) from dedupBam_inferMeta
+    set path (inBam), path (inBai), path (inBamChr) from dedupBam_inferMeta
 
   output:
     path "infer.csv" into inferedMetadata
@@ -474,8 +479,12 @@ process inferMetadata {
       strategy="us"
     fi
 
-    # calcualte TIN values per feature
-    tin.py -i "${inBam}" -r ./bed/genome.bed
+    # calcualte TIN values per feature on each chromosome
+    for i in `find sorted.deduped.*.bam`;
+      do 
+      echo "\"LOG: running tin.py on \${i}\" >> ${repRID}.rseqc.err\"; tin.py -i \"\${i}\" -r ./bed/genome.bed 1>>${repRID}.rseqc.log 2>>${repRID}.rseqc.err"
+    done | shuf | parallel -j `nproc` -k
+
 
     # write infered metadata to file
     echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv
