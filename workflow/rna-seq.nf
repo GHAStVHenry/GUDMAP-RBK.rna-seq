@@ -106,7 +106,7 @@ process getData {
     echo "LOG: \${replicate}" >> ${repRID}.getData.err
     
     # unzip bagit
-    unzip ${bagit} 2>> ${repRID}.getData.err 1>> ${repRID}.getData.out 2>> ${repRID}.getData.err
+    unzip ${bagit} 1>> ${repRID}.getData.out 2>> ${repRID}.getData.err
     echo "LOG: replicate bdbag unzipped" >> ${repRID}.getData.err
     
     # bagit fetch fastq"s only and rename by repRID
@@ -337,7 +337,7 @@ process alignData {
     elif [ "${endsManual_alignData}" == "pe" ]
     then
       echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.align.err
-      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>> ${repRID}.align.out 2> ${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>> ${repRID}.align.out 2>> ${repRID}.align.err
     fi
     
     #Convert the output sam file to a sorted bam file using Samtools
@@ -468,7 +468,7 @@ process makeFeatureCounts {
       featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.featureCounts -g 'gene_name' --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.makeFeatureCounts.out 2>> ${repRID}.makeFeatureCounts.err
     elif [ "${endsManual_featureCounts }" == "pe" ]
     then
-      featureCounts -R SAM -p -G ./genmome.fna -T `nproc` -s \${stranding} -p -a ./genome.gtf -o ${repRID}.featureCounts -g 'gene_name' --primary --ignoreDup -B ${repRID}.sorted.deduped.bam 1>> ${repRID}.makeFeatureCounts.out 2>> ${repRID}.makeFeatureCounts.err
+      featureCounts -R SAM -p -G ./genmome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.featureCounts -g 'gene_name' --primary --ignoreDup -B ${repRID}.sorted.deduped.bam 1>> ${repRID}.makeFeatureCounts.out 2>> ${repRID}.makeFeatureCounts.err
     fi
 
     #Calculate TMP from the resulting featureCounts table
