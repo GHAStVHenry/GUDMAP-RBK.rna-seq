@@ -10,7 +10,7 @@ rm(option_list)
 if (!("count" %in% names(opt))){
   stop("No count file passed, exiting.")
 } else if (!file.exists(opt$count)) {
-  stop("No count file passed, exiting.")
+  stop("Count file doesn't exist, exiting.")
 }
 
 repRID <- basename(gsub(".featureCounts","",opt$count))
