@@ -4,7 +4,7 @@
 # Steps to reproduce
 
 
-# Observed bug behavoir
+# Observed bug behavior
 
 
 # Expected behavior
