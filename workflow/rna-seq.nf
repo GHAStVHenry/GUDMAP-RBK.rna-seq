@@ -426,7 +426,7 @@ process inferMetadata {
     set val (repRID), path (inBam), path (inBai) from dedupBam_inferMeta
 
   output:
-    path "infer.csv" into inferedMetadata
+    path "infer.tsv" into inferedMetadata
     path "${inBam.baseName}.tin.xls" into tin
     path "${repRID}.insertSize.inner_distance_freq.txt" optional true into innerDistance
 
@@ -451,7 +451,7 @@ process inferMetadata {
       percentF=`bash inferMeta.sh sef ${repRID}.rseqc.log`
       percentR=`bash inferMeta.sh ser ${repRID}.rseqc.log`
     fi
-    if [ \$percentF -gt 0.25 ] && [ \$percentR -lt 0.25 ]
+    if [ 1 -eq \$(echo \$(expr \$percentF ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \$percentR "<" 0.25)) ]
     then
       stranded="forward"
       if [ \$endness == "PairEnd" ]
@@ -460,7 +460,7 @@ process inferMetadata {
       else
         strategy="++,--"
       fi
-    elif [ \$percentR -gt 0.25 ] && [ \$percentF -lt 0.25 ]
+    elif [ 1 -eq \$(echo \$(expr \$percentR ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \$percentF "<" 0.25)) ]
     then
       stranded="reverse"
       if [ \$endness == "PairEnd" ]
@@ -478,6 +478,6 @@ process inferMetadata {
     tin.py -i "${inBam}" -r ./bed/genome.bed
 
     # write infered metadata to file
-    echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv
+    echo -e \${endness}'\\t'\${stranded}'\\t'\${strategy}'\\t'\${percentF}'\\t'\${percentR}'\\t'\${fail} > infer.tsv
     """
 }
