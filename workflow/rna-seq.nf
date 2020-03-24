@@ -117,6 +117,7 @@ process getData {
 
 // Replicate raw fastqs for multiple process inputs
 fastqs.into {
+  fastqs_downsampleData
   fastqs_trimData
   fastqs_fastqc
 }
@@ -190,6 +191,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
 )
 // Replicate metadata for multiple process inputs
 endsManual.into {
+  endsManual_downsampleData
   endsManual_trimData
   endsManual_alignData
   endsManual_featureCounts
@@ -284,7 +286,7 @@ process trimData {
     path (fastq) from fastqs_trimData
 
   output:
-    path ("*.fq.gz") into fastqs_trimmed
+    path ("*.fq.gz") into fastqsTrim
     path ("*_trimming_report.txt") into trimQC
     path ("${repRID}.trimData.{out,err}")
 
@@ -306,6 +308,47 @@ process trimData {
     """
 }
 
+// Replicate trimmed fastqs
+fastqsTrim.into {
+  fastqsTrim_downsampleData
+  fastqsTrim_alignData
+}
+
+/*
+ * downsampleData: downsample fastq's for metadata inference
+ */
+process downsampleData {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.downsampleData.{out,err}"
+
+  input:
+    val endsManual_downsampleData
+    path fastq from fastqsTrim_downsampleData
+
+  output:
+    path ("sampled.{1,2}.fq") into fastqsSample
+    path ("${repRID}.downsampleData.{out,err}")
+
+  script:
+    """
+    hostname > ${repRID}.downsampleData.err
+    ulimit -a >> ${repRID}.downsampleData.err
+    export https_proxy=\${http_proxy}
+
+    if [ "${endsManual_downsampleData}" == "se" ]
+    then
+      echo "LOG: downsampling single-end trimmed fastq" >> ${repRID}.downsampleData.err
+      seqtk sample -s100 *trimmed.fq.gz 10000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
+    elif [ "${endsManual_downsampleData}" == "pe" ]
+    then
+      echo "LOG: downsampling read 1 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
+      seqtk sample -s100 *1.fq.gz 1000000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
+      echo "LOG: downsampling read 2 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
+      seqtk sample -s100 *2.fq.gz 1000000 1> sampled.2.fq 2>> ${repRID}.downsampleData.err
+    fi
+    """
+}
+
 /*
  * alignData: aligns the reads to a reference database
 */
@@ -316,7 +359,7 @@ process alignData {
   input:
     val endsManual_alignData
     val stranded_alignData
-    path fastq from fastqs_trimmed
+    path fastq from fastqsTrim_alignData
     path reference_alignData
 
   output:
