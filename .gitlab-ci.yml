@@ -105,13 +105,13 @@ inferMetadata:
 integration_se:
   stage: integration
   script:
-  - ulimit -u 16384
+  - ulimit -a
   - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4
 
 integration_pe:
   stage: integration
   script:
-  - ulimit -u 16384
+  - ulimit -a
   - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png
   artifacts:
     name: "$CI_JOB_NAME"
