@@ -15,6 +15,7 @@ params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 params.repRID = "Q-Y5JA"
 params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
+params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
 
 // Parse input variables
@@ -27,6 +28,7 @@ bdbag = Channel
 repRID = params.repRID
 refMoVersion = params.refMoVersion
 refHuVersion = params.refHuVersion
+refERCCVersion = params.refERCCVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
 
@@ -34,6 +36,7 @@ logsDir = "${outDir}/Logs"
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 //referenceBase = "s3://bicf-references"
 referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
+referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
@@ -208,6 +211,67 @@ species.into {
 }
 
 /*
+  * getRefInfer: Dowloads appropriate reference for metadata inference
+*/
+process getRefInfer {
+  tag "${referenceInfer}"
+  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.getRefInfer.{out,err}"
+
+  input:
+    val referenceInfer
+
+  output:
+    tuple val ("${referenceInfer}"), path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
+    path ("${repRID}.getRefInfer.{out,err}")
+ 
+  script:
+    """
+    hostname > ${repRID}.getRefInfer.err
+    ulimit -a >> ${repRID}.getRefInfer.err
+    export https_proxy=\${http_proxy}
+
+    #Set the reference name
+    if [ "${referenceInfer}" == "ERCC" ]
+    then
+      references=\$(echo ${referenceBase}/ERCC${refERCCVersion})
+    elif [ "${referenceInfer}" == "GRCm" ]
+    then
+      references=\$(echo ${referenceBase}/GRCm${refMoVersion})
+    elif [ '${referenceInfer}' == "GRCh" ]
+    then
+      references=\$(echo ${referenceBase}/GRCh${refHuVersion})
+    else
+      echo -e "LOG: ERROR - References could not be set!\nReference found: ${referenceBase}" >> ${repRID}.getRefInfer.err
+      exit 1
+    fi
+    
+    #Retreive appropriate reference appropriate location
+    if [ ${referenceBase} == "s3://bicf-references" ]
+    then
+      echo "LOG: grabbing reference files from S3" >> ${repRID}.getRefInfer.err
+      aws s3 cp "\${references}" /hisat2 ./ --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      aws s3 cp "\${references}" /bed ./ --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      aws s3 cp "\${references}" /*.fna --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      aws s3 cp "\${references}" /*.gtf --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+    elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
+    then
+      echo "LOG: using pre-defined locations for reference files" >> ${repRID}.getRefInfer.err
+      ln -s "\${references}"/hisat2 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      ln -s "\${references}"/bed 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      ln -s "\${references}"/genome.fna 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      ln -s "\${references}"/genome.gtf 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+    fi
+
+    #Make blank bed folder for ERCC
+    if [ "${referenceInfer}" == "ERCC" ]
+    then
+      rm bed
+      mkdir bed
+    fi
+    """
+}
+
+/*
   * getRef: Dowloads appropriate reference
 */
 process getRef {
@@ -228,7 +292,7 @@ process getRef {
     ulimit -a >> ${repRID}.getRef.err
     export https_proxy=\${http_proxy}
 
-    # run set the reference name
+    #Set the reference name
     if [ "${species_getRef}" == "Mus musculus" ]
     then
       references=\$(echo ${referenceBase}/GRCm${refMoVersion})
@@ -248,7 +312,7 @@ process getRef {
     fi
     echo "LOG: species set to \${references}" >> ${repRID}.getRef.err
 
-    # retreive appropriate reference appropriate location
+    #Retreive appropriate reference appropriate location
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
       echo "LOG: grabbing reference files from S3" >> ${repRID}.getRef.err
