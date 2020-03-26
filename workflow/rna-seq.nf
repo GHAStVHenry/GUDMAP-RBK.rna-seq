@@ -347,7 +347,8 @@ process dedupData {
     set path (inBam), path (inBai) from rawBam_dedupData
 
   output:
-    tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai"), path ("${repRID}.sorted.deduped.*.bam") into dedupBam
+    tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
+    tuple path ("${repRID}.sorted.deduped.*.bam"), path ("${repRID}.sorted.deduped.*.bam.bai") into dedupChrBam 
     path ("*.deduped.Metrics.txt") into dedupQC
     path ("${repRID}.dedup.out")
     path ("${repRID}.dedup.err")
@@ -364,7 +365,7 @@ process dedupData {
     # Split the deduped BAM file for multi-threaded tin calculation
     for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
       do
-      echo "echo \"LOG: splitting each chromosome into its own BAM file with Samtools\" >> ${repRID}.dedup.err; samtools view -b ${repRID}.sorted.deduped.bam \${i} > ${repRID}.sorted.deduped.\${i}.bam"
+      echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\" >> ${repRID}.dedup.err; samtools view -b ${repRID}.sorted.deduped.bam \${i} > ${repRID}.sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}.sorted.deduped.\${i}.bam ${repRID}.sorted.deduped.\${i}.bam.bai"
     done | parallel -j `nproc` -k 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }
@@ -428,7 +429,8 @@ process inferMetadata {
   input:
     path script_inferMeta
     path reference_inferMeta
-    set path (inBam), path (inBai), path (inBamChr) from dedupBam_inferMeta
+    set path (inBam), path (inBai) from dedupBam_inferMeta
+    set path (inChrBam), path (inChrBai) from dedupChrBam
 
   output:
     path "infer.tsv" into inferedMetadata
@@ -480,13 +482,11 @@ process inferMetadata {
     fi
 
     # calcualte TIN values per feature on each chromosome
-    for i in `find sorted.deduped.*.bam`;
-      do 
-      echo "\"LOG: running tin.py on \${i}\" >> ${repRID}.rseqc.err\"; tin.py -i \"\${i}\" -r ./bed/genome.bed 1>>${repRID}.rseqc.log 2>>${repRID}.rseqc.err"
-    done | shuf | parallel -j `nproc` -k
-
+    for i in `cat ./bed/genome.bed | cut -f1 | sort | uniq`; do
+      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.rseqc.err; tin.py -i ${repRID}.sorted.deduped.\${i}.bam  -r ./bed/genome.bed 1>>${repRID}.rseqc.log 2>>${repRID}.rseqc.err; cat ${repRID}.sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
+    done | parallel -j `nproc` -k > ${repRID}.sorted.deduped.tin.xls 2>>${repRID}.rseqc.err
 
     # write infered metadata to file
-    echo -e \${endness}'\\t'\${stranded}'\\t'\${strategy}'\\t'\${percentF}'\\t'\${percentR}'\\t'\${fail} > infer.tsv
+    echo -e "\${endness}'\\t'\${stranded}'\\t'\${strategy}'\\t'\${percentF}'\\t'\${percentR}'\\t'\${fail}" > infer.tsv
     """
 }
