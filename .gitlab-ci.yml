@@ -69,9 +69,9 @@ dedupData:
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=./test_data/bam/small/Q-Y5JA_1M.se.sorted.bam O=Q-Y5JA_1M.se.deduped.bam M=Q-Y5JA_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools sort -@ `nproc` -O BAM -o Q-Y5JA_1M.se.sorted.deduped.bam ./test_data/bam/small/Q-Y5JA_1M.se.deduped.bam
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools index -@ `nproc` -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam Q-Y5JA_1M.se.sorted.deduped.bam.bai
-  - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' "for i in chr1,chr2,chr8; do 
-      echo \"samtools view -b Q-Y5JA_1M.se.sorted.deduped.bam \${i} > Q-Y5JA_1M.se.sorted.deduped.\${i}.bam; samtools index -@ \`nproc\` -b Q-Y5JA_1M.se.sorted.deduped.\${i}.bam Q-Y5JA_1M.se.sorted.deduped.\${i}.bam.bai;\";
-      done | parallel -j `nproc` -k"
+  - for i in {chr1,chr2,chr8}; do 
+      echo "singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools view -b Q-Y5JA_1M.se.sorted.deduped.bam ${i} > Q-Y5JA_1M.se.sorted.deduped.${i}.bam; singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools index -@ `nproc` -b Q-Y5JA_1M.se.sorted.deduped.${i}.bam Q-Y5JA_1M.se.sorted.deduped.${i}.bam.bai;";
+      done | singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' parallel -j `nproc` -k
   - pytest -m dedupData
   
 makeBigWig:
