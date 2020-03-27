@@ -13,3 +13,9 @@ data_output_path = os.path.dirname(os.path.abspath(__file__)) + \
 def test_dedupData():
 	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA_1M.se.sorted.deduped.bam'))
 	assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA_1M.se.sorted.deduped.bam.bai'))
+    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.deduped.chr1.bam'))
+    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.deduped.chr1.bam.bai'))
+    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.deduped.chr2.bam'))
+    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.deduped.chr2.bam.bai'))
+    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.deduped.chr8.bam'))
+    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5JA.sorted.deduped.chr8.bam.bai'))
