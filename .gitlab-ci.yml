@@ -80,6 +80,13 @@ makeBigWig:
   - singularity run 'docker://bicf/deeptools3.3:2.0.0' bamCoverage -p `nproc` -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -o Q-Y5JA_1M.se.bw
   - pytest -m makeBigWig
 
+makeFeatureCounts:
+  stage: unit
+  script:
+  - singularity run 'docker://bicf/subread2:2.0.0' featureCounts -R SAM -p -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -T `nproc` -s 1 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -o Q-Y5JA_1M.se.featureCounts -g 'gene_name' --primary --ignoreDup -B ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam 
+  - singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5JA_1M.se.featureCounts
+  - pytest -m makeFeatureCounts
+
 fastqc:
   stage: unit
   script:
@@ -96,11 +103,13 @@ inferMetadata:
 integration_se:
   stage: integration
   script:
+  - ulimit -u 16384
   - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4
 
 integration_pe:
   stage: integration
   script:
+  - ulimit -u 16384
   - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png
   artifacts:
     name: "$CI_JOB_NAME"
