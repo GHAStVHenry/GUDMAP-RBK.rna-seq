@@ -1,6 +1,6 @@
 |*master*|*develop*|
 |:-:|:-:|
-|[![Build Status](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/badges/master/build.svg)](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/commits/master)|[![Build Status](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/badges/develop/build.svg)](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/commits/develop)|
+|[![pipeline status](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/badges/master/pipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/commits/master)|[![pipeline status](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/badges/develop/pipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/commits/develop)|
 <!--
 [![DOI]()]()
 -->
