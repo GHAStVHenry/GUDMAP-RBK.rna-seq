@@ -487,6 +487,6 @@ process inferMetadata {
     done | parallel -j `nproc` -k > ${repRID}.sorted.deduped.tin.xls 2>>${repRID}.rseqc.err
 
     # write infered metadata to file
-    echo -e \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv
+    echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv
     """
 }
