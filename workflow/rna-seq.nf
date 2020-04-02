@@ -521,7 +521,7 @@ process inferMetadata {
     set path (inChrBam), path (inChrBai) from dedupChrBam
 
   output:
-    path "infer.tsv" into inferedMetadata
+    path "infer.csv" into inferedMetadata
     path "${inBam.baseName}.tin.xls" into tin
     path "${repRID}.insertSize.inner_distance_freq.txt" optional true into innerDistance
     path "${repRID}.rseqc.{out,err}" optional true
