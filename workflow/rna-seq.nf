@@ -477,7 +477,7 @@ process alignData {
     path reference_alignData
 
   output:
-    tuple val ("${repRID}"), path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
+    tuple path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
     path ("*.alignSummary.txt") into alignQC
     path ("${repRID}.align.{out,err}")
 
@@ -525,10 +525,11 @@ process dedupData {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.dedup.{out,err}"
 
   input:
-    set val (repRID), path (inBam), path (inBai) from rawBam_dedupData
+    set path (inBam), path (inBai) from rawBam_dedupData
 
   output:
     tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
+    tuple path ("${repRID}.sorted.deduped.*.bam"), path ("${repRID}.sorted.deduped.*.bam.bai") into dedupChrBam 
     path ("*.deduped.Metrics.txt") into dedupQC
     path ("${repRID}.dedup.{out,err}")
 
@@ -541,13 +542,15 @@ process dedupData {
     echo "LOG: running picard MarkDuplicates to remove duplicate reads" >> ${repRID}.dedup.err
     java -jar /picard/build/libs/picard.jar MarkDuplicates I=${inBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>> ${repRID}.dedup.out 2>> ${repRID}.dedup.err
 
-    #Use SamTools to sort the now deduped bam file
-    echo "LOG: sorting the deduped bam file" >> ${repRID}.dedup.err
-    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>> ${repRID}.dedup.out 2>> ${repRID}.dedup.err
-
-    #Use SamTools to index the now sorted deduped bam file
-    echo "LOG: indexing the sorted deduped bam file" >> ${repRID}.dedup.err
-    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>> ${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    # remove duplicated reads
+    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${inBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    # Split the deduped BAM file for multi-threaded tin calculation
+    for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
+      do
+      echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\" >> ${repRID}.dedup.err; samtools view -b ${repRID}.sorted.deduped.bam \${i} > ${repRID}.sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}.sorted.deduped.\${i}.bam ${repRID}.sorted.deduped.\${i}.bam.bai"
+    done | parallel -j `nproc` -k 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     """
 }
 
@@ -672,6 +675,7 @@ process inferMetadata {
     path script_inferMeta
     path reference_inferMeta
     set path (inBam), path (inBai) from dedupBam_inferMeta
+    set path (inChrBam), path (inChrBai) from dedupChrBam
 
   output:
     path "infer.csv" into inferedMetadata
@@ -701,7 +705,7 @@ process inferMetadata {
       percentF=`bash inferMeta.sh sef ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
       percentR=`bash inferMeta.sh ser ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
     fi
-    if [ \$percentF -gt 0.25 ] && [ \$percentR -lt 0.25 ]
+    if [ 1 -eq \$(echo \$(expr \$percentF ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \$percentR "<" 0.25)) ]
     then
       stranded="forward"
       if [ \$endness == "PairEnd" ]
@@ -710,7 +714,7 @@ process inferMetadata {
       else
         strategy="++,--"
       fi
-    elif [ \$percentR -gt 0.25 ] && [ \$percentF -lt 0.25 ]
+    elif [ 1 -eq \$(echo \$(expr \$percentR ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \$percentF "<" 0.25)) ]
     then
       stranded="reverse"
       if [ \$endness == "PairEnd" ]
@@ -725,8 +729,10 @@ process inferMetadata {
     fi
     echo -e "LOG: strategy set to \${strategy}\nStranded set to ${stranded}" >> ${repRID}.rseqc.err
 
-    # calcualte TIN values per feature
-    tin.py -i "${inBam}" -r ./bed/genome.bed 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
+    # calcualte TIN values per feature on each chromosome
+    for i in `cat ./bed/genome.bed | cut -f1 | sort | uniq`; do
+      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.rseqc.err; tin.py -i ${repRID}.sorted.deduped.\${i}.bam  -r ./bed/genome.bed 1>>${repRID}.rseqc.log 2>>${repRID}.rseqc.err; cat ${repRID}.sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
+    done | parallel -j `nproc` -k > ${repRID}.sorted.deduped.tin.xls 2>>${repRID}.rseqc.err
 
     # write infered metadata to file
     echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv 2>> ${repRID}.rseqc.err
