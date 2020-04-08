@@ -118,7 +118,7 @@ process getData {
     """
 }
 
-// Replicate raw fastqs for multiple process inputs
+// Replicate raw fastq's for multiple process inputs
 fastqs.into {
   fastqs_downsampleData
   fastqs_trimData
@@ -195,6 +195,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
 // Replicate metadata for multiple process inputs
 endsManual.into {
   endsManual_downsampleData
+  endsManual_alignSampleData
   endsManual_trimData
   endsManual_alignData
   endsManual_featureCounts
@@ -221,7 +222,7 @@ process getRefInfer {
     val referenceInfer
 
   output:
-    tuple val ("${referenceInfer}"), path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
+    tuple val (referenceInfer), path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
     path ("${repRID}.getRefInfer.{out,err}")
  
   script:
@@ -359,7 +360,7 @@ process trimData {
     hostname > ${repRID}.trimData.err
     ulimit -a >> ${repRID}.trimData.err
 
-    #Trim fastqs using trim_galore
+    #Trim fastq's using trim_galore
     if [ "${endsManual_trimData}" == "se" ]
     then
       echo "LOG: running trim_galore using single-end settings" >> ${repRID}.trimData.err
@@ -372,7 +373,7 @@ process trimData {
     """
 }
 
-// Replicate trimmed fastqs
+// Replicate trimmed fastq's
 fastqsTrim.into {
   fastqsTrim_downsampleData
   fastqsTrim_alignData
@@ -390,7 +391,8 @@ process downsampleData {
     path fastq from fastqsTrim_downsampleData
 
   output:
-    path ("sampled.{1,2}.fq") into fastqsSample
+    path ("sampled.1.fq") into fastqs1Sample
+    path ("sampled.2.fq") optional true into fastqs2Sample
     path ("${repRID}.downsampleData.{out,err}")
 
   script:
@@ -410,6 +412,54 @@ process downsampleData {
       echo "LOG: downsampling read 2 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
       seqtk sample -s100 *2.fq.gz 1000000 1> sampled.2.fq 2>> ${repRID}.downsampleData.err
     fi
+    """
+}
+
+// Replicate the dowsampled fastq's and attatched to the references
+inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect())))
+
+/*
+ * alignSampleData: aligns the downsampled reads to a reference database
+*/
+process alignSampleData {
+  tag "${ref}"
+  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.alignSampleData.{out,err}"
+
+  input:
+    tuple val (ends), val (ref), path (hisat2), path (bed), path (fna), path (gtf), path (fastq1), path (fastq2) from inferInput
+
+  output:
+    tuple val (ref), path ("sampled.sorted.bam"), path ("sampled.sorted.bam.bai"), path (bed) into sampleBam
+    path ("*.alignSampleSummary.txt") into alignSampleQC
+    path ("${repRID}.alignSampleData.{out,err}")
+
+  script:
+    """
+    hostname > ${repRID}.alignSampleData.err
+    ulimit -a >> ${repRID}.alignSampleData.err
+
+    #Align the reads with Hisat 2
+    if [ "${ends}" == "se" ]
+    then
+      echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname -S sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${repRID}.alignSampleSummary.txt --new-summary 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err
+    elif [ "${ends}" == "pe" ]
+    then
+      echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname -S sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq1} -2 ${fastq2} --summary-file ${repRID}.alignSampleSummary.txt --new-summary 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err
+    fi
+    
+    #Convert the output sam file to a sorted bam file using Samtools
+    echo "LOG: converting from sam to bam" >> ${repRID}.alignSampleData.err
+    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o sampled.bam sampled.sam 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err;
+
+    #Sort the bam file using Samtools
+    echo "LOG: sorting the bam file" >> ${repRID}.alignSampleData.err
+    samtools sort -@ `nproc` -O BAM -o sampled.sorted.bam sampled.bam 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err;
+
+    #Index the sorted bam using Samtools
+    echo "LOG: indexing sorted bam file" >> ${repRID}.alignSampleData.err
+    samtools index -@ `nproc` -b sampled.sorted.bam sampled.sorted.bam.bai 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err;
     """
 }
 
