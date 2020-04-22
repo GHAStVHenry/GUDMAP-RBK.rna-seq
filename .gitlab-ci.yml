@@ -62,6 +62,12 @@ trimData:
   - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --illumina --length 35 --paired --basename Q-Y5JA_1M.pe -j 20 ./test_data/fastq/small/Q-Y5JA_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5JA_1M.R2.fastq.gz
   - pytest -m trimData
 
+downsampleData:
+  stage: unit
+  script:
+  - singularity exec 'docker://bicf/seqtk:2.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5JA_1M_trimmed.fq.gz 1000 1> sampled.1.fq
+  - pytest -m downsampleData
+
 alignData:
   stage: unit
   script:
@@ -109,15 +115,10 @@ fastqc:
 dataQC:
   stage: unit
   script:
+  - echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > Q-Y5JA_1M.se.sorted.deduped.tin.xls
   - for i in {"chr8","chr4","chrY"}; do
-    echo "tin.py -i /project/BICF/BICF_Core/shared/gudmap/test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed; cat Q-Y5JA_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"; done | singularity run 'docker://bicf/rseqc3.0:2.0.0' parallel -j 20 -k > Q-Y5JA_1M.se.sorted.deduped.tin.xls
-  - pytest -m inferMetadata
-
-downsampleData:
-  stage: unit
-  script:
-  - singularity exec 'docker://bicf/seqtk:2.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5JA_1M_trimmed.fq.gz 1000 1> sampled.1.fq
-  - pytest -m downsampleData
+    echo "tin.py -i /project/BICF/BICF_Core/shared/gudmap/test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed; cat Q-Y5JA_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"; done | singularity run 'docker://bicf/rseqc3.0:2.0.0' parallel -j 20 -k >> Q-Y5JA_1M.se.sorted.deduped.tin.xls
+  - pytest -m dataQC
 
 
 integration_se:
