@@ -134,7 +134,6 @@ process parseMetadata {
 
   input:
     path script_parseMeta
-    val repRID
     path fileMeta
     path experimentSettingsMeta
     path experimentMeta
@@ -161,7 +160,7 @@ process parseMetadata {
     echo "LOG: endedness manually detected: \${endsManual}" >> ${repRID}.parseMetadata.err
 
     # Get strandedness metadata
-    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded -e \${endsManual})
+    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
     echo "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.err
     
     # Get spike-in metadata
@@ -173,56 +172,84 @@ process parseMetadata {
     echo "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.err
 
     # Save design file
-    echo "\${rep},\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
+    echo "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
     """
 }
 
 // Split metadata into separate channels
-rep = Channel.create()
 endsMeta = Channel.create()
 endsManual = Channel.create()
-stranded = Channel.create()
-spike = Channel.create()
-species = Channel.create()
+strandedMeta = Channel.create()
+spikeMeta = Channel.create()
+speciesMeta = Channel.create()
 metadata.splitCsv(sep: ",", header: false).separate(
-  rep,
   endsMeta,
   endsManual,
-  stranded,
-  spike,
-  species
+  strandedMeta,
+  spikeMeta,
+  speciesMeta
 )
 // Replicate metadata for multiple process inputs
 endsManual.into {
+  endsManual_trimData
   endsManual_downsampleData
   endsManual_alignSampleData
-  endsManual_trimData
-  endsManual_alignData
-  endsManual_featureCounts
 }
-stranded.into {
-  stranded_alignData
-  stranded_featureCounts
+
+
+/*
+ * trimData: trims any adapter or non-host sequences from the data
+*/
+process trimData {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.trimData.{out,err}"
+
+  input:
+    val ends from endsManual_trimData
+    path (fastq) from fastqs_trimData
+
+  output:
+    path ("*.fq.gz") into fastqsTrim
+    path ("*_trimming_report.txt") into trimQC
+    path ("${repRID}.trimData.{out,err}")
+
+  script:
+    """
+    hostname > ${repRID}.trimData.err
+    ulimit -a >> ${repRID}.trimData.err
+
+    #Trim fastq's using trim_galore
+    if [ "${ends}" == "se" ]
+    then
+      echo "LOG: running trim_galore using single-end settings" >> ${repRID}.trimData.err
+      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>> ${repRID}.trimData.out 2>> ${repRID}.trimData.err
+    elif [ "${ends}" == "pe" ]
+    then
+      echo "LOG: running trim_galore using paired-end settings" >> ${repRID}.trimData.err
+      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>> ${repRID}.trimData.out 2>> ${repRID}.trimData.err
+    fi
+    """
 }
-spike.into{
-  spike_getRef
-}
-species.into {
-  species_getRef
+
+// Replicate trimmed fastq's
+fastqsTrim.into {
+  fastqsTrim_alignData
+  fastqsTrim_downsampleData
 }
 
 /*
   * getRefInfer: Dowloads appropriate reference for metadata inference
 */
 process getRefInfer {
-  tag "${referenceInfer}"
+  tag "${refName}"
   publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.getRefInfer.{out,err}"
 
   input:
-    val referenceInfer
+    val refName from referenceInfer
 
   output:
-    tuple val (referenceInfer), path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
+    tuple val (refName), path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
+    path ("${refName}", type: 'dir') into bedInfer
     path ("${repRID}.getRefInfer.{out,err}")
  
   script:
@@ -232,56 +259,268 @@ process getRefInfer {
     export https_proxy=\${http_proxy}
 
     #Set the reference name
-    if [ "${referenceInfer}" == "ERCC" ]
+    if [ "${refName}" == "ERCC" ]
     then
       references=\$(echo ${referenceBase}/ERCC${refERCCVersion})
-    elif [ "${referenceInfer}" == "GRCm" ]
+    elif [ "${refName}" == "GRCm" ]
     then
       references=\$(echo ${referenceBase}/GRCm${refMoVersion})
-    elif [ '${referenceInfer}' == "GRCh" ]
+    elif [ '${refName}' == "GRCh" ]
     then
       references=\$(echo ${referenceBase}/GRCh${refHuVersion})
     else
       echo -e "LOG: ERROR - References could not be set!\nReference found: ${referenceBase}" >> ${repRID}.getRefInfer.err
       exit 1
     fi
-    
+    mkdir ${refName}
     #Retreive appropriate reference appropriate location
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
       echo "LOG: grabbing reference files from S3" >> ${repRID}.getRefInfer.err
       aws s3 cp "\${references}" /hisat2 ./ --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
-      aws s3 cp "\${references}" /bed ./ --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      aws s3 cp "\${references}" /bed ./${refName}/ --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
       aws s3 cp "\${references}" /*.fna --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
       aws s3 cp "\${references}" /*.gtf --recursive 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
       echo "LOG: using pre-defined locations for reference files" >> ${repRID}.getRefInfer.err
       ln -s "\${references}"/hisat2 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
-      ln -s "\${references}"/bed 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
+      ln -s "\${references}"/bed ${refName}/bed 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
       ln -s "\${references}"/genome.fna 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
       ln -s "\${references}"/genome.gtf 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
     fi
 
     #Make blank bed folder for ERCC
-    if [ "${referenceInfer}" == "ERCC" ]
+    if [ "${refName}" == "ERCC" ]
     then
-      rm bed
-      mkdir bed
+      rm ${refName}/bed
+      mkdir ${refName}/bed
     fi
     """
 }
 
 /*
+ * downsampleData: downsample fastq's for metadata inference
+ */
+process downsampleData {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.downsampleData.{out,err}"
+
+  input:
+    val ends from endsManual_downsampleData
+    path fastq from fastqsTrim_downsampleData
+
+  output:
+    path ("sampled.1.fq") into fastqs1Sample
+    path ("sampled.2.fq") optional true into fastqs2Sample
+    path ("${repRID}.downsampleData.{out,err}")
+
+  script:
+    """
+    hostname > ${repRID}.downsampleData.err
+    ulimit -a >> ${repRID}.downsampleData.err
+    export https_proxy=\${http_proxy}
+
+    if [ "${ends}" == "se" ]
+    then
+      echo "LOG: downsampling single-end trimmed fastq" >> ${repRID}.downsampleData.err
+      seqtk sample -s100 *trimmed.fq.gz 10000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
+    elif [ "${ends}" == "pe" ]
+    then
+      echo "LOG: downsampling read 1 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
+      seqtk sample -s100 *1.fq.gz 1000000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
+      echo "LOG: downsampling read 2 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
+      seqtk sample -s100 *2.fq.gz 1000000 1> sampled.2.fq 2>> ${repRID}.downsampleData.err
+    fi
+    """
+}
+
+// Replicate the dowsampled fastq's and attatched to the references
+inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect())))
+
+/*
+ * alignSampleData: aligns the downsampled reads to a reference database
+*/
+process alignSampleData {
+  tag "${ref}"
+  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.alignSampleData.{out,err}"
+
+  input:
+    tuple val (ends), val (ref), path (hisat2), path (fna), path (gtf), path (fastq1), path (fastq2) from inferInput
+
+  output:
+    path ("${ref}.sampled.sorted.bam") into sampleBam
+    path ("${ref}.sampled.sorted.bam.bai") into sampleBai
+    path ("${ref}.alignSampleSummary.txt") into alignSampleQC
+    path ("${repRID}.${ref}.alignSampleData.{out,err}")
+
+  script:
+    """
+    hostname > ${repRID}.${ref}.alignSampleData.err
+    ulimit -a >> ${repRID}.${ref}.alignSampleData.err
+
+    #Align the reads with Hisat 2
+    if [ "${ends}" == "se" ]
+    then
+      echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.${ref}.alignSampleData.err
+      hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${repRID}.alignSampleSummary.txt --new-summary 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err
+    elif [ "${ends}" == "pe" ]
+    then
+      echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.${ref}.alignSampleData.err
+      hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq1} -2 ${fastq2} --summary-file ${ref}.alignSampleSummary.txt --new-summary 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err
+    fi
+    
+    #Convert the output sam file to a sorted bam file using Samtools
+    echo "LOG: converting from sam to bam" >> ${repRID}.${ref}.alignSampleData.err
+    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${ref}.sampled.bam ${ref}.sampled.sam 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err;
+
+    #Sort the bam file using Samtools
+    echo "LOG: sorting the bam file" >> ${repRID}.${ref}.alignSampleData.err
+    samtools sort -@ `nproc` -O BAM -o ${ref}.sampled.sorted.bam ${ref}.sampled.bam 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err;
+
+    #Index the sorted bam using Samtools
+    echo "LOG: indexing sorted bam file" >> ${repRID}.${ref}.alignSampleData.err
+    samtools index -@ `nproc` -b ${ref}.sampled.sorted.bam ${ref}.sampled.sorted.bam.bai 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err;
+    """
+}
+
+process inferMetadata {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.inferMetadata.{out,err}"
+
+  input:
+    path script_inferMeta
+    path beds from bedInfer.collect()
+    path bam from sampleBam.collect()
+    path bai from sampleBai.collect()
+    path alignSummary from alignSampleQC.collect()
+
+  output:
+    path "infer.csv" into inferMetadata
+    path "${repRID}.inferMetadata.{out,err}" optional true
+
+  script:
+    """
+    hostname > ${repRID}.inferMetadata.err
+    ulimit -a >> ${repRID}.inferMetadata.err
+
+    # collect alignment rates
+    align_ercc=\$(echo \$(grep "Overall alignment rate" ERCC.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    align_hu=\$(echo \$(grep "Overall alignment rate" GRCh.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    align_mo=\$(echo \$(grep "Overall alignment rate" GRCm.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    
+    # determine spike-in
+    if [ 1 -eq \$(echo \$(expr \${align_ercc} ">=" 0.1)) ]
+    then
+      spike="yes"
+    else
+      spike="no"
+    fi
+    echo -e "LOG: Inference of strandedness results in: \${spike}" >> ${repRID}.inferMetadata.err
+
+    # determine species
+    if [ 1 -eq \$(echo \$(expr \${align_hu} ">=" 25)) ] && [ 1 -eq \$(echo \$(expr \${align_mo} "<" 25)) ]
+    then
+      species="Homo sapiens"
+      bam="GRCh.sampled.sorted.bam"
+      bed="./GRCh/bed/genome.bed"
+    elif [ 1 -eq \$(echo \$(expr \${align_mo} ">=" 25)) ] && [ 1 -eq \$(echo \$(expr \${align_hu} "<" 25)) ]
+    then
+      species="Mus musculus"
+      bam="GRCm.sampled.sorted.bam"
+      bed="./GRCm/bed/genome.bed"
+    else
+      echo "LOG: ERROR - Inference of species returns an ambiguous result" >> ${repRID}.inferMetadata.err
+      exit 1
+    fi
+    echo -e "LOG: Inference of species results in: \${species}" >> ${repRID}.inferMetadata.err
+
+    # infer experimental setting from dedup bam
+    echo "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.err
+    infer_experiment.py -r "\${bed}" -i "\${bam}" > ${repRID}.inferMetadata.log 2>> ${repRID}.inferMetadata.err
+
+    echo "LOG: determining endedness and strandedness from file" >> ${repRID}.inferMetadata.err
+    ended=`bash inferMeta.sh endness ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+    fail=`bash inferMeta.sh fail ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+    if [ \${ended} == "PairEnd" ] 
+    then
+      ends="pe"
+      percentF=`bash inferMeta.sh pef ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+      percentR=`bash inferMeta.sh per ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+    elif [ \${ended} == "SingleEnd" ]
+    then
+      ends="se"
+      percentF=`bash inferMeta.sh sef ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+      percentR=`bash inferMeta.sh ser ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+    fi
+    if [ 1 -eq \$(echo \$(expr \${percentF} ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \${percentR} "<" 0.25)) ]
+    then
+      stranded="forward"
+    elif [ 1 -eq \$(echo \$(expr \${percentR} ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \${percentF} "<" 0.25)) ]
+    then
+      stranded="reverse"
+
+    else
+      stranded="unstranded"
+    fi
+    echo -e "LOG: stradedness set to \${stranded}" >> ${repRID}.inferMetadata.err
+
+    # write infered metadata to file
+    echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" 1>> infer.csv 2>> ${repRID}.inferMetadata.err
+    """
+}
+
+// Split metadata into separate channels
+endsInfer = Channel.create()
+strandedInfer = Channel.create()
+spikeInfer = Channel.create()
+speciesInfer = Channel.create()
+align_erccInfer = Channel.create()
+align_huInfer = Channel.create()
+align_moInfer = Channel.create()
+percentFInfer = Channel.create()
+percentRInfer = Channel.create()
+failInfer = Channel.create()
+inferMetadata.splitCsv(sep: ",", header: false).separate(
+  endsInfer,
+  strandedInfer,
+  spikeInfer,
+  speciesInfer,
+  align_erccInfer,
+  align_huInfer,
+  align_moInfer,
+  percentFInfer,
+  percentRInfer,
+  failInfer
+)
+// Replicate metadata for multiple process inputs
+endsInfer.into {
+  endsInfer_trimData
+  endsInfer_alignData
+  endsInfer_countData
+}
+strandedInfer.into {
+  strandedInfer_alignData
+  strandedInfer_countData
+}
+spikeInfer.into{
+  spikeInfer_getRef
+}
+speciesInfer.into {
+  speciesInfer_getRef
+}
+
+
+/*
   * getRef: Dowloads appropriate reference
 */
 process getRef {
-  tag "${species_getRef}"
+  tag "${species}"
   publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.getRef.{out,err}"
 
   input:
-    val spike_getRef
-    val species_getRef
+    val spike from spikeInfer_getRef
+    val species from speciesInfer_getRef
 
   output:
     tuple path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf")  into reference
@@ -294,20 +533,20 @@ process getRef {
     export https_proxy=\${http_proxy}
 
     #Set the reference name
-    if [ "${species_getRef}" == "Mus musculus" ]
+    if [ "${species}" == "Mus musculus" ]
     then
       references=\$(echo ${referenceBase}/GRCm${refMoVersion})
-    elif [ '${species_getRef}' == "Homo sapiens" ]
+    elif [ '${species}' == "Homo sapiens" ]
     then
       references=\$(echo ${referenceBase}/GRCh${refHuVersion})
     else
-      echo -e "LOG: ERROR - References could not be set!\nSpecies reference found: ${species_getRef}" >> ${repRID}.getRef.err
+      echo -e "LOG: ERROR - References could not be set!\nSpecies reference found: ${species}" >> ${repRID}.getRef.err
       exit 1
     fi
-    if [ "${spike_getRef}" == "yes" ]
+    if [ "${spike}" == "yes" ]
     then
       references=\$(echo \${reference}-S/)
-    elif [ "${spike_getRef}" == "no" ]
+    elif [ "${spike}" == "no" ]
     then
       reference=\$(echo \${references}/)
     fi
@@ -335,48 +574,8 @@ process getRef {
 // Replicate reference for multiple process inputs
 reference.into {
   reference_alignData
-  reference_makeFeatureCounts
-  reference_inferMeta
-}
-
-/*
- * trimData: trims any adapter or non-host sequences from the data
-*/
-process trimData {
-  tag "${repRID}"
-  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.trimData.{out,err}"
-
-  input:
-    val endsManual_trimData
-    path (fastq) from fastqs_trimData
-
-  output:
-    path ("*.fq.gz") into fastqsTrim
-    path ("*_trimming_report.txt") into trimQC
-    path ("${repRID}.trimData.{out,err}")
-
-  script:
-    """
-    hostname > ${repRID}.trimData.err
-    ulimit -a >> ${repRID}.trimData.err
-
-    #Trim fastq's using trim_galore
-    if [ "${endsManual_trimData}" == "se" ]
-    then
-      echo "LOG: running trim_galore using single-end settings" >> ${repRID}.trimData.err
-      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]} 1>> ${repRID}.trimData.out 2>> ${repRID}.trimData.err
-    elif [ "${endsManual_trimData}" == "pe" ]
-    then
-      echo "LOG: running trim_galore using paired-end settings" >> ${repRID}.trimData.err
-      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]} 1>> ${repRID}.trimData.out 2>> ${repRID}.trimData.err
-    fi
-    """
-}
-
-// Replicate trimmed fastq's
-fastqsTrim.into {
-  fastqsTrim_downsampleData
-  fastqsTrim_alignData
+  reference_countData
+  reference_dataQC
 }
 
 /*
@@ -387,8 +586,8 @@ process alignData {
   publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.align.{out,err}"
 
   input:
-    val endsManual_alignData
-    val stranded_alignData
+    val ends from endsInfer_alignData
+    val stranded from strandedInfer_alignData
     path fastq from fastqsTrim_alignData
     path reference_alignData
 
@@ -402,15 +601,33 @@ process alignData {
     hostname > ${repRID}.align.err
     ulimit -a >> ${repRID}.align.err
 
+    #Set stranded param for hisat2
+    if [ "${stranded}"=="unstranded" ]
+    then
+      strandedParam=""
+    elif [ "${stranded}" == "forward" ] && [ "${ends}" == "se" ]
+    then
+        strandedParam="--rna-strandness F"
+    elif [ "${stranded}" == "forward" ] && [ "${ends}" == "pe" ]
+    then
+      strandedParam="--rna-strandness FR"
+    elif [ "${stranded}" == "reverse" ] && [ "${ends}" == "se" ]
+    then
+        strandedParam="--rna-strandness R"
+    elif [ "${stranded}" == "reverse" ] && [ "${ends}" == "pe" ]
+    then
+      strandedParam="--rna-strandness RF"    
+    fi
+
     #Align the reads with Hisat 2
-    if [ "${endsManual_alignData}" == "se" ]
+    if [ "${ends}" == "se" ]
     then
       echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.align.err
-      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} -U ${fastq[0]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>> ${repRID}.align.out 2>> ${repRID}.align.err
-    elif [ "${endsManual_alignData}" == "pe" ]
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} -U ${fastq[0]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>> ${repRID}.align.out 2>> ${repRID}.align.err
+    elif [ "${ends}" == "pe" ]
     then
       echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.align.err
-      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome ${stranded_alignData} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>> ${repRID}.align.out 2>> ${repRID}.align.err
+      hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>> ${repRID}.align.out 2>> ${repRID}.align.err
     fi
     
     #Convert the output sam file to a sorted bam file using Samtools
@@ -441,7 +658,7 @@ process dedupData {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.dedup.{out,err}"
 
   input:
-    set path (inBam), path (inBai) from rawBam_dedupData
+    set path (bam), path (bai) from rawBam_dedupData
 
   output:
     tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
@@ -456,12 +673,14 @@ process dedupData {
 
     # remove duplicated reads using Picard's MarkDuplicates
     echo "LOG: running picard MarkDuplicates to remove duplicate reads" >> ${repRID}.dedup.err
-    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${inBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>> ${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${bam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>> ${repRID}.dedup.out 2>> ${repRID}.dedup.err
 
-    # remove duplicated reads
-    java -jar /picard/build/libs/picard.jar MarkDuplicates I=${inBam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    # Sort the bam file using Samtools
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    
+    # Index the sorted bam using Samtools
     samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
+    
     # Split the deduped BAM file for multi-threaded tin calculation
     for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
       do
@@ -472,9 +691,8 @@ process dedupData {
 
 // Replicate dedup bam/bai for multiple process inputs
 dedupBam.into {
-  dedupBam_makeFeatureCounts
+  dedupBam_countData
   dedupBam_makeBigWig
-  dedupBam_inferMeta
 }
 
 /*
@@ -486,7 +704,7 @@ process makeBigWig {
   publishDir "${outDir}/bigwig", mode: 'copy', pattern: "${repRID}.bw"
 
   input:
-    set path (inBam), path (inBai) from dedupBam_makeBigWig
+    set path (bam), path (bai) from dedupBam_makeBigWig
 
   output:
     path ("${repRID}.bw")
@@ -499,57 +717,63 @@ process makeBigWig {
 
     #Run bamCoverage
     echo "LOG: Running bigWig bamCoverage" >> ${repRID}.makeBigWig.err
-    bamCoverage -p `nproc` -b ${inBam} -o ${repRID}.bw 1>> ${repRID}.makeBigWig.out 2>> ${repRID}.makeBigWig.err
+    bamCoverage -p `nproc` -b ${bam} -o ${repRID}.bw 1>> ${repRID}.makeBigWig.out 2>> ${repRID}.makeBigWig.err
     """
 }
 
 /*
- *Run featureCounts and get the counts, tpm
+ *Run countData and get the counts, tpm
 */
-process makeFeatureCounts {
+process countData {
   tag "${repRID}"
-  publishDir "${outDir}/featureCounts", mode: 'copy', pattern: "${repRID}*.countTable.csv"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.makeFetureCounts.{out,err}"
+  publishDir "${outDir}/countData", mode: 'copy', pattern: "${repRID}*.countTable.csv"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.countData.{out,err}"
 
   input:
     path script_calculateTPM
-    tuple path (bam), path (bai) from dedupBam_makeFeatureCounts
-    path reference_makeFeatureCounts
-    val endsManual_featureCounts
+    tuple path (bam), path (bai) from dedupBam_countData
+    path ref from reference_countData
+    val ends from endsInfer_countData
+    val stranded from strandedInfer_countData
 
   output:
     path ("*.countTable.csv") into counts
-    path ("*.featureCounts.summary") into countsQC
-    path ("${repRID}.makeFeatureCounts.{out,err}")
+    path ("*.countData.summary") into countsQC
+    path ("${repRID}.countData.{out,err}")
 
   script:
     """
-    hostname > ${repRID}.makeFeatureCounts.err
-    ulimit -a >> ${repRID}.makeFeatureCounts.err
+    hostname > ${repRID}.countData.err
+    ulimit -a >> ${repRID}.countData.err
 
-    #Determine strandedness and setup strandig for featureCounts
+    #Determine strandedness and setup strandig for countData
     stranding=0;
-    if [ "${stranded_featureCounts}" == "--rna-strandness F" ] || [ "${stranded_featureCounts}" == "--rna-strandness FR" ]
-      then
-      stranding=1
-      echo "LOG: strandedness set to stranded [1]" >> ${repRID}.makeFeatureCounts.err
-    else
+    if [ "${stranded}" == "unstranded" ]
+    then
       stranding=0
-      echo "LOG: strandedness set to unstranded [0]" >> ${repRID}.makeFeatureCounts.err
-    fi;
-    #Run featureCounts
-    echo "LOG: running featureCounts on the data" >> ${repRID}.makeFeatureCounts.err
-    if [ "${endsManual_featureCounts }" == "se" ]
+      echo "LOG: strandedness set to unstranded [0]" >> ${repRID}.countData.err
+    elif [ "${stranded}" == "forward" ]
     then
-      featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.featureCounts -g 'gene_name' --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.makeFeatureCounts.out 2>> ${repRID}.makeFeatureCounts.err
-    elif [ "${endsManual_featureCounts }" == "pe" ]
+      stranding=1
+      echo "LOG: strandedness set to forward stranded [1]" >> ${repRID}.countData.err
+    elif [ "${stranded}" == "reverse" ]
     then
-      featureCounts -R SAM -p -G ./genmome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.featureCounts -g 'gene_name' --primary --ignoreDup -B ${repRID}.sorted.deduped.bam 1>> ${repRID}.makeFeatureCounts.out 2>> ${repRID}.makeFeatureCounts.err
+      stranding=2
+      echo "LOG: strandedness set to forward stranded [2]" >> ${repRID}.countData.err
+    fi
+    #Run countData
+    echo "LOG: running countData on the data" >> ${repRID}.countData.err
+    if [ "${ends}" == "se" ]
+    then
+      featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
+    elif [ "${ends}" == "pe" ]
+    then
+      featureCounts -R SAM -p -G ./genmome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup -B ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
     fi
 
-    #Calculate TMP from the resulting featureCounts table
-    echo "LOG: calculating TMP with R" >> ${repRID}.makeFeatureCounts.err
-    Rscript calculateTPM.R --count "${repRID}.featureCounts" 1>> ${repRID}.makeFeatureCounts.out 2>> ${repRID}.makeFeatureCounts.err
+    #Calculate TPM from the resulting countData table
+    echo "LOG: calculating TPM with R" >> ${repRID}.countData.err
+    Rscript calculateTPM.R --count "${repRID}.countData" 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
     """
 }
 
@@ -580,161 +804,30 @@ process fastqc {
 }
 
 /*
- *inferMetadata: run RSeQC to collect stats and infer experimental metadata
+ *dataQC: run RSeQC to calculate transcript integrity numbers (TIN)
 */
 
-process inferMetadata {
+process dataQC {
   tag "${repRID}"
-  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.rseqc.{out,err}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.dataQC.{out,err}"
 
   input:
-    path script_inferMeta
-    path reference_inferMeta
-    set path (inBam), path (inBai) from dedupBam_inferMeta
-    set path (inChrBam), path (inChrBai) from dedupChrBam
+    path ref from reference_dataQC
+    set path (chrBam), path (chrBai) from dedupChrBam
 
   output:
-    path "infer.csv" into inferedMetadata
-    path "${inBam.baseName}.tin.xls" into tin
-    path "${repRID}.insertSize.inner_distance_freq.txt" optional true into innerDistance
-    path "${repRID}.rseqc.{out,err}" optional true
+    path "${repRID}.sorted.deduped.tin.xls" into tin
+    path "${repRID}.dataQC.{out,err}" optional true
 
   script:
     """
-    hostname > ${repRID}.rseqc.err
-    ulimit -a >> ${repRID}.rseqc.err
-
-    # infer experimental setting from dedup bam
-    echo "LOG: running inference from bed file" >> ${repRID}.rseqc.err
-    infer_experiment.py -r ./bed/genome.bed -i "${inBam}" > ${repRID}.rseqc.log 2>> ${repRID}.rseqc.err
-
-    echo "LOG: determining endedness and strandedness from file" >> ${repRID}.rseqc.err
-    endness=`bash inferMeta.sh endness ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
-    fail=`bash inferMeta.sh fail ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
-    if [ \${endness} == "PairEnd" ] 
-    then
-      percentF=`bash inferMeta.sh pef ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
-      percentR=`bash inferMeta.sh per ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
-      inner_distance.py -i "${inBam}" -o ${repRID}.insertSize -r ./bed/genome.bed 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
-    elif [ \${endness} == "SingleEnd" ]
-    then
-      percentF=`bash inferMeta.sh sef ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
-      percentR=`bash inferMeta.sh ser ${repRID}.rseqc.log` 1>> ${repRID}.rseqc.out 2>> ${repRID}.rseqc.err
-    fi
-    if [ 1 -eq \$(echo \$(expr \$percentF ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \$percentR "<" 0.25)) ]
-    then
-      stranded="forward"
-      if [ \$endness == "PairEnd" ]
-      then
-        strategy="1++,1--,2+-,2-+"
-      else
-        strategy="++,--"
-      fi
-    elif [ 1 -eq \$(echo \$(expr \$percentR ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \$percentF "<" 0.25)) ]
-    then
-      stranded="reverse"
-      if [ \$endness == "PairEnd" ]
-      then
-        strategy="1+-,1-+,2++,2--"
-      else
-        strategy="+-,-+"
-      fi
-    else
-      stranded="unstranded"
-      strategy="us"
-    fi
-    echo -e "LOG: strategy set to \${strategy}\nStranded set to ${stranded}" >> ${repRID}.rseqc.err
+    hostname > ${repRID}.dataQC.err
+    ulimit -a >> ${repRID}.dataQC.err
 
     # calcualte TIN values per feature on each chromosome
+    echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > ${repRID}.sorted.deduped.tin.xls
     for i in `cat ./bed/genome.bed | cut -f1 | sort | uniq`; do
       echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.rseqc.err; tin.py -i ${repRID}.sorted.deduped.\${i}.bam  -r ./bed/genome.bed 1>>${repRID}.rseqc.log 2>>${repRID}.rseqc.err; cat ${repRID}.sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
-    done | parallel -j `nproc` -k > ${repRID}.sorted.deduped.tin.xls 2>>${repRID}.rseqc.err
-
-    # write infered metadata to file
-    echo \${endness},\${stranded},\${strategy},\${percentF},\${percentR},\${fail} > infer.csv 2>> ${repRID}.rseqc.err
-    """
-}
-
-/*
- * downsampleData: downsample fastq's for metadata inference
- */
-process downsampleData {
-  tag "${repRID}"
-  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.downsampleData.{out,err}"
-
-  input:
-    val endsManual_downsampleData
-    path fastq from fastqsTrim_downsampleData
-
-  output:
-    path ("sampled.1.fq") into fastqs1Sample
-    path ("sampled.2.fq") optional true into fastqs2Sample
-    path ("${repRID}.downsampleData.{out,err}")
-
-  script:
-    """
-    hostname > ${repRID}.downsampleData.err
-    ulimit -a >> ${repRID}.downsampleData.err
-    export https_proxy=\${http_proxy}
-
-    if [ "${endsManual_downsampleData}" == "se" ]
-    then
-      echo "LOG: downsampling single-end trimmed fastq" >> ${repRID}.downsampleData.err
-      seqtk sample -s100 *trimmed.fq.gz 10000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
-    elif [ "${endsManual_downsampleData}" == "pe" ]
-    then
-      echo "LOG: downsampling read 1 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
-      seqtk sample -s100 *1.fq.gz 1000000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
-      echo "LOG: downsampling read 2 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
-      seqtk sample -s100 *2.fq.gz 1000000 1> sampled.2.fq 2>> ${repRID}.downsampleData.err
-    fi
-    """
-}
-
-// Replicate the dowsampled fastq's and attatched to the references
-inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect())))
-
-/*
- * alignSampleData: aligns the downsampled reads to a reference database
-*/
-process alignSampleData {
-  tag "${ref}"
-  publishDir "${logsDir}", mode: "copy", pattern: "${repRID}.alignSampleData.{out,err}"
-
-  input:
-    tuple val (ends), val (ref), path (hisat2), path (bed), path (fna), path (gtf), path (fastq1), path (fastq2) from inferInput
-
-  output:
-    tuple val (ref), path ("sampled.sorted.bam"), path ("sampled.sorted.bam.bai"), path (bed) into sampleBam
-    path ("*.alignSampleSummary.txt") into alignSampleQC
-    path ("${repRID}.alignSampleData.{out,err}")
-
-  script:
-    """
-    hostname > ${repRID}.alignSampleData.err
-    ulimit -a >> ${repRID}.alignSampleData.err
-
-    #Align the reads with Hisat 2
-    if [ "${ends}" == "se" ]
-    then
-      echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.align.err
-      hisat2 -p `nproc` --add-chrname -S sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${repRID}.alignSampleSummary.txt --new-summary 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err
-    elif [ "${ends}" == "pe" ]
-    then
-      echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.align.err
-      hisat2 -p `nproc` --add-chrname -S sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq1} -2 ${fastq2} --summary-file ${repRID}.alignSampleSummary.txt --new-summary 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err
-    fi
-    
-    #Convert the output sam file to a sorted bam file using Samtools
-    echo "LOG: converting from sam to bam" >> ${repRID}.alignSampleData.err
-    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o sampled.bam sampled.sam 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err;
-
-    #Sort the bam file using Samtools
-    echo "LOG: sorting the bam file" >> ${repRID}.alignSampleData.err
-    samtools sort -@ `nproc` -O BAM -o sampled.sorted.bam sampled.bam 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err;
-
-    #Index the sorted bam using Samtools
-    echo "LOG: indexing sorted bam file" >> ${repRID}.alignSampleData.err
-    samtools index -@ `nproc` -b sampled.sorted.bam sampled.sorted.bam.bai 1>> ${repRID}.alignSampleData.out 2>> ${repRID}.alignSampleData.err;
+    done | parallel -j `nproc` -k 1>> ${repRID}.sorted.deduped.tin.xls 2>>${repRID}.rseqc.err
     """
 }
