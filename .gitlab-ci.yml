@@ -39,11 +39,11 @@ inferMetadata:
   stage: unit
   script:
   - >
-    align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5JA_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5JA_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
     if [[ ${align} == "" ]]; then exit 1; fi
   - >
-    singularity run 'docker://bicf/rseqc3.0:2.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed" -i "./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam" 1>> Q-Y5JA_1M.se.inferMetadata.log
-    ended=`singularity run 'docker://bicf/python3:1.3' python3 ./workflow/scripts/inferMeta.sh endness Q-Y5JA_1M.se.inferMetadata.log`
+    singularity run 'docker://bicf/rseqc3.0:2.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed" -i "./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam" 1>> Q-Y5JA_1M.se.inferMetadata.log &&
+    ended=`singularity run 'docker://bicf/python3:1.3' python3 ./workflow/scripts/inferMeta.sh endness Q-Y5JA_1M.se.inferMetadata.log` &&
     if [[ ${ended} == "" ]]; then exit 1; fi
   - pytest -m inferMetadata
 
