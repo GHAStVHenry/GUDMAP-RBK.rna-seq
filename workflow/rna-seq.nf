@@ -437,7 +437,7 @@ process inferMetadata {
 
     # infer experimental setting from dedup bam
     echo "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.err
-    infer_experiment.py -r "\${bed}" -i "\${bam}" > ${repRID}.inferMetadata.log 2>> ${repRID}.inferMetadata.err
+    infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.inferMetadata.log 2>> ${repRID}.inferMetadata.err
 
     echo "LOG: determining endedness and strandedness from file" >> ${repRID}.inferMetadata.err
     ended=`bash inferMeta.sh endness ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err

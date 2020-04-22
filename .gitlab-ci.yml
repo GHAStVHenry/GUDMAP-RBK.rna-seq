@@ -35,6 +35,24 @@ parseMetadata:
   - singularity run 'docker://bicf/python3:1.3' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded
   - singularity run 'docker://bicf/python3:1.3' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species
 
+inferMetadata:
+  stage: unit
+  script:
+  - >
+    align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5JA_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    if [[ ${align} == "" ]]
+    then
+      exit 1
+    fi
+  - >
+    singularity run 'docker://bicf/rseqc3.0:2.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed" -i "./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam" 1>> Q-Y5JA_1M.se.inferMetadata.log
+    ended=`bash inferMeta.sh endness Q-Y5JA_1M.se.inferMetadata.log
+    if [[ ${ended} == "" ]]
+    then
+      exit 1
+    fi
+  - pytest -m inferMetadata
+
 getRef:
   stage: unit
   script:
@@ -73,19 +91,19 @@ dedupData:
       echo "samtools view -b Q-Y5JA_1M.se.sorted.deduped.bam ${i} > Q-Y5JA_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5JA_1M.se.sorted.deduped.${i}.bam Q-Y5JA_1M.se.sorted.deduped.${i}.bam.bai;";
       done | singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' parallel -j 20 -k
   - pytest -m dedupData
-  
-makeBigWig:
-  stage: unit
-  script:
-  - singularity run 'docker://bicf/deeptools3.3:2.0.0' bamCoverage -p 20 -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -o Q-Y5JA_1M.se.bw
-  - pytest -m makeBigWig
 
-makeFeatureCounts:
+  countData:
   stage: unit
   script:
   - singularity run 'docker://bicf/subread2:2.0.0' featureCounts -R SAM -p -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -T 20 -s 1 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -o Q-Y5JA_1M.se.featureCounts -g 'gene_name' --primary --ignoreDup -B ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam 
   - singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5JA_1M.se.featureCounts
   - pytest -m makeFeatureCounts
+
+makeBigWig:
+  stage: unit
+  script:
+  - singularity run 'docker://bicf/deeptools3.3:2.0.0' bamCoverage -p 20 -b ./test_data/bam/small/Q-Y5JA_1M.se.sorted.deduped.bam -o Q-Y5JA_1M.se.bw
+  - pytest -m makeBigWig
 
 fastqc:
   stage: unit
@@ -105,6 +123,7 @@ downsampleData:
   script:
   - singularity exec 'docker://bicf/seqtk:2.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5JA_1M_trimmed.fq.gz 1000 1> sampled.1.fq
   - pytest -m downsampleData
+
 
 integration_se:
   stage: integration
