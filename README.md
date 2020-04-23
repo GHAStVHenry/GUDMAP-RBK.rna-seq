@@ -9,7 +9,7 @@ RNA-Seq Analytic Pipeline for GUDMAP/RBK
 
 Introduction
 ------------
-This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub.
+This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub. It is designed to run on the HPC cluster ([BioHPC](https://portal.biohpc.swmed.edu)) at UT Southwestern Medical Center (in conjunction with the standard nextflow profile: config `biohpc.config`)
 
 ![flowchart](docs/RNA-Seq%20Pipeline%20Design%20Flowchart.jpg "Flowchart")
 
@@ -21,18 +21,19 @@ This pipeline is also capable of being run on AWS. To do so:
   * Replace workDir with the S3 bucket generated
   * Change region if different
   * Change queue to the aws batch queue generated
-* The user must have awscli configured with an appropriate authentication (with ```aws configure``` and access keys) in the environment which nextflow will be run
-* Add ```-profile ``` with the name aws config which was customized
+* The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow will be run
+* Add `-profile` with the name aws config which was customized
 
 To Run:
 -------
 * Available parameters:
-  * ```--deriva``` active **credential.json** file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
-  * ```--bdbag``` active **cookies.txt** file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
-  * ```--repRID``` mRNA-seq replicate RID
-  * ```--refMoVersion``` mouse reference version ***(optional)***
-  * ```--refHuVersion``` human reference version ***(optional)***
-  * ```-profile``` config profile to use: standard = local processes on BioHPC (default), biohpc = BioHPC cluster, aws_ondemand = AWS Batch on-demand instant requests, aws_spot = AWS Batch spot instance requests ***(optional)***
+  * `--deriva` active **credential.json** file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
+  * `--bdbag` active **cookies.txt** file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
+  * `--repRID` mRNA-seq replicate RID
+  * `--refMoVersion` mouse reference version ***(optional)***
+  * `--refHuVersion` human reference version ***(optional)***
+  * `--refERCCVersion` human reference version ***(optional)***
+  * `-profile` config profile to use: standard = processes on BioHPC cluster, aws_ondemand = AWS Batch on-demand instant requests, aws_spot = AWS Batch spot instance requests ***(optional)***
 * NOTES:
   * once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)
   * reference version consists of Genome Reference Consortium version, patch release and GENCODE annotation release # (leaving the params blank will use the default version tied to the pipeline version)
