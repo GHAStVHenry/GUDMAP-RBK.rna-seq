@@ -120,7 +120,6 @@ process getData {
 
 // Replicate raw fastq's for multiple process inputs
 fastqs.into {
-  fastqs_downsampleData
   fastqs_trimData
   fastqs_fastqc
 }
@@ -324,7 +323,7 @@ process downsampleData {
     if [ "${ends}" == "se" ]
     then
       echo "LOG: downsampling single-end trimmed fastq" >> ${repRID}.downsampleData.err
-      seqtk sample -s100 *trimmed.fq.gz 10000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
+      seqtk sample -s100 *trimmed.fq.gz 100000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
     elif [ "${ends}" == "pe" ]
     then
       echo "LOG: downsampling read 1 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
@@ -495,7 +494,6 @@ inferMetadata.splitCsv(sep: ",", header: false).separate(
 )
 // Replicate metadata for multiple process inputs
 endsInfer.into {
-  endsInfer_trimData
   endsInfer_alignData
   endsInfer_countData
 }
