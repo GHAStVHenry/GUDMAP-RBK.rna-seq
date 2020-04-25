@@ -58,9 +58,9 @@ process trackStart {
     --table-name pipeline.tracking \
     --item '{ \
       "sessionId": {"S": "${workflow.sessionId}"}, \
-      "pipeline": {"S": "cellranger_count"}, \
+      "pipeline": {"S": "GUDMAP/RBK RNA-Seq"}, \
       "start": {"S": "${workflow.start}"}, \
-      "astrocyte": {"BOOL": ${params.astrocyte}}, \
+      "astrocyte": {"BOOL": false}, \
       "status": {"S": "started"}, \
       "nextflowVersion": {"S": "${workflow.nextflow.version}"}}'
   """
