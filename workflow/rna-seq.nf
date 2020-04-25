@@ -45,6 +45,28 @@ script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
 
 /*
+ * trackStart: track start of pipeline
+ */
+process trackStart {
+  script:
+  """
+  hostname
+  ulimit -a
+  export https_proxy=\${http_proxy}
+  
+  aws dynamodb put-item \
+    --table-name pipeline.tracking \
+    --item '{ \
+      "sessionId": {"S": "${workflow.sessionId}"}, \
+      "pipeline": {"S": "cellranger_count"}, \
+      "start": {"S": "${workflow.start}"}, \
+      "astrocyte": {"BOOL": ${params.astrocyte}}, \
+      "status": {"S": "started"}, \
+      "nextflowVersion": {"S": "${workflow.nextflow.version}"}}'
+  """
+ }
+
+/*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
  */
 process getBag {
