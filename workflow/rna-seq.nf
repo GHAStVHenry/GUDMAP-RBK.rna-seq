@@ -45,6 +45,29 @@ script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
 
 /*
+ * trackStart: track start of pipeline
+ */
+params.ci = false
+process trackStart {
+  script:
+  """
+  hostname
+  ulimit -a
+  export https_proxy=\${http_proxy}
+  
+  curl -H 'Content-Type: application/json' -X PUT -d '{ \
+      "sessionId": "${workflow.sessionId}", \
+      "pipeline": "gudmap.rbk_rnaseq", \
+      "start": "${workflow.start}", \
+      "astrocyte": false, \
+      "status": "started", \
+      "nextflowVersion": "${workflow.nextflow.version}",
+      "ci": ${params.ci}}' \
+  "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
+  """
+ }
+
+/*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
  */
 process getBag {
