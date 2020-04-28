@@ -48,6 +48,7 @@ script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
  * trackStart: track start of pipeline
  */
 params.ci = false
+params.dev = false
 process trackStart {
   script:
   """
@@ -59,10 +60,12 @@ process trackStart {
       "sessionId": "${workflow.sessionId}", \
       "pipeline": "gudmap.rbk_rnaseq", \
       "start": "${workflow.start}", \
+      "repRID": ${reRID} \
       "astrocyte": false, \
       "status": "started", \
-      "nextflowVersion": "${workflow.nextflow.version}",
-      "ci": ${params.ci}}' \
+      "nextflowVersion": "${workflow.nextflow.version}", \
+      "ci": ${params.ci}, \
+      "dev": ${params.dev}}' \
   "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
   """
  }
