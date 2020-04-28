@@ -56,17 +56,19 @@ process trackStart {
   ulimit -a
   export https_proxy=\${http_proxy}
   
-  curl -H 'Content-Type: application/json' -X PUT -d '{ \
+  curl -H 'Content-Type: application/json' -X PUT -d 
+    '{ \
       "sessionId": "${workflow.sessionId}", \
       "pipeline": "gudmap.rbk_rnaseq", \
       "start": "${workflow.start}", \
-      "repRID": ${reRID} \
+      "repRID": ${reRID}, \
       "astrocyte": false, \
       "status": "started", \
       "nextflowVersion": "${workflow.nextflow.version}", \
       "ci": ${params.ci}, \
-      "dev": ${params.dev}}' \
-  "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
+      "dev": ${params.dev} \
+    }' \
+    "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
   """
  }
 
