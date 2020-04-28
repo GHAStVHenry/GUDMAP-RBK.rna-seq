@@ -61,7 +61,7 @@ process trackStart {
       "sessionId": "${workflow.sessionId}", \
       "pipeline": "gudmap.rbk_rnaseq", \
       "start": "${workflow.start}", \
-      "repRID": ${reRID}, \
+      "repRID": "${reRID}", \
       "astrocyte": false, \
       "status": "started", \
       "nextflowVersion": "${workflow.nextflow.version}", \
