@@ -56,7 +56,7 @@ process trackStart {
   ulimit -a
   export https_proxy=\${http_proxy}
   
-  curl -H 'Content-Type: application/json' -X PUT -d 
+  curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "sessionId": "${workflow.sessionId}", \
       "pipeline": "gudmap.rbk_rnaseq", \
