@@ -37,12 +37,14 @@ derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
 //referenceBase = "s3://bicf-references"
 referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
+multiqcConfig = Channel.fromPath("${baseDir}/conf/multiqc_config.yaml")
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
-script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
+script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
+script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 
 /*
  * trackStart: track start of pipeline
@@ -56,17 +58,19 @@ process trackStart {
   ulimit -a
   export https_proxy=\${http_proxy}
   
-  curl -H 'Content-Type: application/json' -X PUT -d '{ \
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
       "sessionId": "${workflow.sessionId}", \
       "pipeline": "gudmap.rbk_rnaseq", \
       "start": "${workflow.start}", \
-      "repRID": ${reRID} \
+      "repRID": "${repRID}", \
       "astrocyte": false, \
       "status": "started", \
       "nextflowVersion": "${workflow.nextflow.version}", \
       "ci": ${params.ci}, \
-      "dev": ${params.dev}}' \
-  "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
+      "dev": ${params.dev} \
+    }' \
+    "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
   """
  }
 
@@ -409,6 +413,11 @@ process alignSampleData {
     """
 }
 
+alignSampleQC.into {
+  alignSampleQC_inferMetadata
+  alignSampleQC_aggrQC
+}
+
 process inferMetadata {
   tag "${repRID}"
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.inferMetadata.{out,err}"
@@ -418,10 +427,11 @@ process inferMetadata {
     path beds from bedInfer.collect()
     path bam from sampleBam.collect()
     path bai from sampleBai.collect()
-    path alignSummary from alignSampleQC.collect()
+    path alignSummary from alignSampleQC_inferMetadata.collect()
 
   output:
     path "infer.csv" into inferMetadata
+    path "${repRID}.infer_experiment.txt" into inferExperiment
     path "${repRID}.inferMetadata.{out,err}" optional true
 
   script:
@@ -462,21 +472,21 @@ process inferMetadata {
 
     # infer experimental setting from dedup bam
     echo "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.err
-    infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.inferMetadata.log 2>> ${repRID}.inferMetadata.err
+    infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt 2>> ${repRID}.inferMetadata.err
 
     echo "LOG: determining endedness and strandedness from file" >> ${repRID}.inferMetadata.err
-    ended=`bash inferMeta.sh endness ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
-    fail=`bash inferMeta.sh fail ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+    ended=`bash inferMeta.sh endness ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+    fail=`bash inferMeta.sh fail ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
     if [ \${ended} == "PairEnd" ] 
     then
       ends="pe"
-      percentF=`bash inferMeta.sh pef ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
-      percentR=`bash inferMeta.sh per ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+      percentF=`bash inferMeta.sh pef ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+      percentR=`bash inferMeta.sh per ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
     elif [ \${ended} == "SingleEnd" ]
     then
       ends="se"
-      percentF=`bash inferMeta.sh sef ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
-      percentR=`bash inferMeta.sh ser ${repRID}.inferMetadata.log` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+      percentF=`bash inferMeta.sh sef ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
+      percentR=`bash inferMeta.sh ser ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
     fi
     if [ 1 -eq \$(echo \$(expr \${percentF} ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \${percentR} "<" 0.25)) ]
     then
@@ -522,6 +532,7 @@ inferMetadata.splitCsv(sep: ",", header: false).separate(
 endsInfer.into {
   endsInfer_alignData
   endsInfer_countData
+  endsInfer_dataQC
 }
 strandedInfer.into {
   strandedInfer_alignData
@@ -682,7 +693,7 @@ process dedupData {
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.dedup.{out,err}"
 
   input:
-    set path (bam), path (bai) from rawBam_dedupData
+    tuple path (bam), path (bai) from rawBam_dedupData
 
   output:
     tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
@@ -717,6 +728,7 @@ process dedupData {
 dedupBam.into {
   dedupBam_countData
   dedupBam_makeBigWig
+  dedupBam_dataQC
 }
 
 /*
@@ -728,7 +740,7 @@ process makeBigWig {
   publishDir "${outDir}/bigwig", mode: 'copy', pattern: "${repRID}.bw"
 
   input:
-    set path (bam), path (bai) from dedupBam_makeBigWig
+    tuple path (bam), path (bai) from dedupBam_makeBigWig
 
   output:
     path ("${repRID}.bw")
@@ -830,18 +842,21 @@ process fastqc {
 /*
  *dataQC: run RSeQC to calculate transcript integrity numbers (TIN)
 */
-
 process dataQC {
   tag "${repRID}"
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.dataQC.{out,err}"
 
   input:
+    path script_tinHist
     path ref from reference_dataQC
-    set path (chrBam), path (chrBai) from dedupChrBam
-
+    tuple path (bam), path (bai) from dedupBam_dataQC
+    tuple path (chrBam), path (chrBai) from dedupChrBam
+    val ends from endsInfer_dataQC
+    
   output:
-    path "${repRID}.sorted.deduped.tin.xls" into tin
-    path "${repRID}.dataQC.{out,err}" optional true
+    path "${repRID}.tin.hist.tsv" into tin
+    path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
+    path "${repRID}.dataQC.{out,err}"
 
   script:
     """
@@ -851,7 +866,53 @@ process dataQC {
     # calcualte TIN values per feature on each chromosome
     echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > ${repRID}.sorted.deduped.tin.xls
     for i in `cat ./bed/genome.bed | cut -f1 | sort | uniq`; do
-      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.rseqc.err; tin.py -i ${repRID}.sorted.deduped.\${i}.bam  -r ./bed/genome.bed 1>>${repRID}.rseqc.log 2>>${repRID}.rseqc.err; cat ${repRID}.sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
-    done | parallel -j `nproc` -k 1>> ${repRID}.sorted.deduped.tin.xls 2>>${repRID}.rseqc.err
+      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.dataQC.err; tin.py -i ${repRID}.sorted.deduped.\${i}.bam  -r ./bed/genome.bed 1>>${repRID}.dataQC.log 2>>${repRID}.dataQC.err; cat ${repRID}.sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
+    done | parallel -j `nproc` -k 1>> ${repRID}.sorted.deduped.tin.xls 2>>${repRID}.dataQC.err
+
+    # bin TIN values
+    python3 ${script_tinHist} -r ${repRID}
+
+    # calculate inner-distances for PE dat
+    if [ "${ends}" == "pe" ]
+    then
+      inner_distance.py -i "${bam}" -o ${repRID}.insertSize -r ./bed/genome.bed 1>>${repRID}.dataQC.out 2>>${repRID}.dataQC.err
+    else
+      touch ${repRID}.insertSize.inner_distance_freq.txt
+    fi
+    """
+}
+
+/*
+ *aggrQC: aggregate QC from processes as wel as metadata and run MultiQC
+*/
+process aggrQC {
+  tag "${repRID}"
+  publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.aggrQC.{out,err}"
+
+  input:
+    path multiqcConfig
+    path fastqc
+    path trimQC
+    path alignQC
+    path dedupQC
+    path countsQC
+    path tin
+    path innerDistance
+    path alignSampleQCs from alignSampleQC_aggrQC.collect()
+    path inferExperiment
+
+  output:
+    path "${repRID}.aggrQC.{out,err}" optional true
+
+  script:
+    """
+    hostname > ${repRID}.aggrQC.err
+    ulimit -a >> ${repRID}.aggrQC.err
+
+    if [ wc -l ${innerDistance} | awk '{print\${1}}' -eq 0 ]
+    then
+      rm -f ${innerDistance}
+    fi
+    multiqc -c ${multiqcConfig} .
     """
 }
