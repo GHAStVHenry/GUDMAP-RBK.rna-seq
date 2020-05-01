@@ -179,7 +179,15 @@ process parseMetadata {
     # Check replicate RID metadata
     rep=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p repRID)
     echo "LOG: replicate RID metadata parsed: \${rep}" >> ${repRID}.parseMetadata.err
+
+    # Get experiment RID metadata
+    exp=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p expRID)
+    echo "LOG: experiment RID metadata parsed: \${exp}" >> ${repRID}.parseMetadata.err
     
+    # Get study RID metadata
+    study=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p studyRID)
+    echo "LOG: study RID metadata parsed: \${study}" >> ${repRID}.parseMetadata.err
+
     # Get endedness metadata
     endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p endsMeta)
     echo "LOG: endedness metadata parsed: \${endsMeta}" >> ${repRID}.parseMetadata.err
@@ -201,7 +209,7 @@ process parseMetadata {
     echo "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.err
 
     # Save design file
-    echo "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species}" > design.csv
+    echo "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${exp},\${study}" > design.csv
     """
 }
 
@@ -211,12 +219,16 @@ endsManual = Channel.create()
 strandedMeta = Channel.create()
 spikeMeta = Channel.create()
 speciesMeta = Channel.create()
+expRID = Channel.create()
+studyRID = Channel.create()
 metadata.splitCsv(sep: ",", header: false).separate(
   endsMeta,
   endsManual,
   strandedMeta,
   spikeMeta,
-  speciesMeta
+  speciesMeta,
+  expRID,
+  studyRID
 )
 // Replicate metadata for multiple process inputs
 endsManual.into {
@@ -914,6 +926,8 @@ process aggrQC {
     val strandedI from strandedInfer_aggrQC
     val spikeI from spikeInfer_aggrQC
     val speciesI from speciesInfer_aggrQC
+    val expRID
+    val studyRID
 
   output:
     path "${repRID}.aggrQC.{out,err}" optional true
@@ -924,7 +938,7 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.err
 
     echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
-    echo -e "${repRID}\t-\t-" >> rid.tsv
+    echo -e "${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
 
     echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in" > metadata.tsv
     echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}" >> metadata.tsv
