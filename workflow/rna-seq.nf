@@ -223,6 +223,7 @@ endsManual.into {
   endsManual_trimData
   endsManual_downsampleData
   endsManual_alignSampleData
+  endsManual_aggrQC
 }
 
 
@@ -533,16 +534,20 @@ endsInfer.into {
   endsInfer_alignData
   endsInfer_countData
   endsInfer_dataQC
+  endsInfer_aggrQC
 }
 strandedInfer.into {
   strandedInfer_alignData
   strandedInfer_countData
+  strandedInfer_aggrQC
 }
 spikeInfer.into{
   spikeInfer_getRef
+  spikeInfer_aggrQC
 }
 speciesInfer.into {
   speciesInfer_getRef
+  speciesInfer_aggrQC
 }
 
 
@@ -872,7 +877,7 @@ process dataQC {
     # bin TIN values
     python3 ${script_tinHist} -r ${repRID}
 
-    # calculate inner-distances for PE dat
+    # calculate inner-distances for PE data
     if [ "${ends}" == "pe" ]
     then
       inner_distance.py -i "${bam}" -o ${repRID}.insertSize -r ./bed/genome.bed 1>>${repRID}.dataQC.out 2>>${repRID}.dataQC.err
@@ -896,10 +901,19 @@ process aggrQC {
     path alignQC
     path dedupQC
     path countsQC
-    path tin
     path innerDistance
+    path tin
     path alignSampleQCs from alignSampleQC_aggrQC.collect()
     path inferExperiment
+    val endsManual from endsManual_aggrQC
+    val endsM from endsMeta
+    val strandedM from strandedMeta
+    val spikeM from spikeMeta
+    val speciesM from speciesMeta
+    val endsI from endsInfer_aggrQC
+    val strandedI from strandedInfer_aggrQC
+    val spikeI from spikeInfer_aggrQC
+    val speciesI from speciesInfer_aggrQC
 
   output:
     path "${repRID}.aggrQC.{out,err}" optional true
@@ -909,10 +923,21 @@ process aggrQC {
     hostname > ${repRID}.aggrQC.err
     ulimit -a >> ${repRID}.aggrQC.err
 
+    echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
+    echo -e "${repRID}\t-\t-" >> rid.tsv
+
+    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in" > metadata.tsv
+    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}" >> metadata.tsv
+    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}" >> metadata.tsv
+    echo -e "Manual\t-\t${endsManual}\t-\t-" >> metadata.tsv
+
+    # remove inner distance report if it is empty (SE repRID)
     if [ wc -l ${innerDistance} | awk '{print\${1}}' -eq 0 ]
     then
       rm -f ${innerDistance}
     fi
+
+    #run MultiQC
     multiqc -c ${multiqcConfig} .
     """
 }
