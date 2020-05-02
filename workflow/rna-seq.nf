@@ -406,7 +406,7 @@ process alignSampleData {
     if [ "${ends}" == "se" ]
     then
       echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.${ref}.alignSampleData.err
-      hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${repRID}.alignSampleSummary.txt --new-summary 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err
+      hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${ref}.alignSampleSummary.txt --new-summary 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err
     elif [ "${ends}" == "pe" ]
     then
       echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.${ref}.alignSampleData.err
