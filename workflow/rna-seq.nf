@@ -505,10 +505,10 @@ process inferMetadata {
       percentF=`bash inferMeta.sh sef ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
       percentR=`bash inferMeta.sh ser ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
     fi
-    if [ 1 -eq \$(echo \$(expr \${percentF#.*} ">" 25)) ] && [ 1 -eq \$(echo \$(expr \${percentR#.*} "<" 25)) ]
+    if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
     then
       stranded="forward"
-    elif [ 1 -eq \$(echo \$(expr \${percentR#.*} ">" 25)) ] && [ 1 -eq \$(echo \$(expr \${percentF#.*} "<" 25)) ]
+    elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
     then
       stranded="reverse"
 
