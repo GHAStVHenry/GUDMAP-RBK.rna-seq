@@ -354,7 +354,7 @@ process downsampleData {
 
   output:
     path ("sampled.1.fq") into fastqs1Sample
-    path ("sampled.2.fq") optional true into fastqs2Sample
+    path ("sampled.2.fq") into fastqs2Sample
     path ("${repRID}.downsampleData.{out,err}")
 
   script:
@@ -367,6 +367,7 @@ process downsampleData {
     then
       echo "LOG: downsampling single-end trimmed fastq" >> ${repRID}.downsampleData.err
       seqtk sample -s100 *trimmed.fq.gz 100000 1> sampled.1.fq 2>> ${repRID}.downsampleData.err
+      touch sampled.2.fq
     elif [ "${ends}" == "pe" ]
     then
       echo "LOG: downsampling read 1 of paired-end trimmed fastq" >> ${repRID}.downsampleData.err
