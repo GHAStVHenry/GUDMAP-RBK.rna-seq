@@ -822,10 +822,12 @@ process countData {
     echo "LOG: running countData on the data" >> ${repRID}.countData.err
     if [ "${ends}" == "se" ]
     then
-      featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
+      #featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
     elif [ "${ends}" == "pe" ]
     then
-      featureCounts -R SAM -p -G ./genmome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup -B ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
+      #featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup -B ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
     fi
 
     #Calculate TPM from the resulting countData table
