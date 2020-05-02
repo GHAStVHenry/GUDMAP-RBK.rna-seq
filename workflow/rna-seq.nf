@@ -176,39 +176,39 @@ process parseMetadata {
     hostname > ${repRID}.parseMetadata.err
     ulimit -a >> ${repRID}.parseMetadata.err
 
-    # Check replicate RID metadata
+    # check replicate RID metadata
     rep=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p repRID)
     echo "LOG: replicate RID metadata parsed: \${rep}" >> ${repRID}.parseMetadata.err
 
-    # Get experiment RID metadata
+    # get experiment RID metadata
     exp=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p expRID)
     echo "LOG: experiment RID metadata parsed: \${exp}" >> ${repRID}.parseMetadata.err
     
-    # Get study RID metadata
+    # get study RID metadata
     study=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p studyRID)
     echo "LOG: study RID metadata parsed: \${study}" >> ${repRID}.parseMetadata.err
 
-    # Get endedness metadata
+    # get endedness metadata
     endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p endsMeta)
     echo "LOG: endedness metadata parsed: \${endsMeta}" >> ${repRID}.parseMetadata.err
     
-    # Manually get endness
+    # ganually get endness
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
     echo "LOG: endedness manually detected: \${endsManual}" >> ${repRID}.parseMetadata.err
 
-    # Get strandedness metadata
+    # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
     echo "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.err
     
-    # Get spike-in metadata
+    # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
     echo "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.err
     
-    # Get species metadata
+    # get species metadata
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
     echo "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.err
 
-    # Save design file
+    # gave design file
     echo "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${exp},\${study}" > design.csv
     """
 }
@@ -260,7 +260,7 @@ process trimData {
     hostname > ${repRID}.trimData.err
     ulimit -a >> ${repRID}.trimData.err
 
-    #Trim fastq's using trim_galore
+    # trim fastq's using trim_galore
     if [ "${ends}" == "se" ]
     then
       echo "LOG: running trim_galore using single-end settings" >> ${repRID}.trimData.err
@@ -300,7 +300,7 @@ process getRefInfer {
     ulimit -a >> ${repRID}.getRefInfer.err
     export https_proxy=\${http_proxy}
 
-    #Set the reference name
+    # set the reference name
     if [ "${refName}" == "ERCC" ]
     then
       references=\$(echo ${referenceBase}/ERCC${refERCCVersion})
@@ -315,7 +315,8 @@ process getRefInfer {
       exit 1
     fi
     mkdir ${refName}
-    #Retreive appropriate reference appropriate location
+
+    # retreive appropriate reference appropriate location
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
       echo "LOG: grabbing reference files from S3" >> ${repRID}.getRefInfer.err
@@ -332,7 +333,7 @@ process getRefInfer {
       ln -s "\${references}"/genome.gtf 1>> ${repRID}.getRefInfer.out 2>> ${repRID}.getRefInfer.err
     fi
 
-    #Make blank bed folder for ERCC
+    # make blank bed folder for ERCC
     if [ "${refName}" == "ERCC" ]
     then
       rm ${refName}/bed
@@ -402,7 +403,7 @@ process alignSampleData {
     hostname > ${repRID}.${ref}.alignSampleData.err
     ulimit -a >> ${repRID}.${ref}.alignSampleData.err
 
-    #Align the reads with Hisat 2
+    # align the reads with Hisat 2
     if [ "${ends}" == "se" ]
     then
       echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.${ref}.alignSampleData.err
@@ -413,15 +414,15 @@ process alignSampleData {
       hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq1} -2 ${fastq2} --summary-file ${ref}.alignSampleSummary.txt --new-summary 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err
     fi
     
-    #Convert the output sam file to a sorted bam file using Samtools
+    # convert the output sam file to a sorted bam file using Samtools
     echo "LOG: converting from sam to bam" >> ${repRID}.${ref}.alignSampleData.err
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${ref}.sampled.bam ${ref}.sampled.sam 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err;
 
-    #Sort the bam file using Samtools
+    # sort the bam file using Samtools
     echo "LOG: sorting the bam file" >> ${repRID}.${ref}.alignSampleData.err
     samtools sort -@ `nproc` -O BAM -o ${ref}.sampled.sorted.bam ${ref}.sampled.bam 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err;
 
-    #Index the sorted bam using Samtools
+    # index the sorted bam using Samtools
     echo "LOG: indexing sorted bam file" >> ${repRID}.${ref}.alignSampleData.err
     samtools index -@ `nproc` -b ${ref}.sampled.sorted.bam ${ref}.sampled.sorted.bam.bai 1>> ${repRID}.${ref}.alignSampleData.out 2>> ${repRID}.${ref}.alignSampleData.err;
     """
@@ -588,7 +589,7 @@ process getRef {
     ulimit -a >> ${repRID}.getRef.err
     export https_proxy=\${http_proxy}
 
-    #Set the reference name
+    # set the reference name
     if [ "${species}" == "Mus musculus" ]
     then
       references=\$(echo ${referenceBase}/GRCm${refMoVersion})
@@ -608,7 +609,7 @@ process getRef {
     fi
     echo "LOG: species set to \${references}" >> ${repRID}.getRef.err
 
-    #Retreive appropriate reference appropriate location
+    # retreive appropriate reference appropriate location
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
       echo "LOG: grabbing reference files from S3" >> ${repRID}.getRef.err
@@ -657,7 +658,7 @@ process alignData {
     hostname > ${repRID}.align.err
     ulimit -a >> ${repRID}.align.err
 
-    #Set stranded param for hisat2
+    # set stranded param for hisat2
     if [ "${stranded}"=="unstranded" ]
     then
       strandedParam=""
@@ -675,7 +676,7 @@ process alignData {
       strandedParam="--rna-strandness RF"    
     fi
 
-    #Align the reads with Hisat 2
+    # align the reads with Hisat 2
     if [ "${ends}" == "se" ]
     then
       echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.align.err
@@ -686,15 +687,15 @@ process alignData {
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary 1>> ${repRID}.align.out 2>> ${repRID}.align.err
     fi
     
-    #Convert the output sam file to a sorted bam file using Samtools
+    # convert the output sam file to a sorted bam file using Samtools
     echo "LOG: converting from sam to bam" >> ${repRID}.align.err
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam 1>> ${repRID}.align.out 2>> ${repRID}.align.err;
 
-    #Sort the bam file using Samtools
+    # sort the bam file using Samtools
     echo "LOG: sorting the bam file" >> ${repRID}.align.err
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam 1>> ${repRID}.align.out 2>> ${repRID}.align.err;
 
-    #Index the sorted bam using Samtools
+    # index the sorted bam using Samtools
     echo "LOG: indexing sorted bam file" >> ${repRID}.align.err
     samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bam.bai 1>> ${repRID}.align.out 2>> ${repRID}.align.err;
     """
@@ -731,13 +732,13 @@ process dedupData {
     echo "LOG: running picard MarkDuplicates to remove duplicate reads" >> ${repRID}.dedup.err
     java -jar /picard/build/libs/picard.jar MarkDuplicates I=${bam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true 1>> ${repRID}.dedup.out 2>> ${repRID}.dedup.err
 
-    # Sort the bam file using Samtools
+    # sort the bam file using Samtools
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     
-    # Index the sorted bam using Samtools
+    # index the sorted bam using Samtools
     samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai 1>>${repRID}.dedup.out 2>> ${repRID}.dedup.err
     
-    # Split the deduped BAM file for multi-threaded tin calculation
+    # split the deduped BAM file for multi-threaded tin calculation
     for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
       do
       echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\" >> ${repRID}.dedup.err; samtools view -b ${repRID}.sorted.deduped.bam \${i} > ${repRID}.sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}.sorted.deduped.\${i}.bam ${repRID}.sorted.deduped.\${i}.bam.bai"
@@ -772,7 +773,7 @@ process makeBigWig {
     hostname > ${repRID}.makeBigWig.err
     ulimit -a >> ${repRID}.makeBigWig.err
 
-    #Run bamCoverage
+    # run bamCoverage
     echo "LOG: Running bigWig bamCoverage" >> ${repRID}.makeBigWig.err
     bamCoverage -p `nproc` -b ${bam} -o ${repRID}.bw 1>> ${repRID}.makeBigWig.out 2>> ${repRID}.makeBigWig.err
     """
@@ -803,7 +804,7 @@ process countData {
     hostname > ${repRID}.countData.err
     ulimit -a >> ${repRID}.countData.err
 
-    #Determine strandedness and setup strandig for countData
+    # determine strandedness and setup strandig for countData
     stranding=0;
     if [ "${stranded}" == "unstranded" ]
     then
@@ -818,19 +819,18 @@ process countData {
       stranding=2
       echo "LOG: strandedness set to forward stranded [2]" >> ${repRID}.countData.err
     fi
-    #Run countData
-    echo "LOG: running countData on the data" >> ${repRID}.countData.err
+
+    # run featureCounts
+    echo "LOG: running featureCounts on the data" >> ${repRID}.countData.err
     if [ "${ends}" == "se" ]
     then
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
-      #featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
     elif [ "${ends}" == "pe" ]
     then
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
-      #featureCounts -R SAM -p -G ./genome.fna -T `nproc` -s \${stranding} -a ./genome.gtf -o ${repRID}.countData -g 'gene_name' --primary --ignoreDup -B ${repRID}.sorted.deduped.bam 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
     fi
 
-    #Calculate TPM from the resulting countData table
+    # calculate TPM from the resulting countData table
     echo "LOG: calculating TPM with R" >> ${repRID}.countData.err
     Rscript calculateTPM.R --count "${repRID}.countData" 1>> ${repRID}.countData.out 2>> ${repRID}.countData.err
     """
@@ -841,7 +841,6 @@ process countData {
 */
 process fastqc {
   tag "${repRID}"
-  publishDir "${outDir}/fastqc", mode: 'copy', pattern: "*_fastqc.zip"
   publishDir "${logsDir}", mode: 'copy', pattern: "${repRID}.fastqc.{out,err}"
 
   input:
@@ -943,9 +942,11 @@ process aggrQC {
     hostname > ${repRID}.aggrQC.err
     ulimit -a >> ${repRID}.aggrQC.err
 
+    # make RID table
     echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
     echo -e "${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
 
+    # make metadata table
     echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in" > metadata.tsv
     echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}" >> metadata.tsv
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}" >> metadata.tsv
@@ -957,7 +958,7 @@ process aggrQC {
       rm -f ${innerDistance}
     fi
 
-    #run MultiQC
+    # run MultiQC
     multiqc -c ${multiqcConfig} .
     """
 }
