@@ -453,19 +453,22 @@ process inferMetadata {
     hostname > ${repRID}.inferMetadata.err
     ulimit -a >> ${repRID}.inferMetadata.err
 
-    # collect alignment rates
+    # collect alignment rates (round down to integers)
     align_ercc=\$(echo \$(grep "Overall alignment rate" ERCC.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    align_ercc=\$(echo \${align_ercc%.*})
     align_hu=\$(echo \$(grep "Overall alignment rate" GRCh.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    align_hu=\$(echo \${align_hu%.*})
     align_mo=\$(echo \$(grep "Overall alignment rate" GRCm.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
-    
+    align_mo=\$(echo \${align_mo%.*})
+
     # determine spike-in
-    if [ 1 -eq \$(echo \$(expr \${align_ercc} ">=" 0.1)) ]
+    if [ 1 -eq \$(echo \$(expr \${align_ercc} ">=" 10)) ]
     then
       spike="yes"
     else
       spike="no"
     fi
-    echo -e "LOG: Inference of strandedness results in: \${spike}" >> ${repRID}.inferMetadata.err
+    echo -e "LOG: Inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.err
 
     # determine species
     if [ 1 -eq \$(echo \$(expr \${align_hu} ">=" 25)) ] && [ 1 -eq \$(echo \$(expr \${align_mo} "<" 25)) ]
@@ -479,7 +482,7 @@ process inferMetadata {
       bam="GRCm.sampled.sorted.bam"
       bed="./GRCm/bed/genome.bed"
     else
-      echo "LOG: ERROR - Inference of species returns an ambiguous result" >> ${repRID}.inferMetadata.err
+      echo -e "LOG: ERROR - Inference of species returns an ambiguous result: hu=\${align_hu} mo=\${align_mo}" >> ${repRID}.inferMetadata.err
       exit 1
     fi
     echo -e "LOG: Inference of species results in: \${species}" >> ${repRID}.inferMetadata.err
@@ -502,10 +505,10 @@ process inferMetadata {
       percentF=`bash inferMeta.sh sef ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
       percentR=`bash inferMeta.sh ser ${repRID}.infer_experiment.txt` 1>> ${repRID}.inferMetadata.out 2>> ${repRID}.inferMetadata.err
     fi
-    if [ 1 -eq \$(echo \$(expr \${percentF} ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \${percentR} "<" 0.25)) ]
+    if [ 1 -eq \$(echo \$(expr \${percentF#.*} ">" 25)) ] && [ 1 -eq \$(echo \$(expr \${percentR#.*} "<" 25)) ]
     then
       stranded="forward"
-    elif [ 1 -eq \$(echo \$(expr \${percentR} ">" 0.25)) ] && [ 1 -eq \$(echo \$(expr \${percentF} "<" 0.25)) ]
+    elif [ 1 -eq \$(echo \$(expr \${percentR#.*} ">" 25)) ] && [ 1 -eq \$(echo \$(expr \${percentF#.*} "<" 25)) ]
     then
       stranded="reverse"
 
