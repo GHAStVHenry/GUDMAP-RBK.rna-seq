@@ -280,7 +280,7 @@ fastqsTrim.into {
 }
 
 /*
-  * getRefInfer: Dowloads appropriate reference for metadata inference
+  * getRefInfer: dowloads appropriate reference for metadata inference
 */
 process getRefInfer {
   tag "${refName}"
@@ -569,7 +569,7 @@ speciesInfer.into {
 
 
 /*
-  * getRef: Dowloads appropriate reference
+  * getRef: downloads appropriate reference
 */
 process getRef {
   tag "${species}"
@@ -754,7 +754,7 @@ dedupBam.into {
 }
 
 /*
- *Make BigWig files for output
+ *makeBigWig: make BigWig files for output
 */
 process makeBigWig {
   tag "${repRID}"
@@ -780,7 +780,7 @@ process makeBigWig {
 }
 
 /*
- *Run countData and get the counts, tpm
+ *countData: count data and calculate tpm
 */
 process countData {
   tag "${repRID}"
@@ -862,7 +862,7 @@ process fastqc {
 }
 
 /*
- *dataQC: run RSeQC to calculate transcript integrity numbers (TIN)
+ *dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
 */
 process dataQC {
   tag "${repRID}"
@@ -905,7 +905,7 @@ process dataQC {
 }
 
 /*
- *aggrQC: aggregate QC from processes as wel as metadata and run MultiQC
+ *aggrQC: aggregate QC from processes as well as metadata and run MultiQC
 */
 process aggrQC {
   tag "${repRID}"
