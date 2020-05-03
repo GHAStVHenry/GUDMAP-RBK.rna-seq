@@ -94,12 +94,14 @@ process getBag {
     export https_proxy=\${http_proxy}
 
     # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.getBag.log
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json
-    echo "LOG: deriva credentials linked" >> ${repRID}.getBag.log
+    echo -e "LOG: linked" >> ${repRID}.getBag.log
 
     # deriva-download replicate RID
-    echo "LOG: fetching deriva catalog for selected RID in GUDMAP." >> ${repRID}.getBag.log
+    echo -e "LOG: fetching bagit for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
     deriva-download-cli dev.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID}
+    echo -e "LOG: fetched" >> ${repRID}.getBag.log
     """
 }
 
@@ -127,20 +129,23 @@ process getData {
     export https_proxy=\${http_proxy}
     
     # link deriva cookie for authentication
+    echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
     ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
-    echo "LOG: deriva cookie linked" >> ${repRID}.getData.log
+    echo -e "LOG: linked" >> ${repRID}.getData.log
     
     # get bagit basename
     replicate=\$(basename "${bagit}" | cut -d "." -f1)
-    echo "LOG: \${replicate}" >> ${repRID}.getData.log
+    echo -e "LOG: bagit replicate name \${replicate}" >> ${repRID}.getData.log
     
     # unzip bagit
+    echo -e "LOG: unzipping replicate bagit" >> ${repRID}.getData.log
     unzip ${bagit}
-    echo "LOG: replicate bdbag unzipped" >> ${repRID}.getData.log
+    echo -e "LOG: unzipped" >> ${repRID}.getData.log
     
-    # bagit fetch fastq"s only and rename by repRID
-    sh ${script_bdbagFetch} \${replicate} ${repRID}
-    echo "LOG: replicate bdbag fetched" >> ${repRID}.getData.log
+    # bagit fetch fastq's only and rename by repRID
+    echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
+    sh ${script_bdbagFetch} ${repRID} ${repRID}
+    echo -e "LOG: fetched" >> ${repRID}.getData.log
     """
 }
 
@@ -172,38 +177,38 @@ process parseMetadata {
 
     # check replicate RID metadata
     rep=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p repRID)
-    echo "LOG: replicate RID metadata parsed: \${rep}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: replicate RID metadata parsed: \${rep}" >> ${repRID}.parseMetadata.log
 
     # get experiment RID metadata
     exp=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p expRID)
-    echo "LOG: experiment RID metadata parsed: \${exp}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: experiment RID metadata parsed: \${exp}" >> ${repRID}.parseMetadata.log
     
     # get study RID metadata
     study=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p studyRID)
-    echo "LOG: study RID metadata parsed: \${study}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: study RID metadata parsed: \${study}" >> ${repRID}.parseMetadata.log
 
     # get endedness metadata
     endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p endsMeta)
-    echo "LOG: endedness metadata parsed: \${endsMeta}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: endedness metadata parsed: \${endsMeta}" >> ${repRID}.parseMetadata.log
     
     # ganually get endness
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
-    echo "LOG: endedness manually detected: \${endsManual}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: endedness manually detected: \${endsManual}" >> ${repRID}.parseMetadata.log
 
     # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
-    echo "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
     
     # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
-    echo "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
     
     # get species metadata
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
-    echo "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
+    echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
 
     # gave design file
-    echo "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${exp},\${study}" > design.csv
+    echo -e "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${exp},\${study}" > design.csv
     """
 }
 
@@ -253,15 +258,15 @@ process trimData {
     ulimit -a >> ${repRID}.trimData.log
 
     # trim fastq's using trim_galore
+    echo -e "LOG: trimming ${ends}" >> ${repRID}.trimData.log
     if [ "${ends}" == "se" ]
     then
-      echo "LOG: running trim_galore using single-end settings" >> ${repRID}.trimData.log
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]}
     elif [ "${ends}" == "pe" ]
     then
-      echo "LOG: running trim_galore using paired-end settings" >> ${repRID}.trimData.log
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]}
     fi
+    echo -e "LOG: trimmed" >> ${repRID}.trimData.log
     """
 }
 
@@ -286,8 +291,8 @@ process getRefInfer {
  
   script:
     """
-    hostname > ${repRID}.getRefInfer.log
-    ulimit -a >> ${repRID}.getRefInfer.log
+    hostname > ${repRID}.${refName}.getRefInfer.log
+    ulimit -a >> ${repRID}.${refName}.getRefInfer.log
     export https_proxy=\${http_proxy}
 
     # set the reference name
@@ -301,29 +306,30 @@ process getRefInfer {
     then
       references=\$(echo ${referenceBase}/GRCh${refHuVersion})
     else
-      echo -e "LOG: ERROR - References could not be set!\nReference found: ${referenceBase}" >> ${repRID}.getRefInfer.log
+      echo -e "LOG: ERROR - References could not be set!\nReference found: ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
       exit 1
     fi
     mkdir ${refName}
 
     # retreive appropriate reference appropriate location
+    echo -e "LOG: fetching ${refName} reference files from ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
-      echo "LOG: grabbing reference files from S3" >> ${repRID}.getRefInfer.log
       aws s3 cp "\${references}" /hisat2 ./ --recursive
       aws s3 cp "\${references}" /bed ./${refName}/ --recursive
       aws s3 cp "\${references}" /*.fna --recursive
       aws s3 cp "\${references}" /*.gtf --recursive
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
-      echo "LOG: using pre-defined locations for reference files" >> ${repRID}.getRefInfer.log
       ln -s "\${references}"/hisat2
       ln -s "\${references}"/bed ${refName}/bed
       ln -s "\${references}"/genome.fna
       ln -s "\${references}"/genome.gtf
     fi
+    echo -e "LOG: fetched" >> ${repRID}.${refName}.getRefInfer.log
 
     # make blank bed folder for ERCC
+    echo -e "LOG: making dummy bed folder for ERCC" >> ${repRID}.${refName}.getRefInfer.log
     if [ "${refName}" == "ERCC" ]
     then
       rm ${refName}/bed
@@ -354,16 +360,17 @@ process downsampleData {
 
     if [ "${ends}" == "se" ]
     then
-      echo "LOG: downsampling single-end trimmed fastq" >> ${repRID}.downsampleData.log
+      echo -e "LOG: downsampling SE trimmed fastq" >> ${repRID}.downsampleData.log
       seqtk sample -s100 *trimmed.fq.gz 100000 1> sampled.1.fq
       touch sampled.2.fq
     elif [ "${ends}" == "pe" ]
     then
-      echo "LOG: downsampling read 1 of paired-end trimmed fastq" >> ${repRID}.downsampleData.log
+      echo -e "LOG: downsampling R1 of PE trimmed fastq" >> ${repRID}.downsampleData.log
       seqtk sample -s100 *1.fq.gz 1000000 1> sampled.1.fq
-      echo "LOG: downsampling read 2 of paired-end trimmed fastq" >> ${repRID}.downsampleData.log
+      echo -e "LOG: downsampling R2 of PE trimmed fastq" >> ${repRID}.downsampleData.log
       seqtk sample -s100 *2.fq.gz 1000000 1> sampled.2.fq
     fi
+    echo -e "LOG: downsampled" >> ${repRID}.downsampleData.log
     """
 }
 
@@ -389,27 +396,28 @@ process alignSampleData {
     hostname > ${repRID}.${ref}.alignSampleData.log
     ulimit -a >> ${repRID}.${ref}.alignSampleData.log
 
-    # align the reads with Hisat 2
+    # align the reads with Hisat2
+    echo -e "LOG: aligning ${ends}" >> ${repRID}.${ref}.alignSampleData.log
     if [ "${ends}" == "se" ]
     then
-      echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.${ref}.alignSampleData.log
+     
       hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${ref}.alignSampleSummary.txt --new-summary
     elif [ "${ends}" == "pe" ]
     then
-      echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.${ref}.alignSampleData.log
       hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq1} -2 ${fastq2} --summary-file ${ref}.alignSampleSummary.txt --new-summary
     fi
+    echo -e "LOG: aliged" >> ${repRID}.${ref}.alignSampleData.log
     
     # convert the output sam file to a sorted bam file using Samtools
-    echo "LOG: converting from sam to bam" >> ${repRID}.${ref}.alignSampleData.log
+    echo -e "LOG: converting from sam to bam" >> ${repRID}.${ref}.alignSampleData.log
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${ref}.sampled.bam ${ref}.sampled.sam
 
     # sort the bam file using Samtools
-    echo "LOG: sorting the bam file" >> ${repRID}.${ref}.alignSampleData.log
+    echo -e "LOG: sorting the bam file" >> ${repRID}.${ref}.alignSampleData.log
     samtools sort -@ `nproc` -O BAM -o ${ref}.sampled.sorted.bam ${ref}.sampled.bam
 
     # index the sorted bam using Samtools
-    echo "LOG: indexing sorted bam file" >> ${repRID}.${ref}.alignSampleData.log
+    echo -e "LOG: indexing sorted bam file" >> ${repRID}.${ref}.alignSampleData.log
     samtools index -@ `nproc` -b ${ref}.sampled.sorted.bam ${ref}.sampled.sorted.bam.bai
     """
 }
@@ -441,10 +449,13 @@ process inferMetadata {
     # collect alignment rates (round down to integers)
     align_ercc=\$(echo \$(grep "Overall alignment rate" ERCC.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
     align_ercc=\$(echo \${align_ercc%.*})
+    echo -e "LOG: alignment rate to ERCC: \${align_ercc}" >> ${repRID}.inferMetadata.log
     align_hu=\$(echo \$(grep "Overall alignment rate" GRCh.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
     align_hu=\$(echo \${align_hu%.*})
+    echo -e "LOG: alignment rate to GRCh: \${align_hu}" >> ${repRID}.inferMetadata.log
     align_mo=\$(echo \$(grep "Overall alignment rate" GRCm.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
     align_mo=\$(echo \${align_mo%.*})
+    echo -e "LOG: alignment rate to GRCm: \${align_mo}" >> ${repRID}.inferMetadata.log
 
     # determine spike-in
     if [ 1 -eq \$(echo \$(expr \${align_ercc} ">=" 10)) ]
@@ -453,7 +464,7 @@ process inferMetadata {
     else
       spike="no"
     fi
-    echo -e "LOG: Inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
 
     # determine species
     if [ 1 -eq \$(echo \$(expr \${align_hu} ">=" 25)) ] && [ 1 -eq \$(echo \$(expr \${align_mo} "<" 25)) ]
@@ -467,16 +478,16 @@ process inferMetadata {
       bam="GRCm.sampled.sorted.bam"
       bed="./GRCm/bed/genome.bed"
     else
-      echo -e "LOG: ERROR - Inference of species returns an ambiguous result: hu=\${align_hu} mo=\${align_mo}" >> ${repRID}.inferMetadata.log
+      echo -e "LOG: ERROR - inference of species returns an ambiguous result: hu=\${align_hu} mo=\${align_mo}" >> ${repRID}.inferMetadata.log
       exit 1
     fi
-    echo -e "LOG: Inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
 
     # infer experimental setting from dedup bam
-    echo "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
     infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt
+    echo -e "LOG: infered" >> ${repRID}.inferMetadata.log
 
-    echo "LOG: determining endedness and strandedness from file" >> ${repRID}.inferMetadata.log
     ended=`bash inferMeta.sh endness ${repRID}.infer_experiment.txt`
     fail=`bash inferMeta.sh fail ${repRID}.infer_experiment.txt`
     if [ \${ended} == "PairEnd" ] 
@@ -490,6 +501,8 @@ process inferMetadata {
       percentF=`bash inferMeta.sh sef ${repRID}.infer_experiment.txt`
       percentR=`bash inferMeta.sh ser ${repRID}.infer_experiment.txt`
     fi
+    echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
     if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
     then
       stranded="forward"
@@ -500,7 +513,7 @@ process inferMetadata {
     else
       stranded="unstranded"
     fi
-    echo -e "LOG: stradedness set to \${stranded}" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
 
     # write infered metadata to file
     echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" 1>> infer.csv
@@ -589,24 +602,25 @@ process getRef {
     then
       reference=\$(echo \${references}/)
     fi
-    echo "LOG: species set to \${references}" >> ${repRID}.getRef.log
+    echo -e "LOG: species set to \${references}" >> ${repRID}.getRef.log
 
     # retreive appropriate reference appropriate location
+    echo -e "LOG: fetching ${species} reference files from ${referenceBase}" >> ${repRID}.getRef.log
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
-      echo "LOG: grabbing reference files from S3" >> ${repRID}.getRef.log
+      echo -e "LOG: grabbing reference files from S3" >> ${repRID}.getRef.log
       aws s3 cp "\${references}" /hisat2 ./ --recursive
       aws s3 cp "\${references}" /bed ./ --recursive
       aws s3 cp "\${references}" /*.fna --recursive
       aws s3 cp "\${references}" /*.gtf --recursive
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
-      echo "LOG: using pre-defined locations for reference files" >> ${repRID}.getRef.log
       ln -s "\${references}"/hisat2
       ln -s "\${references}"/bed
       ln -s "\${references}"/genome.fna
       ln -s "\${references}"/genome.gtf
     fi
+    echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
 }
 
@@ -656,27 +670,27 @@ process alignData {
       strandedParam="--rna-strandness RF"    
     fi
 
-    # align the reads with Hisat 2
+    # align the reads with Hisat2
+    echo -e "LOG: aligning ${ends}" >> ${repRID}.align.log
     if [ "${ends}" == "se" ]
     then
-      echo "LOG: running Hisat2 with single-end settings" >> ${repRID}.align.log
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} -U ${fastq[0]} --summary-file ${repRID}.alignSummary.txt --new-summary
     elif [ "${ends}" == "pe" ]
     then
-      echo "LOG: running Hisat2 with paired-end settings" >> ${repRID}.align.log
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary
     fi
+    echo -e "LOG: alignined" >> ${repRID}.align.log
     
     # convert the output sam file to a sorted bam file using Samtools
-    echo "LOG: converting from sam to bam" >> ${repRID}.align.log
+    echo -e "LOG: converting from sam to bam" >> ${repRID}.align.log
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam
 
     # sort the bam file using Samtools
-    echo "LOG: sorting the bam file" >> ${repRID}.align.log
+    echo -e "LOG: sorting the bam file" >> ${repRID}.align.log
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam
 
     # index the sorted bam using Samtools
-    echo "LOG: indexing sorted bam file" >> ${repRID}.align.log
+    echo -e "LOG: indexing sorted bam file" >> ${repRID}.align.log
     samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bam.bai
     """
 }
@@ -707,15 +721,18 @@ process dedupData {
     ulimit -a >> ${repRID}.dedup.log
 
     # remove duplicated reads using Picard's MarkDuplicates
-    echo "LOG: running picard MarkDuplicates to remove duplicate reads" >> ${repRID}.dedup.log
+    echo -e "LOG: deduplicating reads" >> ${repRID}.dedup.log
     java -jar /picard/build/libs/picard.jar MarkDuplicates I=${bam} O=${repRID}.deduped.bam M=${repRID}.deduped.Metrics.txt REMOVE_DUPLICATES=true
+    echo -e "LOG: deduplicated" >> ${repRID}.dedup.log
 
     # sort the bam file using Samtools
+    echo -e "LOG: sorting the bam file" >> ${repRID}.dedup.log
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam
     
     # index the sorted bam using Samtools
+    echo -e "LOG: indexing sorted bam file" >> ${repRID}.dedup.log
     samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai
-    
+
     # split the deduped BAM file for multi-threaded tin calculation
     for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
       do
@@ -749,9 +766,10 @@ process makeBigWig {
     hostname > ${repRID}.makeBigWig.log
     ulimit -a >> ${repRID}.makeBigWig.log
 
-    # run bamCoverage
-    echo "LOG: Running bigWig bamCoverage" >> ${repRID}.makeBigWig.log
+    # create bigwig
+    echo -e "LOG: creating bibWig" >> ${repRID}.makeBigWig.log
     bamCoverage -p `nproc` -b ${bam} -o ${repRID}.bw
+    echo -e "LOG: created" >> ${repRID}.makeBigWig.log
     """
 }
 
@@ -783,19 +801,19 @@ process countData {
     if [ "${stranded}" == "unstranded" ]
     then
       stranding=0
-      echo "LOG: strandedness set to unstranded [0]" >> ${repRID}.countData.log
+      echo -e "LOG: strandedness set to unstranded [0]" >> ${repRID}.countData.log
     elif [ "${stranded}" == "forward" ]
     then
       stranding=1
-      echo "LOG: strandedness set to forward stranded [1]" >> ${repRID}.countData.log
+      echo -e "LOG: strandedness set to forward stranded [1]" >> ${repRID}.countData.log
     elif [ "${stranded}" == "reverse" ]
     then
       stranding=2
-      echo "LOG: strandedness set to forward stranded [2]" >> ${repRID}.countData.log
+      echo -e "LOG: strandedness set to forward stranded [2]" >> ${repRID}.countData.log
     fi
 
     # run featureCounts
-    echo "LOG: running featureCounts on the data" >> ${repRID}.countData.log
+    echo -e "LOG: counting ${ends} features" >> ${repRID}.countData.log
     if [ "${ends}" == "se" ]
     then
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
@@ -803,9 +821,10 @@ process countData {
     then
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
     fi
+    echo -e "LOG: counted" >> ${repRID}.countData.log
 
     # calculate TPM from the resulting countData table
-    echo "LOG: calculating TPM with R" >> ${repRID}.countData.log
+    echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
     Rscript calculateTPM.R --count "${repRID}.countData"
     """
 }
@@ -828,7 +847,7 @@ process fastqc {
     ulimit -a >> ${repRID}.fastqc.log
 
     # run fastqc
-    echo "LOG: beginning FastQC analysis of the data" >> ${repRID}.fastqc.log
+    echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
     fastqc *.fastq.gz -o .
     """
 }
@@ -861,13 +880,19 @@ process dataQC {
     done | parallel -j `nproc` -k 1>> ${repRID}.sorted.deduped.tin.xls
 
     # bin TIN values
+    echo -e "LOG: binning TINs" >> ${repRID}.dataQC.log
     python3 ${script_tinHist} -r ${repRID}
+    echo -e "LOG: binned" >> ${repRID}.dataQC.log
 
     # calculate inner-distances for PE data
     if [ "${ends}" == "pe" ]
     then
+      echo -e "LOG: calculating inner distances for ${ends}" >> ${repRID}.dataQC.log
       inner_distance.py -i "${bam}" -o ${repRID}.insertSize -r ./bed/genome.bed
-    else
+      echo -e "LOG: calculated" >> ${repRID}.dataQC.log
+    elif [ "${ends}" == "se" ]
+    then
+      echo -e "LOG: creating dummy inner distance file for ${ends}" >> ${repRID}.dataQC.log
       touch ${repRID}.insertSize.inner_distance_freq.txt
     fi
     """
@@ -910,22 +935,26 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.log
 
     # make RID table
+    echo -e "LOG: creating RID table" >> ${repRID}.aggrQC.log
     echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
     echo -e "${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
 
     # make metadata table
+    echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
     echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in" > metadata.tsv
     echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}" >> metadata.tsv
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}" >> metadata.tsv
     echo -e "Manual\t-\t${endsManual}\t-\t-" >> metadata.tsv
 
     # remove inner distance report if it is empty (SE repRID)
+    echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
     if [ wc -l ${innerDistance} | awk '{print\${1}}' -eq 0 ]
     then
       rm -f ${innerDistance}
     fi
 
     # run MultiQC
+    echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
     multiqc -c ${multiqcConfig} .
     """
 }
