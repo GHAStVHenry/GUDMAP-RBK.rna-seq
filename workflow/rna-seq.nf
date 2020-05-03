@@ -930,7 +930,7 @@ process aggrQC {
     val studyRID
 
   output:
-    path ${repRID}.multiqc.html into multiqc
+    path "${repRID}.multiqc.html" into multiqc
 
   script:
     """
