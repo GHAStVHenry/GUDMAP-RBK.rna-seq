@@ -778,7 +778,7 @@ process makeBigWig {
 */
 process countData {
   tag "${repRID}"
-  publishDir "${outDir}/countData", mode: 'copy', pattern: "${repRID}*.countTable.csv"
+  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*.countTable.csv"
 
   input:
     path script_calculateTPM
@@ -868,6 +868,7 @@ process dataQC {
   output:
     path "${repRID}.tin.hist.tsv" into tin
     path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
+  
   script:
     """
     hostname > ${repRID}.dataQC.log
@@ -903,6 +904,7 @@ process dataQC {
 */
 process aggrQC {
   tag "${repRID}"
+  publishDir "${outDir}/qc", mode: 'copy', pattern: "${repRID}.multiqc.html"
 
   input:
     path multiqcConfig
@@ -928,6 +930,7 @@ process aggrQC {
     val studyRID
 
   output:
+    path ${repRID}.multiqc.html into multiqc
 
   script:
     """
@@ -955,6 +958,6 @@ process aggrQC {
 
     # run MultiQC
     echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
-    multiqc -c ${multiqcConfig} .
+    multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     """
 }
