@@ -13,6 +13,7 @@ params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5JA"
+params.source = "dev"
 params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
@@ -34,6 +35,13 @@ logsDir = "${outDir}/Logs"
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
+if (params.source == "dev") {
+  source = "dev.gudmap.org"
+} else if (params.source == "staging") {
+  source = "staging.gudmap.org"
+} else if (params.source == "production") {
+  source = "www.gudmap.org"
+}
 //referenceBase = "s3://bicf-references"
 referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
@@ -100,7 +108,7 @@ process getBag {
 
     # deriva-download replicate RID
     echo -e "LOG: fetching bagit for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
-    deriva-download-cli staging.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID}
+    deriva-download-cli ${source} --catalog 2 ${derivaConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
     """
 }
