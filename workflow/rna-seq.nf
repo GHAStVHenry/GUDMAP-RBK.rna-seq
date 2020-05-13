@@ -171,9 +171,9 @@ process parseMetadata {
 
   input:
     path script_parseMeta
-    path fileMeta
-    path experimentSettingsMeta
-    path experimentMeta
+    path file from fileMeta
+    path experimentSettings, stageAs: "ExperimentSettings.csv" from experimentSettingsMeta
+    path experiment from experimentMeta
 
   output:
     path "design.csv" into metadata
@@ -184,35 +184,35 @@ process parseMetadata {
     ulimit -a >> ${repRID}.parseMetadata.log
 
     # check replicate RID metadata
-    rep=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p repRID)
+    rep=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p repRID)
     echo -e "LOG: replicate RID metadata parsed: \${rep}" >> ${repRID}.parseMetadata.log
 
     # get experiment RID metadata
-    exp=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p expRID)
+    exp=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p expRID)
     echo -e "LOG: experiment RID metadata parsed: \${exp}" >> ${repRID}.parseMetadata.log
     
     # get study RID metadata
-    study=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p studyRID)
+    study=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p studyRID)
     echo -e "LOG: study RID metadata parsed: \${study}" >> ${repRID}.parseMetadata.log
 
     # get endedness metadata
-    endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p endsMeta)
+    endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p endsMeta)
     echo -e "LOG: endedness metadata parsed: \${endsMeta}" >> ${repRID}.parseMetadata.log
     
     # ganually get endness
-    endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${fileMeta}" -p endsManual)
+    endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p endsManual)
     echo -e "LOG: endedness manually detected: \${endsManual}" >> ${repRID}.parseMetadata.log
 
     # get strandedness metadata
-    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p stranded)
+    stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p stranded)
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
     
     # get spike-in metadata
-    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettingsMeta}" -p spike)
+    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
     
     # get species metadata
-    species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentMeta}" -p species)
+    species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p species)
     echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
 
     # gave design file
