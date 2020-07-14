@@ -129,14 +129,14 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --ci true
+  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --ci true
 
 integration_pe:
   stage: integration
   script:
   - hostname
   - ulimit -a
-  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
+  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
