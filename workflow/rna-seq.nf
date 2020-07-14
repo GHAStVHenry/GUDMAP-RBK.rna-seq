@@ -89,7 +89,7 @@ BICF RNA-seq Pipeline for GUDMAP/RBK
 Replicate RID        : ${params.repRID}
 Source Server: ${params.source}
 Mouse Reference Version: ${params.refMoVersion}
-Human Reference Version: ${params.refhuVersion}
+Human Reference Version: ${params.refHuVersion}
 ERCC Reference Version: ${params.refERCCVersion}
 Output Directory: ${params.outDir}
 ------------------------------------
