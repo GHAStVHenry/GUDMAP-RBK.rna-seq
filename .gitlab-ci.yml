@@ -68,7 +68,7 @@ trimData:
 downsampleData:
   stage: unit
   script:
-  - singularity exec 'docker://bicf/seqtk:2.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M_trimmed.fq.gz 1000 1> sampled.1.fq
+  - singularity exec 'docker://bicf/seqtk:2.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz 1000 1> sampled.1.fq
   - pytest -m downsampleData
 
 alignData:

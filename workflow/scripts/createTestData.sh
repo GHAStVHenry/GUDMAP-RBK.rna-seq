@@ -51,12 +51,22 @@ singularity run 'docker://bicf/gudmaprbkaligner:2.0.0' hisat2 -p 20 --add-chrnam
 singularity run 'docker://bicf/gudmaprbkaligner:2.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.pe.bam Q-Y5F6_1M.pe.sam
 singularity run 'docker://bicf/gudmaprbkaligner:2.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.bam
 singularity run 'docker://bicf/gudmaprbkaligner:2.0.0' samtools index -@ 20 -b Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.sorted.bam.bai
+cp Q-Y5F6_1M.se.bam ./NEW_test_data/bam/small/Q-Y5F6_1M.se.bam
+cp Q-Y5F6_1M.pe.bam ./NEW_test_data/bam/small/Q-Y5F6_1M.pe.bam
 cp Q-Y5F6_1M.se.sorted.bam ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.bam
 cp Q-Y5F6_1M.se.sorted.bam.bai ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.bam.bai
 cp Q-Y5F6_1M.pe.sorted.bam ./NEW_test_data/bam/small/Q-Y5F6_1M.pe.sorted.bam
 cp Q-Y5F6_1M.pe.sorted.bam.bai ./NEW_test_data/bam/small/Q-Y5F6_1M.pe.sorted.bam.bai
 cp Q-Y5F6_1M.se.alignSummary.txt ./NEW_test_data/meta/Q-Y5F6_1M.se.alignSummary.txt
 cp Q-Y5F6_1M.pe.alignSummary.txt ./NEW_test_data/meta/Q-Y5F6_1M.pe.alignSummary.txt
+
+singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.bam O=Q-Y5F6_1M.se.deduped.bam M=Q-Y5F6_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
+singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.deduped.bam
+singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.sorted.deduped.bam.bai
+cp Q-Y5F6_1M.se.sorted.deduped.bam ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
+cp Q-Y5F6_1M.se.sorted.deduped.bam.bai ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam.bai
+cp Q-Y5F6_1M.se.deduped.Metrics.txt /NEW_test_data/meta/Q-Y5F6_1M.se.deduped.Metrics.txt
+cp Q-Y5F6_1M.se.deduped.Metrics.txt ./NEW_test_data/meta/Q-Y5F6_1M.se.deduped.Metrics.txt
 
 for i in {"chr8","chr4","chrY"}; do 
       echo "samtools view -b ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam ${i} > Q-Y5F6_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.${i}.bam Q-Y5F6_1M.se.sorted.deduped.${i}.bam.bai;";
@@ -72,6 +82,7 @@ mkdir -p ./NEW_test_data/counts
 mkdir -p ./NEW_test_data/counts/small
 singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' -o Q-Y5F6_1M.se.featureCounts -s 1 -R SAM --primary --ignoreDup ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
 singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5F6_1M.se.featureCounts
+cp Q-Y5F6_1M.se.featureCounts ./NEW_test_data/counts/small/Q-Y5F6_1M.se.featureCounts
 cp Q-Y5F6_1M.se.countTable.csv ./NEW_test_data/counts/small/Q-Y5F6_1M.se.countTable.csv
 
 mkdir -p ./NEW_test_data/bw
