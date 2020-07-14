@@ -82,6 +82,27 @@ process trackStart {
   """
  }
 
+log.info """\
+====================================
+BICF RNA-seq Pipeline for GUDMAP/RBK
+====================================
+Replicate RID        : ${params.repRID}
+Source Server: ${params.source}
+Mouse Reference Version: ${params.refMoVersion}
+Human Reference Version: ${params.refhuVersion}
+ERCC Reference Version: ${params.refERCCVersion}
+Output Directory: ${params.outDir}
+------------------------------------
+Nextflow Version: ${workflow.nextflow.version}
+Pipeline Version: ${pipelineVersion}
+Session ID      : ${workflow.sessionId}
+------------------------------------
+Astrocyte       : ${params.astrocyte}
+CI              : ${params.ci}
+Development     : ${params.dev}
+------------------------------------
+"""
+
 /*
  * splitData: split bdbag files by replicate so fetch can occure in parallel, and rename files to replicate rid
  */
