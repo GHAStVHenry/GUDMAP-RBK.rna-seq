@@ -63,6 +63,7 @@ cp Q-Y5F6_1M.pe.alignSummary.txt ./NEW_test_data/meta/Q-Y5F6_1M.pe.alignSummary.
 singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.bam O=Q-Y5F6_1M.se.deduped.bam M=Q-Y5F6_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
 singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.deduped.bam
 singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.sorted.deduped.bam.bai
+cp Q-Y5F6_1M.se.deduped.bam ./NEW_test_data/bam/small/Q-Y5F6_1M.se.deduped.bam
 cp Q-Y5F6_1M.se.sorted.deduped.bam ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
 cp Q-Y5F6_1M.se.sorted.deduped.bam.bai ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam.bai
 cp Q-Y5F6_1M.se.deduped.Metrics.txt /NEW_test_data/meta/Q-Y5F6_1M.se.deduped.Metrics.txt
