@@ -75,6 +75,7 @@ process trackStart {
       "astrocyte": false, \
       "status": "started", \
       "nextflowVersion": "${workflow.nextflow.version}", \
+      "pipelineVersion": "${workflow.manifest.version}", \
       "ci": ${params.ci}, \
       "dev": ${params.dev} \
     }' \
@@ -94,7 +95,7 @@ ERCC Reference Version: ${params.refERCCVersion}
 Output Directory: ${params.outDir}
 ------------------------------------
 Nextflow Version: ${workflow.nextflow.version}
-Pipeline Version: ${pipelineVersion}
+Pipeline Version: ${workflow.manifest.version}
 Session ID      : ${workflow.sessionId}
 ------------------------------------
 Astrocyte       : ${params.astrocyte}
