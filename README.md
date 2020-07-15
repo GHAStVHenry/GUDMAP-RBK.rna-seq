@@ -30,6 +30,10 @@ To Run:
   * `--deriva` active **credential.json** file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
   * `--bdbag` active **cookies.txt** file from [deriva-auth](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/Uploading-files-via-Deriva-client-tools#from-a-remote-server)
   * `--repRID` mRNA-seq replicate RID
+  * `--source` consortium server source
+    * **dev** = [dev.gudmap.org](dev.gudmap.org) (default, does not contain all data)
+    * **staging** = [staging.gudmap.org](staging.gudmap.org) (does not contain all data)
+    * **production** = [www.gudmap.org](www.gudmap.org) (***does contain  all data***)
   * `--refMoVersion` mouse reference version ***(optional)***
   * `--refHuVersion` human reference version ***(optional)***
   * `--refERCCVersion` human reference version ***(optional)***
@@ -39,6 +43,9 @@ To Run:
   * reference version consists of Genome Reference Consortium version, patch release and GENCODE annotation release # (leaving the params blank will use the default version tied to the pipeline version)
     * *current mouse* **38.p6.vM22** = GRCm38.p6 with GENCODE annotation release M22
     * *current human* **38.p6.v31** = GRCh38.p12 with GENCODE annotation release 31
+* Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
+  * `--ci` boolean (default = false)
+  * `--dev` boolean (default = false)
 
 FULL EXAMPLE:
 -------------
