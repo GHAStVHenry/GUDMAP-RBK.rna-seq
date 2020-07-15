@@ -87,20 +87,19 @@ log.info """\
 ====================================
 BICF RNA-seq Pipeline for GUDMAP/RBK
 ====================================
-Replicate RID        : ${params.repRID}
-Source Server: ${params.source}
+Replicate RID          : ${params.repRID}
+Source Server          : ${params.source}
 Mouse Reference Version: ${params.refMoVersion}
 Human Reference Version: ${params.refHuVersion}
-ERCC Reference Version: ${params.refERCCVersion}
-Output Directory: ${params.outDir}
+ERCC Reference Version : ${params.refERCCVersion}
+Output Directory       : ${params.outDir}
 ------------------------------------
-Nextflow Version: ${workflow.nextflow.version}
-Pipeline Version: ${workflow.manifest.version}
-Session ID      : ${workflow.sessionId}
+Nextflow Version       : ${workflow.nextflow.version}
+Pipeline Version       : ${workflow.manifest.version}
+Session ID             : ${workflow.sessionId}
 ------------------------------------
-Astrocyte       : ${params.astrocyte}
-CI              : ${params.ci}
-Development     : ${params.dev}
+CI                     : ${params.ci}
+Development            : ${params.dev}
 ------------------------------------
 """
 
