@@ -280,6 +280,7 @@ $RECYCLE.BIN/
 
 # nextflow analysis folders/files
 /test_data/*
+!/test_data/createTestData.sh
 /workflow/.nextflow/*
 /workflow/work/*
 /workflow/output/*
