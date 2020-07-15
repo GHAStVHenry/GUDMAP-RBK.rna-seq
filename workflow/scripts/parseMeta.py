@@ -17,7 +17,6 @@ def get_args():
 def main():
     args = get_args()
     metaFile = pd.read_csv(args.metaFile,sep=",",header=0)
-    endsManual = ""
 
     # Check replicate RID metadata from 'File.csv'
     if (args.parameter == "repRID"):
@@ -33,6 +32,24 @@ def main():
         if (len(metaFile[metaFile["File_Type"] == "FastQ"]) > 2):
             print("There are more then 2 fastq's in the metadata: " + " ".join(metaFile[metaFile["File_Type"] == "FastQ"].RID))
             exit(1)
+
+    # Check experiment RID metadata from 'Experiment.csv'
+    if (args.parameter == "expRID"):
+        if (len(metaFile.Experiment_RID.unique()) > 1):
+            print("There are multiple experoment RID's in the metadata: " + " ".join(metaFile.Experiment_RID.unique()))
+            exit(1)
+        else:
+            exp=metaFile["Experiment_RID"].unique()[0]
+            print(exp)
+
+    # Check study RID metadata from 'Experiment.csv'
+    if (args.parameter == "studyRID"):
+        if (len(metaFile.Study_RID.unique()) > 1):
+            print("There are multiple study RID's in the metadata: " + " ".join(metaFile.Study_RID.unique()))
+            exit(1)
+        else:
+            study=metaFile["Study_RID"].unique()[0]
+            print(study)
     
     # Get endedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "endsMeta"):
