@@ -60,7 +60,6 @@ script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
  */
 params.ci = false
 params.dev = false
-/*
 process trackStart {
   container 'docker://bicf/bicfbase:2.1.0'
   script:
@@ -84,7 +83,6 @@ process trackStart {
     "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
   """
 }
-*/
 
 log.info """\
 ====================================
