@@ -112,7 +112,7 @@ makeBigWig:
 fastqc:
   stage: unit
   script:
-  - singularity run 'docker://bicf/fastqc:2.0.1_indev' ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
+  - singularity run 'docker://bicf/fastqc:2.0.1_indev' fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
   - pytest -m fastqc
 
 dataQC:
