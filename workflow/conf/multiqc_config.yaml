@@ -1,4 +1,4 @@
-custom_logo: '../../docs/bicf_logo.png'
+custom_logo: './bicf_logo.png'
 custom_logo_url: 'https/utsouthwestern.edu/labs/bioinformatics/'
 custom_logo_title: 'Bioinformatics Core Facility'
 

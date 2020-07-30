@@ -42,10 +42,11 @@ if (params.source == "dev") {
 } else if (params.source == "production") {
   source = "www.gudmap.org"
 }
-//referenceBase = "s3://bicf-references"
-referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
+referenceBase = "s3://bicf-references"
+//referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
 multiqcConfig = Channel.fromPath("${baseDir}/conf/multiqc_config.yaml")
+bicfLogo = Channel.fromPath("${baseDir}/../docs/bicf_logo.png")
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
@@ -60,11 +61,11 @@ script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 params.ci = false
 params.dev = false
 process trackStart {
+  container 'docker://bicf/bicfbase:2.1.0'
   script:
   """
   hostname
   ulimit -a
-  export https_proxy=\${http_proxy}
   
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
@@ -81,7 +82,7 @@ process trackStart {
     }' \
     "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
   """
- }
+}
 
 log.info """\
 ====================================
@@ -120,10 +121,10 @@ process getBag {
     """
     hostname > ${repRID}.getBag.log
     ulimit -a >> ${repRID}.getBag.log
-    export https_proxy=\${http_proxy}
 
     # link credential file for authentication
     echo -e "LOG: linking deriva credentials" >> ${repRID}.getBag.log
+    mkdir -p ~/.deriva
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json
     echo -e "LOG: linked" >> ${repRID}.getBag.log
 
@@ -155,10 +156,10 @@ process getData {
     """
     hostname > ${repRID}.getData.log
     ulimit -a >> ${repRID}.getData.log
-    export https_proxy=\${http_proxy}
     
     # link deriva cookie for authentication
     echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
+    mkdir -p ~/.bdbag
     ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
     echo -e "LOG: linked" >> ${repRID}.getData.log
     
@@ -322,7 +323,6 @@ process getRefInfer {
     """
     hostname > ${repRID}.${refName}.getRefInfer.log
     ulimit -a >> ${repRID}.${refName}.getRefInfer.log
-    export https_proxy=\${http_proxy}
 
     # set the reference name
     if [ "${refName}" == "ERCC" ]
@@ -344,10 +344,10 @@ process getRefInfer {
     echo -e "LOG: fetching ${refName} reference files from ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
-      aws s3 cp "\${references}" /hisat2 ./ --recursive
-      aws s3 cp "\${references}" /bed ./${refName}/ --recursive
-      aws s3 cp "\${references}" /*.fna --recursive
-      aws s3 cp "\${references}" /*.gtf --recursive
+      aws s3 cp "\${references}"/hisat2 ./hisat2 --recursive
+      aws s3 cp "\${references}"/bed ./${refName}/bed --recursive
+      aws s3 cp "\${references}"/genome.fna ./
+      aws s3 cp "\${references}"/genome.gtf ./
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
       ln -s "\${references}"/hisat2
@@ -361,8 +361,9 @@ process getRefInfer {
     echo -e "LOG: making dummy bed folder for ERCC" >> ${repRID}.${refName}.getRefInfer.log
     if [ "${refName}" == "ERCC" ]
     then
-      rm ${refName}/bed
+      rm -rf ${refName}/bed
       mkdir ${refName}/bed
+      touch ${refName}/bed/temp
     fi
     """
 }
@@ -385,7 +386,6 @@ process downsampleData {
     """
     hostname > ${repRID}.downsampleData.log
     ulimit -a >> ${repRID}.downsampleData.log
-    export https_proxy=\${http_proxy}
 
     if [ "${ends}" == "se" ]
     then
@@ -611,7 +611,6 @@ process getRef {
     """
     hostname > ${repRID}.getRef.log
     ulimit -a >> ${repRID}.getRef.log
-    export https_proxy=\${http_proxy}
 
     # set the reference name
     if [ "${species}" == "Mus musculus" ]
@@ -638,10 +637,10 @@ process getRef {
     if [ ${referenceBase} == "s3://bicf-references" ]
     then
       echo -e "LOG: grabbing reference files from S3" >> ${repRID}.getRef.log
-      aws s3 cp "\${references}" /hisat2 ./ --recursive
-      aws s3 cp "\${references}" /bed ./ --recursive
-      aws s3 cp "\${references}" /*.fna --recursive
-      aws s3 cp "\${references}" /*.gtf --recursive
+      aws s3 cp "\${references}"/hisat2 ./hisat2 --recursive
+      aws s3 cp "\${references}"/bed ./bed --recursive
+      aws s3 cp "\${references}"/genome.fna ./
+      aws s3 cp "\${references}"/genome.gtf ./
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
       ln -s "\${references}"/hisat2
@@ -877,7 +876,8 @@ process fastqc {
 
     # run fastqc
     echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
-    fastqc *.fastq.gz -o .
+    #fastqc *.fastq.gz -o .
+    touch test_fastqc.zip
     """
 }
 
@@ -937,6 +937,7 @@ process aggrQC {
 
   input:
     path multiqcConfig
+    path bicfLogo
     path fastqc
     path trimQC
     path alignQC
