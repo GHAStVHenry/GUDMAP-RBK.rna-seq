@@ -10,6 +10,7 @@ before_script:
 stages:
   - unit
   - integration
+  - consistency
 
 getBag:
   stage: unit
@@ -132,6 +133,16 @@ integration_se:
   - hostname
   - ulimit -a
   - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --ci true
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - dag.png
+      - output/qc/
+    expire_in: 7 days
+  cache:
+    paths:
+    - output/qc/
 
 integration_pe:
   stage: integration
@@ -144,4 +155,8 @@ integration_pe:
     when: always
     paths:
       - dag.png
+      - output/qc/
     expire_in: 7 days
+  cache:
+    paths:
+    - output/qc/
