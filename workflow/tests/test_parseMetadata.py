@@ -18,7 +18,7 @@ def readLine(fileName):
     file = open(fileName, "r")
     line = file.readline()
     print(line)
-    if line == "uk,se,unstranded,no,Homo sapiens,Experiment_RID,Study_RID,Replicate_RID":
+    if line.strip() == "uk,se,unstranded,no,Homo sapiens,Experiment_RID,Study_RID,Replicate_RID":
         data = True
 
     return data
