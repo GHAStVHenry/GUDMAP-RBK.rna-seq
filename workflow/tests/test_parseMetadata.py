@@ -16,7 +16,8 @@ def test_parseMetadata():
 def readLine(fileName):
     data = False
     file = open(fileName, "r")
-    if file.readline() == "uk,se,unstranded,no,Homo sapiens,Experiment_RID,Study_RID,Replicate_RID":
-        data = True
+print(file.readline())
+    #if file.readline() == "uk,se,unstranded,no,Homo sapiens,Experiment_RID,Study_RID,Replicate_RID":
+        #data = True
 
     return data
