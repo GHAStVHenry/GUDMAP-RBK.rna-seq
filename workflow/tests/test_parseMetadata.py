@@ -16,7 +16,9 @@ def test_parseMetadata():
 def readLine(fileName):
     data = False
     file = open(fileName, "r")
-    if file.readline() == file.readline():
+    line = file.readline()
+    print(line)
+    if line == line:
         data = True
 
     return data
