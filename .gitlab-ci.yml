@@ -121,8 +121,7 @@ dataQC:
   stage: unit
   script:
   - echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > Q-Y5F6_1M.se.sorted.deduped.tin.xls
-  - for i in {"chr8","chr4","chrY"}; do
-    echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"; done | singularity run 'docker://bicf/rseqc3.0:2.0.1_indev' parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
+
   - pytest -m dataQC
 
 
