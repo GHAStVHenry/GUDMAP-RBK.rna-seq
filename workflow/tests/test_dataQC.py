@@ -16,9 +16,8 @@ def test_dataQC():
 def countLines(fileName):
     data = False
     file = open(fileName, "r")
-    for line in file:
-        if file.readlines()[6] != "geneID":
-            data = True
-            break
+    file.readline()
+    if file.readlines()[6] != "geneID":
+        data = True
 
     return data
