@@ -132,17 +132,20 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --ci true
+  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} . \;
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
     paths:
       - dag.png
       - output/qc/
+      - 16-1ZX4_multiqc_data.json
     expire_in: 7 days
   cache:
+    key: se_multiqc_cache
     paths:
-    - output/qc/
+      - 16-1ZX4_multiqc_data.json
 
 integration_pe:
   stage: integration
@@ -150,13 +153,24 @@ integration_pe:
   - hostname
   - ulimit -a
   - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} . \;
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
     paths:
       - dag.png
       - output/qc/
+      - Q-Y5JA_multiqc_data.json
     expire_in: 7 days
   cache:
+    key: pe_multiqc_cache
     paths:
-    - output/qc/
+    - multiqc_data.json
+
+consistency_se:
+  stage: consistency
+  script:
+  - echo "TEST"
+  cache:
+    key: se_multiqc_cache
+
