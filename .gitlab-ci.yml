@@ -29,14 +29,15 @@ getData:
 parseMetadata:
   stage: unit
   script:
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsManual
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species
+  - rep=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID
+  - exp=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID
+  - study=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID
+  - endsMeta=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta
+  - endsManual=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsManual
+  - stranded=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded
+  - spike=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike
+  - species=singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species
+  - pytest -m pareseMetadata
 
 inferMetadata:
   stage: unit
