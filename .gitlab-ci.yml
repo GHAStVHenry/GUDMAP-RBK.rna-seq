@@ -132,7 +132,7 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true
+  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./16-1ZX4_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -147,7 +147,7 @@ integration_pe:
   script:
   - hostname
   - ulimit -a
-  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
+  - nextflow run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./Q-Y5JA_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
