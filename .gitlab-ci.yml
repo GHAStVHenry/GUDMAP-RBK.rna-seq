@@ -140,12 +140,11 @@ integration_se:
     paths:
       - dag.png
       - output/qc/
-      - 16-1ZX4_multiqc_data.json
     expire_in: 7 days
   cache:
     key: se_multiqc_cache
     paths:
-      - 16-1ZX4_multiqc_data.json
+      - multiqc_data.json
 
 integration_pe:
   stage: integration
@@ -160,7 +159,6 @@ integration_pe:
     paths:
       - dag.png
       - output/qc/
-      - Q-Y5JA_multiqc_data.json
     expire_in: 7 days
   cache:
     key: pe_multiqc_cache
