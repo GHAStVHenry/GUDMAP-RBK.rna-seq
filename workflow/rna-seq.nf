@@ -61,7 +61,7 @@ script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 params.ci = false
 params.dev = false
 process trackStart {
-  container 'docker://bicf/bicfbase:2.1.0'
+  container 'bicf/bicfbase:2.1.0'
   script:
   """
   hostname
