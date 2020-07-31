@@ -133,13 +133,13 @@ integration_se:
   - hostname
   - ulimit -a
   - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./16-1ZX4_multiqc_data.json \;
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
     paths:
       - output/qc/
-      - 16-1ZX4_multiqc_data.json
+      - SE_multiqc_data.json
     expire_in: 7 days
 
 integration_pe:
@@ -148,21 +148,34 @@ integration_pe:
   - hostname
   - ulimit -a
   - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./Q-Y5JA_multiqc_data.json \;
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
     paths:
       - dag.png
       - output/qc/
-      - Q-Y5JA_multiqc_data.json
+      - PE_multiqc_data.json
     expire_in: 7 days
 
 consistency:
   stage: consistency
   script:
-  - grep -m 1 \"Assigned\":.[0-9] 16-1ZX4_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
-  - grep -m 1 \"Assigned\":.[0-9] Q-Y5JA_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
+  - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
+  - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
+  - echo 7742416 > assignedExpectSE.txt
+  - echo 2599149 > assignedExpectPE.txt
   - pytest -m consistencySE
   - pytest -m consistencyPE
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - SE_multiqc_data.json
+      - PE_multiqc_data.json
+      - assignedSE.txt
+      - assignedPE.txt
+      - assignedExpectSE.txt
+      - assignedExpectPE.txt
+    expire_in: 7 days
 
