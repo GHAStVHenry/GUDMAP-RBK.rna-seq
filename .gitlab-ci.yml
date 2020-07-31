@@ -158,8 +158,11 @@ integration_pe:
       - Q-Y5JA_multiqc_data.json
     expire_in: 7 days
 
-consistency_se:
+consistency:
   stage: consistency
   script:
-  - echo "TEST"
+  - grep -m 1 \"Assigned\":.[0-9] 16-1ZX4_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
+  - grep -m 1 \"Assigned\":.[0-9] Q-Y5JA_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
+  - pytest -m consistencySE
+  - pytest -m consistencyPE
 
