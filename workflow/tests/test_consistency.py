@@ -18,7 +18,7 @@ def test_consistencyPE():
     assert os.path.exists(os.path.join(test_output_path, 'PE_multiqc_data.json'))
     assert readAssigned("assignedPE.txt","assignedExpectPE.txt")
 
-def readAssgned(fileAssigned,fileExpectAssigned):
+def readAssigned(fileAssigned,fileExpectAssigned):
     data = False
     assigned = open(fileAssigned, "r")
     expect = open(fileExpectAssigned, "r")
