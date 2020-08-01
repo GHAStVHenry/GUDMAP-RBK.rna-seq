@@ -10,6 +10,7 @@ before_script:
 stages:
   - unit
   - integration
+  - consistency
 
 getBag:
   stage: unit
@@ -29,14 +30,16 @@ getData:
 parseMetadata:
   stage: unit
   script:
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsManual
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike
-  - singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species
+  - rep=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
+  - exp=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
+  - study=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
+  - endsMeta=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
+  - endsManual=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsManual)
+  - stranded=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
+  - spike=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
+  - species=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
+  - echo -e "${endsMeta},${endsManual},${stranded},${spike},${species},${exp},${study},${rep}" > design.csv
+  - pytest -m parseMetadata
 
 inferMetadata:
   stage: unit
@@ -129,17 +132,50 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - output/qc/
+      - SE_multiqc_data.json
+    expire_in: 7 days
 
 integration_pe:
   stage: integration
   script:
   - hostname
   - ulimit -a
-  - nextflow -bg run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
     paths:
       - dag.png
+      - output/qc/
+      - PE_multiqc_data.json
     expire_in: 7 days
+
+consistency:
+  stage: consistency
+  script:
+  - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
+  - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
+  - echo 7742416 > assignedExpectSE.txt
+  - echo 2599149 > assignedExpectPE.txt
+  - pytest -m consistencySE
+  - pytest -m consistencyPE
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - SE_multiqc_data.json
+      - PE_multiqc_data.json
+      - assignedSE.txt
+      - assignedPE.txt
+      - assignedExpectSE.txt
+      - assignedExpectPE.txt
+    expire_in: 7 days
+
