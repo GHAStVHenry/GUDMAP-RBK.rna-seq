@@ -241,7 +241,7 @@ process parseMetadata {
     readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p readLength)
     echo -e "LOG: read length metadata parsed: \${readLength}" >> ${repRID}.parseMetadata.log
 
-    # gave design file
+    # save design file
     echo -e "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
     """
 }
@@ -287,6 +287,7 @@ process trimData {
   output:
     path ("*.fq.gz") into fastqsTrim
     path ("*_trimming_report.txt") into trimQC
+    path ("readLength.csv") into inferMetadata_readLength
 
   script:
     """
@@ -298,13 +299,26 @@ process trimData {
     if [ "${ends}" == "se" ]
     then
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]}
+      readLength=$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     elif [ "${ends}" == "pe" ]
     then
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]}
+      readLength=$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     fi
     echo -e "LOG: trimmed" >> ${repRID}.trimData.log
+    echo -e "LOG: average trimmed read length: /${readLength}" >> ${repRID}.trimData.log
+    
+    # save read length file
+    echo -e "\${readLength}" > readLength.csv
     """
 }
+
+// Split metadata into separate channels
+readLengthInfer = Channel.create()
+inferMetadata_readLength.splitCsv(sep: ",", header: false).separate(
+  readLengthInfer
+}
+
 
 // Replicate trimmed fastq's
 fastqsTrim.into {
@@ -962,6 +976,8 @@ process aggrQC {
     val strandedI from strandedInfer_aggrQC
     val spikeI from spikeInfer_aggrQC
     val speciesI from speciesInfer_aggrQC
+    val readLengthM from readLengthMeta
+    val readLengthI from readLengthInfer
     val expRID
     val studyRID
 
@@ -980,10 +996,11 @@ process aggrQC {
 
     # make metadata table
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
-    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in" > metadata.tsv
-    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}" >> metadata.tsv
-    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}" >> metadata.tsv
-    echo -e "Manual\t-\t${endsManual}\t-\t-" >> metadata.tsv
+    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRead Length" > metadata.tsv
+    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-" >> metadata.tsv
+    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t${readLengthM}" >> metadata.tsv
+    echo -e "Manual\t-\t${endsManual}\t-\t-\t-" >> metadata.tsv
+    echo -e "Measured\t-\t-\t-\t-\t${readLengthI}"
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
