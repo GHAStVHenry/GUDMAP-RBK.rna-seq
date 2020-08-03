@@ -238,7 +238,11 @@ process parseMetadata {
     echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
 
     # get read length metadata
-    readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p readLength)
+    readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p readLength)
+    if [ "\${readLength}" == "nan"]
+    then
+      readLength="Not Entered"
+    fi
     echo -e "LOG: read length metadata parsed: \${readLength}" >> ${repRID}.parseMetadata.log
 
     # save design file
