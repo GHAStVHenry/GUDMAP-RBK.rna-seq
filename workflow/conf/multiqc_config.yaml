@@ -70,7 +70,7 @@ custom_data:
     meta:
         file_format: 'tsv'
         section_name: 'Metadata'
-        description: 'This is the comparison of infered metadata and submitter provided'
+        description: 'This is the comparison of infered metadata, submitter provided, and calculated'
         plot_type: 'table'
         pconfig:
             id: 'meta'
@@ -80,6 +80,8 @@ custom_data:
             Ends
             Stranded
             Spike-in
+            Read Length
+            TIN
     tin:
         file_format: 'tsv'
         section_name: 'TIN'

@@ -241,7 +241,7 @@ process parseMetadata {
     readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p readLength)
     if [ "\${readLength}" == "nan"]
     then
-      readLength="Not Entered"
+      readLength="NA"
     fi
     echo -e "LOG: read length metadata parsed: \${readLength}" >> ${repRID}.parseMetadata.log
 
@@ -317,7 +317,7 @@ process trimData {
     """
 }
 
-// Split metadata into separate channels
+// Extract calculated read length metadata into channel
 readLengthInfer = Channel.create()
 inferMetadata_readLength.splitCsv(sep: ",", header: false).separate(
   readLengthInfer
@@ -919,7 +919,8 @@ process dataQC {
     val ends from endsInfer_dataQC
     
   output:
-    path "${repRID}.tin.hist.tsv" into tin
+    path "${repRID}.tin.hist.tsv" into tinHist
+    path "${repRID}.tin.med.csv" into tinMed
     path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
   
   script:
@@ -952,6 +953,11 @@ process dataQC {
     """
 }
 
+// Extract median TIN into channel
+tinMedInfer = Channel.create()
+tinMed.splitCsv(sep: ",", header: false).separate(
+  tinMedInfer,
+
 /*
  *aggrQC: aggregate QC from processes as well as metadata and run MultiQC
 */
@@ -968,7 +974,7 @@ process aggrQC {
     path dedupQC
     path countsQC
     path innerDistance
-    path tin
+    path tinHist
     path alignSampleQCs from alignSampleQC_aggrQC.collect()
     path inferExperiment
     val endsManual from endsManual_aggrQC
@@ -982,6 +988,7 @@ process aggrQC {
     val speciesI from speciesInfer_aggrQC
     val readLengthM from readLengthMeta
     val readLengthI from readLengthInfer
+    val tinMedI from tinMedInfer
     val expRID
     val studyRID
 
@@ -1000,11 +1007,11 @@ process aggrQC {
 
     # make metadata table
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
-    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRead Length" > metadata.tsv
-    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-" >> metadata.tsv
-    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t${readLengthM}" >> metadata.tsv
-    echo -e "Manual\t-\t${endsManual}\t-\t-\t-" >> metadata.tsv
-    echo -e "Measured\t-\t-\t-\t-\t${readLengthI}"
+    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRead Length\tTIN" > metadata.tsv
+    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-" >> metadata.tsv
+    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t${readLengthM}\t-" >> metadata.tsv
+    echo -e "Manual\t-\t${endsManual}\t-\t-\t-\t-" >> metadata.tsv
+    echo -e "Measured\t-\t-\t-\t-\t${readLengthI}\t${tinMedI}" >> metadata.tsv
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
