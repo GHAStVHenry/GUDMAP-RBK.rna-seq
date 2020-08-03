@@ -953,10 +953,11 @@ process dataQC {
     """
 }
 
-// Extract median TIN into channel
+// Extract median TIN metadata into channel
 tinMedInfer = Channel.create()
 tinMed.splitCsv(sep: ",", header: false).separate(
-  tinMedInfer,
+  tinMedInfer
+)
 
 /*
  *aggrQC: aggregate QC from processes as well as metadata and run MultiQC
