@@ -237,8 +237,12 @@ process parseMetadata {
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p species)
     echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
 
+    # get read length metadata
+    readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p readLength)
+    echo -e "LOG: read length metadata parsed: \${readLength}" >> ${repRID}.parseMetadata.log
+
     # gave design file
-    echo -e "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${exp},\${study}" > design.csv
+    echo -e "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
     """
 }
 
@@ -248,6 +252,7 @@ endsManual = Channel.create()
 strandedMeta = Channel.create()
 spikeMeta = Channel.create()
 speciesMeta = Channel.create()
+readLengthMeta = Channel.create()
 expRID = Channel.create()
 studyRID = Channel.create()
 metadata.splitCsv(sep: ",", header: false).separate(
@@ -256,6 +261,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
   strandedMeta,
   spikeMeta,
   speciesMeta,
+  readLengthMeta,
   expRID,
   studyRID
 )

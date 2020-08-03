@@ -38,7 +38,8 @@ parseMetadata:
   - stranded=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
   - spike=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
   - species=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
-  - echo -e "${endsMeta},${endsManual},${stranded},${spike},${species},${exp},${study},${rep}" > design.csv
+  - readLength=$(singularity run 'docker://bicf/python3:2.0.1_indev' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.stageNew.csv" -p readLength)
+  - echo -e "${endsMeta},${endsManual},${stranded},${spike},${species},${readLength},${exp},${study},${rep}" > design.csv
   - pytest -m parseMetadata
 
 inferMetadata:
