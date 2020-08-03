@@ -239,7 +239,6 @@ process parseMetadata {
 
     # get read length metadata
     readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p readLength)
-    readLength=""\${readLength}
     echo -e "LOG: read length metadata parsed: \${readLength}" >> ${repRID}.parseMetadata.log
 
     # gave design file
