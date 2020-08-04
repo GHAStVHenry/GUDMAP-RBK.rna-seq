@@ -842,7 +842,7 @@ process countData {
   output:
     path ("*.countTable.csv") into counts
     path ("*.countData.summary") into countsQC
-    path ("assignedReads") into inferMetadata_assignedReads
+    path ("assignedReads.csv") into inferMetadata_assignedReads
 
   script:
     """
@@ -888,7 +888,7 @@ process countData {
 // Extract number of assigned reads metadata into channel
 assignedReadsInfer = Channel.create()
 inferMetadata_assignedReads.splitCsv(sep: ",", header: false).separate(
-  assignedReads
+  assignedReadsInfer
 )
 
 /*
