@@ -298,7 +298,7 @@ process trimData {
     hostname > ${repRID}.trimData.log
     ulimit -a >> ${repRID}.trimData.log
 
-    # trim fastq's using trim_galore
+    # trim fastq's using trim_galore and extract median read length
     echo -e "LOG: trimming ${ends}" >> ${repRID}.trimData.log
     if [ "${ends}" == "se" ]
     then
@@ -875,7 +875,8 @@ process countData {
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
     fi
     echo -e "LOG: counted" >> ${repRID}.countData.log
-
+    
+    # extract assigned reads
     assignedReads=grep -m 1 'Assigned' *.countData.summary | grep -oe '\([0-9.]*\)'
     echo -e \${assignedReads} > assignedReads.csv
     echo -e "LOG: assigned reads: "\${assignedReads} >> ${repRID}.countData.log
@@ -886,6 +887,12 @@ process countData {
     Rscript calculateTPM.R --count "${repRID}.countData"
     """
 }
+
+// Extract number of assigned reads metadata into channel
+assignedReadsInfer = Channel.create()
+inferMetadata_assignedReads.splitCsv(sep: ",", header: false).separate(
+  assignedReads
+)
 
 /*
  *fastqc: run fastqc on untrimmed fastq's
@@ -910,12 +917,6 @@ process fastqc {
     touch test_fastqc.zip
     """
 }
-
-// Extract number of assigned reads metadata into channel
-assignedReadsInfer = Channel.create()
-inferMetadata_assignedReads.splitCsv(sep: ",", header: false).separate(
-  assignedReads
-)
 
 /*
  *dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
