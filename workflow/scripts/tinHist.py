@@ -36,7 +36,7 @@ def main():
     #hist = hist.apply(lambda x: x/x.sum()*100, axis=1)
     hist.to_csv(args.repRID + '.tin.hist.tsv',sep='\t')
     medFile = open(args.repRID + '.tin.med.csv',"w")
-    medFile.write(str(round(tin['TIN'][(tin['TIN']!=0)].median())))
+    medFile.write(str(round(tin['TIN'][(tin['TIN']!=0)].median(),2)))
     medFile.close()
 
 if __name__ == '__main__':
