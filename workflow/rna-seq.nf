@@ -877,7 +877,7 @@ process countData {
     echo -e "LOG: counted" >> ${repRID}.countData.log
     
     # extract assigned reads
-    grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)') > assignedReads.csv
+    grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)' > assignedReads.csv
 
     # calculate TPM from the resulting countData table
     echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
