@@ -877,7 +877,7 @@ process countData {
     echo -e "LOG: counted" >> ${repRID}.countData.log
     
     # extract assigned reads
-    assignedReads=grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)'
+    assignedReads=\$(grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)')
     echo -e \${assignedReads} > assignedReads.csv
     echo -e "LOG: assigned reads: "\${assignedReads} >> ${repRID}.countData.log
 
