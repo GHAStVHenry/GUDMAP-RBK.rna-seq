@@ -842,6 +842,7 @@ process countData {
   output:
     path ("*.countTable.csv") into counts
     path ("*.countData.summary") into countsQC
+    path ("assignedReads") into inferMetadata_assignedReads
 
   script:
     """
@@ -861,7 +862,7 @@ process countData {
     elif [ "${stranded}" == "reverse" ]
     then
       stranding=2
-      echo -e "LOG: strandedness set to forward stranded [2]" >> ${repRID}.countData.log
+      echo -e "LOG: strandedness set to reverse stranded [2]" >> ${repRID}.countData.log
     fi
 
     # run featureCounts
@@ -874,6 +875,11 @@ process countData {
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
     fi
     echo -e "LOG: counted" >> ${repRID}.countData.log
+
+    assignedReads=grep -m 1 'Assigned' *.countData.summary | grep -oe '\([0-9.]*\)'
+    echo -e \${assignedReads} > assignedReads.csv
+    echo -e "LOG: assigned reads: "\${assignedReads} >> ${repRID}.countData.log
+
 
     # calculate TPM from the resulting countData table
     echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
@@ -905,6 +911,12 @@ process fastqc {
     """
 }
 
+// Extract number of assigned reads metadata into channel
+assignedReadsInfer = Channel.create()
+inferMetadata_assignedReads.splitCsv(sep: ",", header: false).separate(
+  assignedReads
+)
+
 /*
  *dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
 */
@@ -920,7 +932,7 @@ process dataQC {
     
   output:
     path "${repRID}.tin.hist.tsv" into tinHist
-    path "${repRID}.tin.med.csv" into tinMed
+    path "${repRID}.tin.med.csv" into inferMetadata_tinMed
     path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
   
   script:
@@ -955,7 +967,7 @@ process dataQC {
 
 // Extract median TIN metadata into channel
 tinMedInfer = Channel.create()
-tinMed.splitCsv(sep: ",", header: false).separate(
+inferMetadata_tinMed.splitCsv(sep: ",", header: false).separate(
   tinMedInfer
 )
 
@@ -989,6 +1001,7 @@ process aggrQC {
     val speciesI from speciesInfer_aggrQC
     val readLengthM from readLengthMeta
     val readLengthI from readLengthInfer
+    val assignedReadsI from assignedReadsInfer
     val tinMedI from tinMedInfer
     val expRID
     val studyRID
@@ -1008,11 +1021,10 @@ process aggrQC {
 
     # make metadata table
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
-    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRead Length\tTIN" > metadata.tsv
-    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-" >> metadata.tsv
-    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t${readLengthM}\t-" >> metadata.tsv
-    echo -e "Manual\t-\t${endsManual}\t-\t-\t-\t-" >> metadata.tsv
-    echo -e "Measured\t-\t-\t-\t-\t${readLengthI}\t${tinMedI}" >> metadata.tsv
+    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tAssigned Reads\tRead Length\tTIN" > metadata.tsv
+    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-" >> metadata.tsv
+    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t${readLengthM}\t-\t-" >> metadata.tsv
+    echo -e "Measured\t-\t${endsManual}\t-\t-\t${assignedReadsI}\t${readLengthI}\t${tinMedI}" >> metadata.tsv
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
