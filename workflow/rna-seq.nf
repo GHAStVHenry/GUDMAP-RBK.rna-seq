@@ -1026,7 +1026,7 @@ process aggrQC {
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
-    if [ wc -l ${innerDistance} | awk '{print\${1}}' -eq 0 ]
+    if [ "${endsM}" == "se" ]
     then
       rm -f ${innerDistance}
     fi
