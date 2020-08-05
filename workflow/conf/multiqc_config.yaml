@@ -80,12 +80,9 @@ custom_data:
             Ends
             Stranded
             Spike-in
-            Assigned Reads:
-		        format: '{:,.0f}'
-            Read Length:
-		        format: '{:,.0f}'
-            TIN:
-		        format: '{:+.1f}'
+            Assigned Reads
+            Read Length
+            TIN
 
         file_format: 'tsv'
         section_name: 'TIN'
