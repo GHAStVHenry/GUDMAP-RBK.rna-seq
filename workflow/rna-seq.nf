@@ -910,8 +910,7 @@ process fastqc {
 
     # run fastqc
     echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
-    #fastqc *.fastq.gz -o .
-    touch test_fastqc.zip
+    fastqc *.fastq.gz -o .
     """
 }
 
@@ -1021,7 +1020,7 @@ process aggrQC {
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
     echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tAssigned Reads\tRead Length\tTIN" > metadata.tsv
     echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-" >> metadata.tsv
-    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t${readLengthM}\t-\t-" >> metadata.tsv
+    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t${readLengthM}\t-" >> metadata.tsv
     echo -e "Measured\t-\t${endsManual}\t-\t-\t${assignedReadsI}\t${readLengthI}\t${tinMedI}" >> metadata.tsv
 
     # remove inner distance report if it is empty (SE repRID)
