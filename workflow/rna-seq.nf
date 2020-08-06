@@ -902,7 +902,7 @@ process fastqc {
 
   output:
     path ("*_fastqc.zip") into fastqc
-    path ("rawRead.csv") into inferMetadata_rawReads
+    path ("rawReads.csv") into inferMetadata_rawReads
 
   script:
     """
