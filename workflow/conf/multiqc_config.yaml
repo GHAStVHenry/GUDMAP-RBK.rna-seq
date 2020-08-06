@@ -80,9 +80,10 @@ custom_data:
             Ends
             Stranded
             Spike-in
+            Raw Reads
             Assigned Reads
-            Read Length
-            TIN
+            Median Read Length
+            Median TIN
 
         file_format: 'tsv'
         section_name: 'TIN'
