@@ -80,11 +80,11 @@ custom_data:
             Ends
             Stranded
             Spike-in
-            Raw-Reads
-            Assigned-Reads
-            Median-Length
-            Median-TIN
-
+            Raw Reads
+            Assigned Reads
+            Median Read Length
+            Median TIN
+    tin:
         file_format: 'tsv'
         section_name: 'TIN'
         description: 'This is the distribution of TIN values calculated by the tool RSeQC'
