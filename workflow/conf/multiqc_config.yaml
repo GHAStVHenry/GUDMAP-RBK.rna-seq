@@ -64,9 +64,9 @@ custom_data:
         pconfig:
             id: 'rid'
         headers:
-            'Replicate RID:'
-            'Experiment RID:'
-            'Study RID:'
+            Replicate RID
+            Experiment RID
+            Study RID
     meta:
         file_format: 'tsv'
         section_name: 'Metadata'
@@ -75,15 +75,15 @@ custom_data:
         pconfig:
             id: 'meta'
         headers:
-            'Source:'
-            'Species:'
-            'Ends:'
-            'Stranded:'
-            'Spike-in:'
-            'Raw Reads:'
-            'Assigned Reads:'
-            'Median Read Length:'
-            'Median TIN:'
+            Source
+            Species
+            Ends
+            Stranded
+            Spike-in
+            Raw-Reads
+            Assigned-Reads
+            Median-Length
+            Median-TIN
 
         file_format: 'tsv'
         section_name: 'TIN'
