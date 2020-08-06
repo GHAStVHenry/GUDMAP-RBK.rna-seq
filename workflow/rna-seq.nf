@@ -1024,15 +1024,15 @@ process aggrQC {
 
     # make RID table
     echo -e "LOG: creating RID table" >> ${repRID}.aggrQC.log
-    echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
+    echo -e "Replicate RID:\tExperiment RID:\tStudy RID:" > rid.tsv
     echo -e "${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
 
     # make metadata table
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
-    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRaw Reads\tAssigned Reads\tMedian Read Length\tMedian TIN" > metadata.tsv
-    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t${readLengthM}\t-" >> metadata.tsv
+    echo -e "Source\tSpecies:\tEnds:\tStranded:\tSpike-in:\tRaw Reads:\tAssigned Reads:\tMedian Read Length:\tMedian TIN:" > metadata.tsv
+    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
     echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
-    echo -e "Measured\t-\t${endsManual}\t-\t-\t${rawReadsI}\t${assignedReadsI}\t${readLengthI}\t${tinMedI}" >> metadata.tsv
+    echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
