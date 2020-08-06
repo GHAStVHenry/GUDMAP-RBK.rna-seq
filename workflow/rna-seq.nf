@@ -914,7 +914,7 @@ process fastqc {
     fastqc *.fastq.gz -o .
 
     # count raw reads
-    zcat *.R1.fastq.gz | echo $((`wc -l`/4)) > rawReads.csv
+    zcat *.R1.fastq.gz | echo \$((`wc -l`/4)) > rawReads.csv
     """
 }
 
