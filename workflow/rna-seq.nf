@@ -239,7 +239,7 @@ process parseMetadata {
 
     # get read length metadata
     readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p readLength)
-    if [ "\${readLength}" == "nan"]
+    if [ "\${readLength}" = "nan"]
     then
       readLength="NA"
     fi

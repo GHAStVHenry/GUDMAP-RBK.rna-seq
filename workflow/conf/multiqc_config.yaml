@@ -74,6 +74,7 @@ custom_data:
         plot_type: 'table'
         pconfig:
             id: 'meta'
+            format: '{:,.0f}'
         headers:
             Source
             Species
