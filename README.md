@@ -58,11 +58,17 @@ FULL EXAMPLE:
 nextflow run workflow/rna-seq.nf --deriva ./data/credential.json --bdbag ./data/cookies.txt --repRID Q-Y5JA
 ```
 
+To run a set of replicates from study RID:
+------------------------------------------
+Run in repo root dir:
+* `sh workflow/scripts/splitStudy.sh [studyRID]`
+It will run in parallel in batches of 5 replicatesRID
 
 
+
+<hr>
 [**CHANGELOG**](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/blob/develop/CHANGELOG.md)
-
----
+<hr>
 
 Credits
 =======
