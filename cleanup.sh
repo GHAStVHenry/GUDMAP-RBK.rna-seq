@@ -5,3 +5,5 @@ rm timeline*.html*
 rm .nextflow*.log*
 rm -r .nextflow/
 rm -r work/
+rm *_studyRID.json
+rm *_studyRID.csv
