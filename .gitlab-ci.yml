@@ -168,7 +168,7 @@ consistency:
   - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
   - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
   - echo 7742416 > assignedExpectSE.txt
-  - echo 2599149 > assignedExpectPE.txt
+  - echo 2599140 > assignedExpectPE.txt
   - pytest -m consistencySE
   - pytest -m consistencyPE
   artifacts:
