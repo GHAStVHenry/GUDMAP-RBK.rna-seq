@@ -53,6 +53,7 @@ script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
 script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
+script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
 script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 
 /*
@@ -322,7 +323,6 @@ readLengthInfer = Channel.create()
 inferMetadata_readLength.splitCsv(sep: ",", header: false).separate(
   readLengthInfer
 )
-
 
 // Replicate trimmed fastq's
 fastqsTrim.into {
@@ -629,7 +629,7 @@ process getRef {
     val species from speciesInfer_getRef
 
   output:
-    tuple path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf")  into reference
+    tuple path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf"), path ("geneID.tsv"), path ("Entrez.tsv")  into reference
  
   script:
     """
@@ -665,12 +665,16 @@ process getRef {
       aws s3 cp "\${references}"/bed ./bed --recursive
       aws s3 cp "\${references}"/genome.fna ./
       aws s3 cp "\${references}"/genome.gtf ./
+      aws s3 cp "\${references}"/geneID.tsv ./
+      aws s3 cp "\${references}"/Entrez.tsv ./
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
       ln -s "\${references}"/hisat2
       ln -s "\${references}"/bed
       ln -s "\${references}"/genome.fna
       ln -s "\${references}"/genome.gtf
+      ln -s "\${references}"/geneID.tsv
+      ln -s "\${references}"/Entrez.tsv
     fi
     echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
@@ -834,13 +838,14 @@ process countData {
 
   input:
     path script_calculateTPM
+    path script_convertGeneSymbols
     tuple path (bam), path (bai) from dedupBam_countData
     path ref from reference_countData
     val ends from endsInfer_countData
     val stranded from strandedInfer_countData
 
   output:
-    path ("*.countTable.csv") into counts
+    path ("*.tpmTable.csv") into counts
     path ("*.countData.summary") into countsQC
     path ("assignedReads.csv") into inferMetadata_assignedReads
 
@@ -882,6 +887,10 @@ process countData {
     # calculate TPM from the resulting countData table
     echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
     Rscript calculateTPM.R --count "${repRID}.countData"
+
+    # convert gene symbols to Entrez id's
+    echo -e "LOG: convert gene symbols to Entrez id's" >> ${repRID}.countData.log
+    Rscript convertGeneSymbols.R --repRID "${repRID}"
     """
 }
 
@@ -983,7 +992,8 @@ inferMetadata_tinMed.splitCsv(sep: ",", header: false).separate(
 */
 process aggrQC {
   tag "${repRID}"
-  publishDir "${outDir}/qc", mode: 'copy', pattern: "${repRID}.multiqc.html"
+  publishDir "${outDir}/report", mode: 'copy', pattern: "${repRID}.multiqc.html"
+  publishDir "${outDir}/qc", mode: 'copy', pattern: "${repRID}.multiqc_data.json"
 
   input:
     path multiqcConfig
@@ -1016,6 +1026,7 @@ process aggrQC {
 
   output:
     path "${repRID}.multiqc.html" into multiqc
+    path "${repRID}.multiqc_data.json" into multiqcJSON
 
   script:
     """
@@ -1044,5 +1055,6 @@ process aggrQC {
     # run MultiQC
     echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
+    cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
     """
 }
