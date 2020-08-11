@@ -15,6 +15,7 @@ def get_args():
 def main():
     args = get_args()
     tin = pd.read_csv(args.repRID + '.sorted.deduped.tin.xls',sep="\t",header=0)
+    
     hist = pd.cut(tin['TIN'],bins=pd.interval_range(start=0,freq=10,end=100,closed='right')).value_counts(sort=False)
     labels = ["{0} - {1}".format(i, i + 9) for i in range(1, 100, 10)]
     #labels[0] = '0 - 10'
@@ -34,6 +35,9 @@ def main():
     hist = hist.T.fillna(0.0).astype(int)
     #hist = hist.apply(lambda x: x/x.sum()*100, axis=1)
     hist.to_csv(args.repRID + '.tin.hist.tsv',sep='\t')
+    medFile = open(args.repRID + '.tin.med.csv',"w")
+    medFile.write(str(round(tin['TIN'][(tin['TIN']!=0)].median(),2)))
+    medFile.close()
 
 if __name__ == '__main__':
     main()

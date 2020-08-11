@@ -102,5 +102,10 @@ def main():
             exit(1)
         print(species)
 
+    # Get read length metadata from 'Experiment Settings.csv'
+    if (args.parameter == "readLength"):
+        readLength = metaFile.Read_Length.unique()
+        print(str(readLength).strip('[]'))
+
 if __name__ == '__main__':
     main()

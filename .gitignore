@@ -297,6 +297,8 @@ timeline*.html*
 *.tmp
 *.swp
 *.out
+*_studyRID.json
+*_studyRID.csv
 run*.sh
 
 !.gitkeep

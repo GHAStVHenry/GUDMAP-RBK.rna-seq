@@ -53,6 +53,7 @@ script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
 script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
+script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
 script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 
 /*
@@ -237,8 +238,16 @@ process parseMetadata {
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p species)
     echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
 
-    # gave design file
-    echo -e "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${exp},\${study}" > design.csv
+    # get read length metadata
+    readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p readLength)
+    if [ "\${readLength}" = "nan"]
+    then
+      readLength="NA"
+    fi
+    echo -e "LOG: read length metadata parsed: \${readLength}" >> ${repRID}.parseMetadata.log
+
+    # save design file
+    echo -e "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
     """
 }
 
@@ -248,6 +257,7 @@ endsManual = Channel.create()
 strandedMeta = Channel.create()
 spikeMeta = Channel.create()
 speciesMeta = Channel.create()
+readLengthMeta = Channel.create()
 expRID = Channel.create()
 studyRID = Channel.create()
 metadata.splitCsv(sep: ",", header: false).separate(
@@ -256,6 +266,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
   strandedMeta,
   spikeMeta,
   speciesMeta,
+  readLengthMeta,
   expRID,
   studyRID
 )
@@ -281,24 +292,37 @@ process trimData {
   output:
     path ("*.fq.gz") into fastqsTrim
     path ("*_trimming_report.txt") into trimQC
+    path ("readLength.csv") into inferMetadata_readLength
 
   script:
     """
     hostname > ${repRID}.trimData.log
     ulimit -a >> ${repRID}.trimData.log
 
-    # trim fastq's using trim_galore
+    # trim fastq's using trim_galore and extract median read length
     echo -e "LOG: trimming ${ends}" >> ${repRID}.trimData.log
     if [ "${ends}" == "se" ]
     then
       trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]}
+      readLength=\$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length(\$1)}' | sort -n | awk '{a[NR]=\$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     elif [ "${ends}" == "pe" ]
     then
       trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]}
+      readLength=\$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length(\$1)}' | sort -n | awk '{a[NR]=\$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     fi
     echo -e "LOG: trimmed" >> ${repRID}.trimData.log
+    echo -e "LOG: average trimmed read length: \${readLength}" >> ${repRID}.trimData.log
+    
+    # save read length file
+    echo -e "\${readLength}" > readLength.csv
     """
 }
+
+// Extract calculated read length metadata into channel
+readLengthInfer = Channel.create()
+inferMetadata_readLength.splitCsv(sep: ",", header: false).separate(
+  readLengthInfer
+)
 
 // Replicate trimmed fastq's
 fastqsTrim.into {
@@ -605,7 +629,7 @@ process getRef {
     val species from speciesInfer_getRef
 
   output:
-    tuple path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf")  into reference
+    tuple path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf"), path ("geneID.tsv"), path ("Entrez.tsv")  into reference
  
   script:
     """
@@ -641,12 +665,16 @@ process getRef {
       aws s3 cp "\${references}"/bed ./bed --recursive
       aws s3 cp "\${references}"/genome.fna ./
       aws s3 cp "\${references}"/genome.gtf ./
+      aws s3 cp "\${references}"/geneID.tsv ./
+      aws s3 cp "\${references}"/Entrez.tsv ./
     elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
       ln -s "\${references}"/hisat2
       ln -s "\${references}"/bed
       ln -s "\${references}"/genome.fna
       ln -s "\${references}"/genome.gtf
+      ln -s "\${references}"/geneID.tsv
+      ln -s "\${references}"/Entrez.tsv
     fi
     echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
@@ -810,14 +838,16 @@ process countData {
 
   input:
     path script_calculateTPM
+    path script_convertGeneSymbols
     tuple path (bam), path (bai) from dedupBam_countData
     path ref from reference_countData
     val ends from endsInfer_countData
     val stranded from strandedInfer_countData
 
   output:
-    path ("*.countTable.csv") into counts
+    path ("*.tpmTable.csv") into counts
     path ("*.countData.summary") into countsQC
+    path ("assignedReads.csv") into inferMetadata_assignedReads
 
   script:
     """
@@ -837,7 +867,7 @@ process countData {
     elif [ "${stranded}" == "reverse" ]
     then
       stranding=2
-      echo -e "LOG: strandedness set to forward stranded [2]" >> ${repRID}.countData.log
+      echo -e "LOG: strandedness set to reverse stranded [2]" >> ${repRID}.countData.log
     fi
 
     # run featureCounts
@@ -850,12 +880,25 @@ process countData {
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
     fi
     echo -e "LOG: counted" >> ${repRID}.countData.log
+    
+    # extract assigned reads
+    grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)' > assignedReads.csv
 
     # calculate TPM from the resulting countData table
     echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
     Rscript calculateTPM.R --count "${repRID}.countData"
+
+    # convert gene symbols to Entrez id's
+    echo -e "LOG: convert gene symbols to Entrez id's" >> ${repRID}.countData.log
+    Rscript convertGeneSymbols.R --repRID "${repRID}"
     """
 }
+
+// Extract number of assigned reads metadata into channel
+assignedReadsInfer = Channel.create()
+inferMetadata_assignedReads.splitCsv(sep: ",", header: false).separate(
+  assignedReadsInfer
+)
 
 /*
  *fastqc: run fastqc on untrimmed fastq's
@@ -868,6 +911,7 @@ process fastqc {
 
   output:
     path ("*_fastqc.zip") into fastqc
+    path ("rawReads.csv") into inferMetadata_rawReads
 
   script:
     """
@@ -876,10 +920,18 @@ process fastqc {
 
     # run fastqc
     echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
-    #fastqc *.fastq.gz -o .
-    touch test_fastqc.zip
+    fastqc *.fastq.gz -o .
+
+    # count raw reads
+    zcat *.R1.fastq.gz | echo \$((`wc -l`/4)) > rawReads.csv
     """
 }
+
+// Extract number of raw reads metadata into channel
+rawReadsInfer = Channel.create()
+inferMetadata_rawReads.splitCsv(sep: ",", header: false).separate(
+  rawReadsInfer
+)
 
 /*
  *dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
@@ -895,7 +947,8 @@ process dataQC {
     val ends from endsInfer_dataQC
     
   output:
-    path "${repRID}.tin.hist.tsv" into tin
+    path "${repRID}.tin.hist.tsv" into tinHist
+    path "${repRID}.tin.med.csv" into inferMetadata_tinMed
     path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
   
   script:
@@ -928,12 +981,19 @@ process dataQC {
     """
 }
 
+// Extract median TIN metadata into channel
+tinMedInfer = Channel.create()
+inferMetadata_tinMed.splitCsv(sep: ",", header: false).separate(
+  tinMedInfer
+)
+
 /*
  *aggrQC: aggregate QC from processes as well as metadata and run MultiQC
 */
 process aggrQC {
   tag "${repRID}"
-  publishDir "${outDir}/qc", mode: 'copy', pattern: "${repRID}.multiqc.html"
+  publishDir "${outDir}/report", mode: 'copy', pattern: "${repRID}.multiqc.html"
+  publishDir "${outDir}/qc", mode: 'copy', pattern: "${repRID}.multiqc_data.json"
 
   input:
     path multiqcConfig
@@ -944,7 +1004,7 @@ process aggrQC {
     path dedupQC
     path countsQC
     path innerDistance
-    path tin
+    path tinHist
     path alignSampleQCs from alignSampleQC_aggrQC.collect()
     path inferExperiment
     val endsManual from endsManual_aggrQC
@@ -956,11 +1016,17 @@ process aggrQC {
     val strandedI from strandedInfer_aggrQC
     val spikeI from spikeInfer_aggrQC
     val speciesI from speciesInfer_aggrQC
+    val readLengthM from readLengthMeta
+    val readLengthI from readLengthInfer
+    val rawReadsI from rawReadsInfer
+    val assignedReadsI from assignedReadsInfer
+    val tinMedI from tinMedInfer
     val expRID
     val studyRID
 
   output:
     path "${repRID}.multiqc.html" into multiqc
+    path "${repRID}.multiqc_data.json" into multiqcJSON
 
   script:
     """
@@ -974,14 +1040,14 @@ process aggrQC {
 
     # make metadata table
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
-    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in" > metadata.tsv
-    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}" >> metadata.tsv
-    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}" >> metadata.tsv
-    echo -e "Manual\t-\t${endsManual}\t-\t-" >> metadata.tsv
+    echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRaw Reads\tAssigned Reads\tMedian Read Length\tMedian TIN" > metadata.tsv
+    echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
+    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+    echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
-    if [ wc -l ${innerDistance} | awk '{print\${1}}' -eq 0 ]
+    if [ "${endsM}" == "se" ]
     then
       rm -f ${innerDistance}
     fi
@@ -989,5 +1055,6 @@ process aggrQC {
     # run MultiQC
     echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
+    cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
     """
 }

@@ -70,16 +70,21 @@ custom_data:
     meta:
         file_format: 'tsv'
         section_name: 'Metadata'
-        description: 'This is the comparison of infered metadata and submitter provided'
+        description: 'This is the comparison of infered metadata, submitter provided, and calculated'
         plot_type: 'table'
         pconfig:
             id: 'meta'
+            format: '{:,.0f}'
         headers:
             Source
             Species
             Ends
             Stranded
             Spike-in
+            Raw Reads
+            Assigned Reads
+            Median Read Length
+            Median TIN
     tin:
         file_format: 'tsv'
         section_name: 'TIN'
