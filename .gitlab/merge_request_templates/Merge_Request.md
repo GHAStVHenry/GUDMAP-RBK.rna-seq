@@ -10,7 +10,7 @@ These are the most common things requested on pull requests.
  - [ ] `README.md` is updated
  - [ ] `LICENSE.md` is updated with new contributors
  - [ ] Docker images moved to production release and changed in pipeline
- - [ ] Docker images used in the CI unit tests match those used in pipleine
+ - [ ] Docker images used in the CI unit tests match those used in pipeline
 
 
 * [ ] **Close issue**\
