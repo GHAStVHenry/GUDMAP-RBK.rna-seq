@@ -1,32 +1,6 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-# Created by https://www.gitignore.io/api/r,perl,macos,linux,python,windows
-# Edit at https://www.gitignore.io/?templates=r,perl,macos,linux,python,windows
+# Created by https://www.gitignore.io/api/r,perl,linux,macos,python,windows,microsoftoffice
+# Edit at https://www.gitignore.io/?templates=r,perl,linux,macos,python,windows,microsoftoffice
 
 ### Linux ###
 *~
@@ -70,6 +44,27 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+### MicrosoftOffice ###
+*.tmp
+
+# Word temporary
+~$*.doc*
+
+# Word Auto Backup File
+Backup of *.doc*
+
+# Excel temporary
+~$*.xls*
+
+# Excel Backup File
+*.xlk
+
+# PowerPoint temporary
+~$*.ppt*
+
+# Visio autosave temporary files
+*.~vsd*
 
 ### Perl ###
 !Build/
@@ -165,15 +160,6 @@ coverage.xml
 *.mo
 *.pot
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
 # Scrapy stuff:
 .scrapy
 
@@ -183,15 +169,15 @@ docs/_build/
 # PyBuilder
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
 # pyenv
 .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
 
 # celery beat schedule file
 celerybeat-schedule
@@ -199,21 +185,17 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
 # Spyder project settings
 .spyderproject
 .spyproject
 
 # Rope project settings
 .ropeproject
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
 
 # mkdocs documentation
 /site
@@ -226,9 +208,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-### Python Patch ###
-.venv/
-
 ### R ###
 # History files
 .Rhistory
@@ -236,6 +215,9 @@ dmypy.json
 
 # Session Data files
 .RData
+
+# User-specific files
+.Ruserdata
 
 # Example code in package build process
 *-Ex.R
@@ -257,7 +239,7 @@ vignettes/*.pdf
 .httr-oauth
 
 # knitr and R markdown default cache directories
-/*_cache/
+*_cache/
 /cache/
 
 # Temporary files created by R markdown
@@ -271,6 +253,7 @@ vignettes/*.pdf
 ### Windows ###
 # Windows thumbnail cache files
 Thumbs.db
+Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
 
@@ -293,11 +276,11 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.gitignore.io/api/r,perl,macos,linux,python,windows
+# End of https://www.gitignore.io/api/r,perl,linux,macos,python,windows,microsoftoffice
 
 # nextflow analysis folders/files
 /test_data/*
-/workflow/docker/images/*
+!/test_data/createTestData.sh
 /workflow/.nextflow/*
 /workflow/work/*
 /workflow/output/*
@@ -314,6 +297,8 @@ timeline*.html*
 *.tmp
 *.swp
 *.out
+*_studyRID.json
+*_studyRID.csv
 run*.sh
 
 !.gitkeep
