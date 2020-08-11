@@ -24,7 +24,7 @@ def readAssigned(fileAssigned,fileExpectAssigned):
     expect = open(fileExpectAssigned, "r")
     lineAssigned = assigned.readline()
     lineExpect = expect.readline()
-    if lineAssigned.strip() < (lineExpect.strip()+(lineExpect.strip()*0.00001)) and lineAssigned.strip() > (lineExpect.strip()-(lineExpect.strip()*0.00001)):
+    if int(lineAssigned.strip()) < (int(lineExpect.strip())+(int(lineExpect.strip())*0.00001)) and int(lineAssigned.strip()) > (int(lineExpect.strip())-(int(lineExpect.strip())*0.00001)):
         data = True
 
     return data
