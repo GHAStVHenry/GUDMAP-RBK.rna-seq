@@ -1059,3 +1059,27 @@ process aggrQC {
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
     """
 }
+
+/*
+ *ouputBag: create ouputBag
+*/
+process outputBag {
+  tag "${repRID}"
+  publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
+  
+  input:
+    path multiqc
+    path multiqcJSON
+  
+  output:
+    path ("Replicate_*.zip") into outputBag
+
+  script:
+  """
+  mkdir Replicate_${repRID}.outputBag
+  cp ${multiqc} Replicate_${repRID}.outputBag
+  cp ${multiqcJSON} Replicate_${repRID}.outputBag
+  bdbag Replicate_${repRID}.outputBag --archiver zip
+  """
+}
+
