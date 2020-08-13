@@ -65,8 +65,8 @@ getRef:
 trimData:
   stage: unit
   script:
-  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --length 35 --basename Q-Y5F6_1M.se -j 4 ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
-  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --length 35 --paired --basename Q-Y5F6_1M.pe -j 4 ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --length 35 --basename Q-Y5F6_1M.se ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
+  - singularity run 'docker://bicf/trimgalore:1.1' trim_galore --gzip -q 25 --length 35 --paired --basename Q-Y5F6_1M.pe ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
   - readLengthSE=$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
   - readLengthPE=$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
   - pytest -m trimData
