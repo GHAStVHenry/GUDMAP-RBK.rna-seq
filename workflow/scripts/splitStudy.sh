@@ -3,8 +3,6 @@
 #SBATCH -p super
 #SBATCH --job-name GUDMAP-RBK_Study
 #SBATCH -t 7-0:0:0
-#SBATCH -o job_%j.out
-#SBATCH -e job_%j.out
 
 # query GUDMAP/RBK for study RID
 echo "curl --location --request GET 'https://www.gudmap.org/ermrest/catalog/2/entity/RNASeq:Replicate/Study_RID="${1}"'" | bash > $1_studyRID.json
