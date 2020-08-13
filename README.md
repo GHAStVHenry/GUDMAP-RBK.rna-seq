@@ -62,7 +62,7 @@ To run a set of replicates from study RID:
 ------------------------------------------
 Run in repo root dir:
 * `sh workflow/scripts/splitStudy.sh [studyRID]`
-It will run in parallel in batches of 25 replicatesRID with 10 second delays between launches.
+It will run in parallel in batches of 25 replicatesRID with 30 second delays between launches.
 
 
 
