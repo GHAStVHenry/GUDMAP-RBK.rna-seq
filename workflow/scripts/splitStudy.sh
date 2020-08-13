@@ -14,7 +14,7 @@ python3 ./workflow/scripts/splitStudy.py -s $1
 # run pipeline on replicate RIDs in parallel
 module load nextflow/20.01.0
 module load singularity/3.5.3
-while read repRID; do echo ${repRID}; sleep 15; done < "$1_studyRID.csv" | xargs -P 10 -I {} nextflow -q run workflow/rna-seq.nf --repRID {}
+while read repRID; do echo ${repRID}; sleep 15; done < "$1_studyRID.csv" | xargs -P 5 -I {} nextflow -q run workflow/rna-seq.nf --repRID {}
 
 # cleanup study RID files
 rm $1_studyRID.json
