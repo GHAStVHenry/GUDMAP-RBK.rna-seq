@@ -835,7 +835,7 @@ process makeBigWig {
 */
 process countData {
   tag "${repRID}"
-  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*.countTable.csv"
+  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*.tpmTable.csv"
 
   input:
     path script_calculateTPM
