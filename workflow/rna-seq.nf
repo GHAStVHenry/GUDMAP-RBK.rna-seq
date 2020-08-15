@@ -110,6 +110,7 @@ Development            : ${params.dev}
  */
 process getBag {
   tag "${repRID}"
+  publishDir "${outDir}/inputBag", mode: 'copy', pattern: "Replicate_*.zip"
 
   input:
     path credential, stageAs: "credential.json" from deriva
@@ -303,11 +304,11 @@ process trimData {
     echo -e "LOG: trimming ${ends}" >> ${repRID}.trimData.log
     if [ "${ends}" == "se" ]
     then
-      trim_galore --gzip -q 25 --illumina --length 35 --basename ${repRID} -j `nproc` ${fastq[0]}
+      trim_galore --gzip -q 25 --length 35 --basename ${repRID} ${fastq[0]}
       readLength=\$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length(\$1)}' | sort -n | awk '{a[NR]=\$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     elif [ "${ends}" == "pe" ]
     then
-      trim_galore --gzip -q 25 --illumina --length 35 --paired --basename ${repRID} -j `nproc` ${fastq[0]} ${fastq[1]}
+      trim_galore --gzip -q 25 --length 35 --paired --basename ${repRID} ${fastq[0]} ${fastq[1]}
       readLength=\$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length(\$1)}' | sort -n | awk '{a[NR]=\$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     fi
     echo -e "LOG: trimmed" >> ${repRID}.trimData.log
@@ -834,7 +835,7 @@ process makeBigWig {
 */
 process countData {
   tag "${repRID}"
-  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*.countTable.csv"
+  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*.tpmTable.csv"
 
   input:
     path script_calculateTPM
@@ -1058,3 +1059,27 @@ process aggrQC {
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
     """
 }
+
+/*
+ *ouputBag: create ouputBag
+*/
+process outputBag {
+  tag "${repRID}"
+  publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
+  
+  input:
+    path multiqc
+    path multiqcJSON
+  
+  output:
+    path ("Replicate_*.zip") into outputBag
+
+  script:
+  """
+  mkdir Replicate_${repRID}.outputBag
+  cp ${multiqc} Replicate_${repRID}.outputBag
+  cp ${multiqcJSON} Replicate_${repRID}.outputBag
+  bdbag Replicate_${repRID}.outputBag --archiver zip
+  """
+}
+
