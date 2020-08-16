@@ -10,6 +10,9 @@ rm(option_list)
 countTable <- read.csv(paste0(opt$repRID,".countData.countTable.csv"), stringsAsFactors=FALSE)
 geneID <- read.delim("geneID.tsv", header=FALSE, stringsAsFactors=FALSE)
 Entrez <- read.delim("Entrez.tsv", header=FALSE, stringsAsFactors=FALSE)
+convert <- merge(x=Entrex,y=geneID,by.x="V1",by.y="V1",all.x=TRUE)
+
+
 
 convert <- data.frame(geneID=countTable$Geneid)
 convert <- merge(x=convert,y=geneID[,1:2],by.x="geneID",by.y="V2",all.x=TRUE)
