@@ -19,6 +19,6 @@ convert <- convert[,-1]
 colnames(convert) <- c("GeneID","EntrezID")
 convert <- unique(convert)
 
-output <- merge(x=convert,y=countTable,by.x="GeneID",by.y="Geneid",all.x=TRUE)
+output <- merge(x=convert,y=countTable[,c("Geneid","count","tpm")],by.x="GeneID",by.y="Geneid",all.x=TRUE)
 
 write.table(output,file=paste0(opt$repRID,".tpmTable.csv"),sep=",",row.names=FALSE,quote=FALSE)

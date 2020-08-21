@@ -3,8 +3,11 @@
 * Output:
   * inputBag
   * outputBag
+* Remove gene details from tpm table
+* Add EntrezID translation to tpm table (from version specific reference)
 
 **Background**
+* Add GeneSymbol/EnsemblID/EntrezID translation files to references
 
 *Known Bugs*
 * outputBag does not contain fetch for processed data
