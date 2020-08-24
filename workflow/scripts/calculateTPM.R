@@ -13,10 +13,13 @@ if (!("count" %in% names(opt))){
   stop("Count file doesn't exist, exiting.")
 }
 
-repRID <- basename(gsub(".featureCounts","",opt$count))
+repRID <- basename(gsub(".countData","",opt$count))
 
 count <- read.delim(opt$count, comment.char="#") # if featureCounts file changes structure, be sure to update count and Length columns below
-colnames(count)[7] <- "count"
+colnames(count)[1] <- "gene_name"
+colnames(count)[7] <- "gene_id"
+colnames(count)[8] <- "count"
+count <- count[,c(1,7,2:6,8)]
 
 rpk <- count$count/count$Length/1000
 
