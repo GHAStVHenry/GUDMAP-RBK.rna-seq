@@ -105,7 +105,7 @@ dedupData:
 countData:
   stage: unit
   script:
-  - singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se.featureCounts -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
+  - singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se.countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
   - singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count ./test_data/counts/small/Q-Y5F6_1M.se.featureCounts
   - assignedReads=$(grep -m 1 'Assigned' *.summary | grep -oe '\([0-9.]*\)')
   - pytest -m makeFeatureCounts
