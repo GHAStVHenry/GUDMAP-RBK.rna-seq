@@ -9,12 +9,12 @@ mkdir -p NEW_test_data
 
 ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
 
-mkdir -p ./NEW_test_data/bagit
+mkdir -p ./NEW_test_data/bag
 singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' deriva-download-cli dev.gudmap.org --catalog 2 ./workflow/conf/replicate_export_config.json . rid=Q-Y5F6
-cp Replicate_Q-Y5F6.zip ./NEW_test_data/bagit/Replicate_Q-Y5F6.zip
+cp Replicate_Q-Y5F6.zip ./NEW_test_data/bag/Replicate_Q-Y5F6.zip
 
 mkdir -p ./NEW_test_data/fastq
-unzip ./test_data/bagit/Replicate_Q-Y5F6.zip
+unzip ./test_data/bag/Replicate_Q-Y5F6.zip
 singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' bash ./workflow/scripts/bdbagFetch.sh Replicate_Q-Y5F6 Replicate_Q-Y5F6
 cp Replicate_Q-Y5F6.R1.fastq.gz ./NEW_test_data/fastq/Replicate_Q-Y5F6.R1.fastq.gz
 cp Replicate_Q-Y5F6.R2.fastq.gz ./NEW_test_data/fastq/Replicate_Q-Y5F6.R2.fastq.gz
