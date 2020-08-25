@@ -81,10 +81,14 @@ cp Q-Y5F6_1M.se.sorted.deduped.chrY.bam.bai ./NEW_test_data/bam/small/Q-Y5F6_1M.
 
 mkdir -p ./NEW_test_data/counts
 mkdir -p ./NEW_test_data/counts/small
-singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' -o Q-Y5F6_1M.se.featureCounts -s 1 -R SAM --primary --ignoreDup ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
-singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5F6_1M.se.featureCounts
-cp Q-Y5F6_1M.se.featureCounts ./NEW_test_data/counts/small/Q-Y5F6_1M.se.featureCounts
+ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/geneID.tsv
+ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/Entrez.tsv
+singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se.countData -s 1 -R SAM --primary --ignoreDup ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
+singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5F6_1M.se.countData
+singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
+cp Q-Y5F6_1M.se.featureCounts ./NEW_test_data/counts/small/Q-Y5F6_1M.se.countData
 cp Q-Y5F6_1M.se.countTable.csv ./NEW_test_data/counts/small/Q-Y5F6_1M.se.countTable.csv
+cp Q-Y5F6_1M.se.countTable.csv ./NEW_test_data/counts/small/Q-Y5F6_1M.se.tpmTable.csv
 
 mkdir -p ./NEW_test_data/bw
 mkdir -p ./NEW_test_data/bw/small
