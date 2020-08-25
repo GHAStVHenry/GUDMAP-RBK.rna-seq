@@ -21,6 +21,7 @@ params.outDir = "${baseDir}/../output"
 
 // Define override input variable
 params.inputBagForce = ""
+params.fastqsForce = ""
 
 // Parse input variables
 deriva = Channel
@@ -36,6 +37,7 @@ refERCCVersion = params.refERCCVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
 inputBagForce = params.inputBagForce
+fastqsForce = params.fastqsForce
 
 
 // Define fixed files
@@ -122,10 +124,10 @@ process getBag {
     path derivaConfig
 
   output:
-    path ("Replicate_*.zip") into bagit
+    path ("Replicate_*.zip") into bag
 
   when:
-    params.inputBagForce == ""
+    inputBagForce == ""
 
   script:
     """
@@ -139,7 +141,7 @@ process getBag {
     echo -e "LOG: linked" >> ${repRID}.getBag.log
 
     # deriva-download replicate RID
-    echo -e "LOG: fetching bagit for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
+    echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
     deriva-download-cli ${source} --catalog 2 ${derivaConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
     """
@@ -149,9 +151,9 @@ process getBag {
 if (inputBagForce != "") {
   inputBag = Channel
     .fromPath(inputBagForce)
-    .ifEmpty { exit 1, "override inputBagit file not found: ${inputBagForce}" }
+    .ifEmpty { exit 1, "override inputBag file not found: ${inputBagForce}" }
 } else {
-  inputBag = bagit
+  inputBag = bag
 }
 
 /*
@@ -182,26 +184,36 @@ process getData {
     ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
     echo -e "LOG: linked" >> ${repRID}.getData.log
     
-    # get bagit basename
-    replicate=\$(basename "\${inputBag}" | cut -d "." -f1)
-    echo -e "LOG: bagit replicate name \${replicate}" >> ${repRID}.getData.log
+    # get bag basename
+    replicate=\$(basename "${inputBag}" | cut -d "." -f1)
+    echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
     
-    # unzip bagit
-    echo -e "LOG: unzipping replicate bagit" >> ${repRID}.getData.log
+    # unzip bag
+    echo -e "LOG: unzipping replicate bag" >> ${repRID}.getData.log
     unzip ${inputBag}
     echo -e "LOG: unzipped" >> ${repRID}.getData.log
     
-    # bagit fetch fastq's only and rename by repRID
+    # bag fetch fastq's only and rename by repRID
     echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
     sh ${script_bdbagFetch} \${replicate} ${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getData.log
     """
 }
 
-// Replicate raw fastq's for multiple process inputs
-fastqs.into {
-  fastqs_trimData
-  fastqs_fastqc
+// Set raw fastq to downloaded or forced input and replicate them for multiple process inputs
+if (fastqsForce != "") {
+  Channel
+    .fromPath(fastqsForce)
+    .ifEmpty { exit 1, "override inputBag file not found: ${fastqsForce}" }
+    .collect().into {
+      fastqs_trimData
+      fastqs_fastqc
+    }
+} else {
+  fastqs.into {
+    fastqs_trimData
+    fastqs_fastqc
+  }
 }
 
 /*
