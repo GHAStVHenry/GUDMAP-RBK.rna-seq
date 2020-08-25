@@ -48,14 +48,28 @@ top_modules:
         - '*infer_experiment*'
 
 report_section_order:
+    run:
+      order: 4000
     rid:
-      order: 2000
+      order: 3000
     meta:
+      order: 2000
+    ref:
       order: 1000
 
 skip_generalstats: true
 
 custom_data:
+    run:
+        file_format: 'tsv'
+        section_name: 'Run'
+        description: 'This is the run information'
+        plot_type: 'table'
+        pconfig:
+            id: 'run'
+            format: '{:,.0f}'
+        headers:
+            Session ID
     rid:
         file_format: 'tsv'
         section_name: 'RID'
@@ -74,6 +88,7 @@ custom_data:
         plot_type: 'table'
         pconfig:
             id: 'meta'
+            scale: false
             format: '{:,.0f}'
         headers:
             Source
@@ -85,6 +100,21 @@ custom_data:
             Assigned Reads
             Median Read Length
             Median TIN
+            Pipeline Version
+    ref:
+        file_format: 'tsv'
+        section_name: 'Reference'
+        description: 'This is the referenec version information'
+        plot_type: 'table'
+        pconfig:
+            id: 'ref'
+            scale: false
+            format: '{}'
+        headers:
+            Species
+            Genome Reference Consortium Build
+            Genome Reference Consortium Patch
+            GENCODE Annotation Release"
     tin:
         file_format: 'tsv'
         section_name: 'TIN'
@@ -106,9 +136,13 @@ custom_data:
             90 - 99
 
 sp:
+    run:
+        fn: "run.tsv"
     rid:
         fn: 'rid.tsv'
     meta:
         fn: 'metadata.tsv'
+    ref:
+        fn: 'reference.tsv'
     tin:
         fn: '*.tin.hist.tsv'

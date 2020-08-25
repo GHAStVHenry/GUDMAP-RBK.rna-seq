@@ -1034,6 +1034,11 @@ process aggrQC {
     hostname > ${repRID}.aggrQC.log
     ulimit -a >> ${repRID}.aggrQC.log
 
+    # make run table
+    echo -e "LOG: creating run table" >> ${repRID}.aggrQC.log
+    echo -e "Session ID\tPipeline Version" > run.tsv
+    echo -e "${workflow.sessionId}\t${workflow.manifest.version}" >> run.tsv
+    
     # make RID table
     echo -e "LOG: creating RID table" >> ${repRID}.aggrQC.log
     echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
@@ -1045,6 +1050,12 @@ process aggrQC {
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
     echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
+
+    # make reference table
+    echo -e "LOG: creating referencerun table" >> ${repRID}.aggrQC.log
+    echo -e "Species\tGenome Reference Consortium Build\tGenome Reference Consortium Patch\tGENCODE Annotation Release" > reference.tsv
+    echo -e "Human\tGRCh\$(echo `echo ${params.refHuVersion} | cut -d "." -f 1`)\t\$(echo `echo ${params.refHuVersion} | cut -d "." -f 2`)\t'\$(echo `echo ${params.refHuVersion} | cut -d "." -f 3 | sed "s/^v//"`)'" >> reference.tsv
+    echo -e "Mouse\tGRCm\$(echo `echo ${params.refMoVersion} | cut -d "." -f 1`)\t\$(echo `echo ${params.refMoVersion} | cut -d "." -f 2`)\t'\$(echo `echo ${params.refMoVersion} | cut -d "." -f 3 | sed "s/^v//"`)'" >> reference.tsv
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
@@ -1082,4 +1093,3 @@ process outputBag {
   bdbag Replicate_${repRID}.outputBag --archiver zip
   """
 }
-
