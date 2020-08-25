@@ -11,7 +11,6 @@ stages:
   - unit
   - integration
   - consistency
-  - override
 
 getBag:
   stage: unit
@@ -24,7 +23,7 @@ getData:
   stage: unit
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - unzip ./test_data/bagit/Replicate_Q-Y5F6.zip
+  - unzip ./test_data/bag/Replicate_Q-Y5F6.zip
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bash ./workflow/scripts/bdbagFetch.sh Replicate_Q-Y5F6 Replicate_Q-Y5F6 TEST
   - pytest -m getData
 
@@ -173,6 +172,34 @@ integration_pe:
       - PE_multiqc_data.json
     expire_in: 7 days
 
+override_inputBag:
+  stage: integration
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --inputBagForce test_data/bag/Replicate_Q-Y5F6.zip --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - inputBagOverride_PE_multiqc_data.json
+    expire_in: 7 days
+
+override_fastq:
+  stage: integration
+  script:
+  - hostname
+    - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --fastqForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_PE_multiqc_data.json \;
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - fastqOverride_PE_multiqc_data.json
+    expire_in: 7 days
+
 consistency:
   stage: consistency
   script:
@@ -192,32 +219,4 @@ consistency:
       - assignedPE.txt
       - assignedExpectSE.txt
       - assignedExpectPE.txt
-    expire_in: 7 days
-
-inputBag:
-  stage: override
-  script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --inputBagForce test_data/bagit/Replicate_Q-Y5F6.zip --ci true
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - inputBagOverride_PE_multiqc_data.json
-    expire_in: 7 days
-
-fastq:
-  stage: override
-  script:
-  - hostname
-    - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --fastqForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --ci true
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_PE_multiqc_data.json \;
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - fastqOverride_PE_multiqc_data.json
     expire_in: 7 days
