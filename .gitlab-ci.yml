@@ -11,6 +11,7 @@ stages:
   - unit
   - integration
   - consistency
+  - override
 
 getBag:
   stage: unit
@@ -191,4 +192,18 @@ consistency:
       - assignedPE.txt
       - assignedExpectSE.txt
       - assignedExpectPE.txt
+    expire_in: 7 days
+
+inputBag:
+  stage: override
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --inputBagForce test_data/bagit/Replicate_Q-Y5F6.zip --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - inputBagOverride_PE_multiqc_data.json
     expire_in: 7 days
