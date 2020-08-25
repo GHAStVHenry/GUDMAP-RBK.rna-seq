@@ -19,6 +19,9 @@ params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
 
+// Define override input variable
+params.inputBagForce = ""
+
 // Parse input variables
 deriva = Channel
   .fromPath(params.deriva)
@@ -32,6 +35,8 @@ refHuVersion = params.refHuVersion
 refERCCVersion = params.refERCCVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
+inputBagForce = params.inputBagForce
+
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
@@ -119,6 +124,9 @@ process getBag {
   output:
     path ("Replicate_*.zip") into bagit
 
+  when:
+    params.inputBagForce == ""
+
   script:
     """
     hostname > ${repRID}.getBag.log
@@ -137,6 +145,15 @@ process getBag {
     """
 }
 
+// Set inputBag to downloaded or forced input
+if (inputBagForce != "") {
+  inputBag = Channel
+    .fromPath(inputBagForce)
+    .ifEmpty { exit 1, "override inputBagit file not found: ${inputBagForce}" }
+} else {
+  inputBag = bagit
+}
+
 /*
  * getData: fetch study files from consortium with downloaded bdbag.zip
  */
@@ -146,7 +163,7 @@ process getData {
   input:
     path script_bdbagFetch
     path cookies, stageAs: "deriva-cookies.txt" from bdbag
-    path bagit
+    path inputBag
 
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
@@ -158,7 +175,7 @@ process getData {
     """
     hostname > ${repRID}.getData.log
     ulimit -a >> ${repRID}.getData.log
-    
+
     # link deriva cookie for authentication
     echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
     mkdir -p ~/.bdbag
@@ -166,12 +183,12 @@ process getData {
     echo -e "LOG: linked" >> ${repRID}.getData.log
     
     # get bagit basename
-    replicate=\$(basename "${bagit}" | cut -d "." -f1)
+    replicate=\$(basename "\${inputBag}" | cut -d "." -f1)
     echo -e "LOG: bagit replicate name \${replicate}" >> ${repRID}.getData.log
     
     # unzip bagit
     echo -e "LOG: unzipping replicate bagit" >> ${repRID}.getData.log
-    unzip ${bagit}
+    unzip ${inputBag}
     echo -e "LOG: unzipped" >> ${repRID}.getData.log
     
     # bagit fetch fastq's only and rename by repRID
