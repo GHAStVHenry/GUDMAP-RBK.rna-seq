@@ -190,7 +190,7 @@ override_fastq:
   stage: integration
   script:
   - hostname
-    - ulimit -a
+  - ulimit -a
   - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --fastqForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_PE_multiqc_data.json \;
   artifacts:
