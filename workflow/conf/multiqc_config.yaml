@@ -73,6 +73,7 @@ custom_data:
             Session
             Session ID
             Pipeline Version
+            Input
     rid:
         file_format: 'tsv'
         section_name: 'RID'
@@ -83,6 +84,7 @@ custom_data:
             scale: false
             format: '{}'
         headers:
+            Replicate
             Replicate RID
             Experiment RID
             Study RID

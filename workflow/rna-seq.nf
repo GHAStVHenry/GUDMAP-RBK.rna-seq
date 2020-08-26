@@ -22,6 +22,7 @@ params.outDir = "${baseDir}/../output"
 // Define override input variable
 params.inputBagForce = ""
 params.fastqsForce = ""
+params.speciesForce = ""
 
 // Parse input variables
 deriva = Channel
@@ -38,7 +39,7 @@ outDir = params.outDir
 logsDir = "${outDir}/Logs"
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
-
+speciesForce = params.speciesForce
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
@@ -562,7 +563,24 @@ process inferMetadata {
       bed="./GRCm/bed/genome.bed"
     else
       echo -e "LOG: ERROR - inference of species returns an ambiguous result: hu=\${align_hu} mo=\${align_mo}" >> ${repRID}.inferMetadata.log
-      exit 1
+      if [ "${speciesForce}" == "" ]
+      then
+        exit 1
+      fi
+    fi
+    if [ "${speciesForce}" != "" ]
+    then
+      echo -e "LOG: species overridden to: ${speciesForce}"
+      species="${speciesForce}"
+      if [ "${speciesForce}" == "Homo sapiens" ]
+      then
+        bam="GRCh.sampled.sorted.bam"
+        bed="./GRCh/bed/genome.bed"
+      elif [ "${speciesForce}" == "Mus musculus" ]
+      then
+        bam="GRCm.sampled.sorted.bam"
+        bed="./GRCm/bed/genome.bed"
+      fi
     fi
     echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
 
@@ -1064,20 +1082,44 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.log
 
     # make run table
+    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ]
+    then
+      input="default"
+    else
+      input="override:"
+      if [ "${params.inputBagForce}" != "" ]
+      then
+        input=\$(echo \${input} inputBag)
+      fi
+      if [ "${params.fastqsForce}" != "" ]
+      then
+        input=\$(echo \${input} fastq)
+      fi
+      if [ "${params.speciesForce}" != "" ]
+      then
+        input=\$(echo \${input} species)
+      fi
+    fi
     echo -e "LOG: creating run table" >> ${repRID}.aggrQC.log
-    echo -e "Session\tSession ID\tPipeline Version" > run.tsv
-    echo -e "Session\t${workflow.sessionId}\t${workflow.manifest.version}" >> run.tsv
+    echo -e "Session\tSession ID\tPipeline Version\tInput" > run.tsv
+    echo -e "Session\t${workflow.sessionId}\t${workflow.manifest.version}\t\${input}" >> run.tsv
+    
     
     # make RID table
     echo -e "LOG: creating RID table" >> ${repRID}.aggrQC.log
-    echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
-    echo -e "${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
+    echo -e "Replicate\tReplicate RID\tExperiment RID\tStudy RID" > rid.tsv
+    echo -e "Replicate\t${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
 
     # make metadata table
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
     echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRaw Reads\tAssigned Reads\tMedian Read Length\tMedian TIN" > metadata.tsv
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
-    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+    if [ "${params.speciesForce}" == "" ]
+    then
+      echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+    else
+      echo -e "Infered\t${speciesI} (FORCED)\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+    fi
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
 
     # make reference table

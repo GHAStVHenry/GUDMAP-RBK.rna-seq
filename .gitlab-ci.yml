@@ -201,6 +201,20 @@ override_fastq:
     paths:
       - fastqOverride_PE_multiqc_data.json
     expire_in: 7 days
+    
+override_species:
+  stage: integration
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --speciesForce 'Homo sapiens' --ci true
+  - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_PE_multiqc_data.json \;
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - speciesOverride_PE_multiqc_data.json
+    expire_in: 7 days
 
 consistency:
   stage: consistency
