@@ -177,7 +177,7 @@ override_inputBag:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --inputBagForce test_data/bag/Replicate_Q-Y5F6.zip --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --inputBagForce test_data/bag/Replicate_Q-Y5F6.zip --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -191,7 +191,7 @@ override_fastq:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --fastqForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --fastqForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
