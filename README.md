@@ -50,7 +50,7 @@ To Run:
     * *current human* **38.p6.v31** = GRCh38.p12 with GENCODE annotation release 31
 * ***Optional*** input overrides
   * `--inputBagForce` utilizes a local replicate inputBag instead of downloading from the data-hub (still requires accurate repRID input)
-    * eg: `--inputBagForce test_data/bagit/Replicate_Q-Y5F6.zip` (must be the expected bagit structure)
+    * eg: `--inputBagForce test_data/bag/Replicate_Q-Y5F6.zip` (must be the expected bag structure)
   * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)
     * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order)
 * Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
