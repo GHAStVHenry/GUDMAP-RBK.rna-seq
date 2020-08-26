@@ -231,10 +231,10 @@ integration_se:
       - output/report/
       - SE_multiqc_data.json
     expire_in: 7 days
-    retry:
-      max: 1
-      when:
-        - always
+  retry:
+    max: 1
+    when:
+      - always
 
 integration_pe:
   stage: integration
@@ -257,17 +257,18 @@ integration_pe:
       - output/report/
       - PE_multiqc_data.json
     expire_in: 7 days
-    retry:
-      max: 1
-      when:
-        - always
+  retry:
+    max: 1
+    when:
+      - always
 
 override_inputBag:
   stage: integration
   only:
     - merge_requests
+  except:
     refs:
-      - develop
+      - master
   script:
   - hostname
   - ulimit -a
@@ -279,17 +280,18 @@ override_inputBag:
     paths:
       - inputBagOverride_PE_multiqc_data.json
     expire_in: 7 days
-    retry:
-      max: 1
-      when:
-        - always
+  retry:
+    max: 1
+    when:
+      - always
 
 override_fastq:
   stage: integration
   only:
     - merge_requests
+  except:
     refs:
-      - develop
+      - master
   script:
   - hostname
   - ulimit -a
@@ -301,16 +303,15 @@ override_fastq:
     paths:
       - fastqOverride_PE_multiqc_data.json
     expire_in: 7 days
-    retry:
-      max: 1
-      when:
-        - always
+  retry:
+    max: 1
+    when:
+      - always
     
 override_species:
   stage: integration
   only:
     - merge_requests
-    - tags
   except:
     refs:
       - master
@@ -325,10 +326,10 @@ override_species:
     paths:
       - speciesOverride_PE_multiqc_data.json
     expire_in: 7 days
-    retry:
-      max: 1
-      when:
-        - always
+  retry:
+    max: 1
+    when:
+      - always
   
 
 consistency:
