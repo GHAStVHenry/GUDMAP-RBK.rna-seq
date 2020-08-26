@@ -153,6 +153,7 @@ integration_se:
     when: always
     paths:
       - output/qc/
+      - output/report/
       - SE_multiqc_data.json
     expire_in: 7 days
 
@@ -169,6 +170,7 @@ integration_pe:
     paths:
       - dag.png
       - output/qc/
+      - output/report/
       - PE_multiqc_data.json
     expire_in: 7 days
 
