@@ -213,10 +213,8 @@ outputBag:
 
 integration_se:
   stage: integration
-  only:
-    - merge_requests
-  except:
-    - master
+  only: [merge_requests]
+  except: [/master/]
   script:
   - hostname
   - ulimit -a
@@ -237,10 +235,8 @@ integration_se:
 
 integration_pe:
   stage: integration
-  only:
-    - merge_requests
-  except:
-    - master
+  only: [merge_requests]
+  except: [/master/]
   script:
   - hostname
   - ulimit -a
@@ -262,10 +258,8 @@ integration_pe:
 
 override_inputBag:
   stage: integration
-  only:
-    - merge_requests
-  except:
-    - master
+  only: [merge_requests]
+  except: [/master/]
   script:
   - hostname
   - ulimit -a
@@ -284,10 +278,8 @@ override_inputBag:
 
 override_fastq:
   stage: integration
-  only:
-    - merge_requests
-  except:
-    - master
+  only: [merge_requests]
+  except: [/master/]
   script:
   - hostname
   - ulimit -a
@@ -306,10 +298,8 @@ override_fastq:
     
 override_species:
   stage: integration
-  only:
-    - merge_requests
-  except:
-    - master
+  only: [merge_requests]
+  except: [/master/]
   script:
   - hostname
   - ulimit -a
@@ -329,10 +319,8 @@ override_species:
 
 consistency:
   stage: consistency
-  only:
-    - merge_requests
-  except:
-    - master
+  only: [merge_requests]
+  except: [/master/]
   script:
   - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
   - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
