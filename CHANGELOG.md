@@ -3,9 +3,9 @@
 * TPM table:
   * Add Ensembl Gene ID
   * Rename columns: *GENCODE_Gene_Symbol*, *Ensembl_GeneID*, *NCBI_GeneID*
-* MultiQC output custom talbes (html+JSON):
+* MultiQC output custom tables (html+JSON):
   * Run table: *Session ID* and *Pipeline Version*
-  * Reference Table: *Species*, *Genome Reference Consortium Build*, *Genome Reference Consortium Patch*, *GENCODE Annotation Release* (ouputs both human and mouse versions)
+  * Reference Table: *Species*, *Genome Reference Consortium Build*, *Genome Reference Consortium Patch*, *GENCODE Annotation Release* (outputs both human and mouse versions)
 * Add inputBag override param (`inputBagForce`) [`*.zip`]
   * Uses provided inputBag instead of downloading from data-hub
   * Still requires matching repRID input param
@@ -14,7 +14,7 @@
   * Still requires matching repRID input param and will pull inputBag from data-hub to access submitted metadata for reporting
 * Add species override param (`speciesForce`) [`Mus musculus` or `Homo sapiens`]
   * forces the use of the provided species
-  * ignors infered ambiguous species
+  * ignores inferred ambiguous species
 
 **Background**
 * Add GeneSymbol/EnsemblID/EntrezID translation files to references
@@ -22,7 +22,7 @@
 *Known Bugs*
 * outputBag does not contain fetch for processed data
 * Does not include automatic data upload
-* Override params (inputBag, fastq, species) are't checked for integrity
+* Override params (inputBag, fastq, species) aren't checked for integrity
 
 <hr>
 
