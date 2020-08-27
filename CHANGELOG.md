@@ -1,4 +1,4 @@
-# v0.0.3 (in development)
+# v0.0.3
 **User Facing**
 * TPM table:
   * Add Ensembl Gene ID
