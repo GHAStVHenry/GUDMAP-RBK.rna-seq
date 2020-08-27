@@ -215,7 +215,7 @@ integration_se:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ master
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME = master
   script:
   - hostname
   - ulimit -a
@@ -238,7 +238,7 @@ integration_pe:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ master
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME = master
   script:
   - hostname
   - ulimit -a
@@ -262,7 +262,7 @@ override_inputBag:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ master
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME = master
   script:
   - hostname
   - ulimit -a
@@ -283,7 +283,7 @@ override_fastq:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ master
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME = master
   script:
   - hostname
   - ulimit -a
@@ -304,7 +304,7 @@ override_species:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ master
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME = master
   script:
   - hostname
   - ulimit -a
@@ -326,7 +326,7 @@ consistency:
   stage: consistency
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ master
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME = master
   script:
   - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
   - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
