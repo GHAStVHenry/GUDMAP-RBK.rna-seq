@@ -30,7 +30,8 @@ getData:
     - push
     - tags
   except:
-    - merge_requests    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - merge_requests
+  script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bag/Replicate_Q-Y5F6.zip
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bash ./workflow/scripts/bdbagFetch.sh Replicate_Q-Y5F6 Replicate_Q-Y5F6 TEST
