@@ -216,8 +216,7 @@ integration_se:
   only:
     - merge_requests
   except:
-    refs:
-      - master
+    - master
   script:
   - hostname
   - ulimit -a
@@ -241,8 +240,7 @@ integration_pe:
   only:
     - merge_requests
   except:
-    refs:
-      - master
+    - master
   script:
   - hostname
   - ulimit -a
@@ -267,8 +265,7 @@ override_inputBag:
   only:
     - merge_requests
   except:
-    refs:
-      - master
+    - master
   script:
   - hostname
   - ulimit -a
@@ -290,8 +287,7 @@ override_fastq:
   only:
     - merge_requests
   except:
-    refs:
-      - master
+    - master
   script:
   - hostname
   - ulimit -a
@@ -313,8 +309,7 @@ override_species:
   only:
     - merge_requests
   except:
-    refs:
-      - master
+    - master
   script:
   - hostname
   - ulimit -a
@@ -337,8 +332,7 @@ consistency:
   only:
     - merge_requests
   except:
-    refs:
-      - master
+    - master
   script:
   - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
   - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
