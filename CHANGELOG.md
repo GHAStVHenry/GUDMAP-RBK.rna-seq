@@ -1,4 +1,18 @@
-# v0.0.3 (in development)
+# v0.0.4 (in development)
+**User Facing**
+* 
+
+**Background**
+* 
+
+*Known Bugs*
+* outputBag does not contain fetch for processed data
+* Does not include automatic data upload
+* Override params (inputBag, fastq, species) aren't checked for integrity
+
+<hr>
+
+# v0.0.3
 **User Facing**
 * TPM table:
   * Add Ensembl Gene ID
