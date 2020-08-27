@@ -9,12 +9,12 @@ mkdir -p NEW_test_data
 
 ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
 
-mkdir -p ./NEW_test_data/bagit
+mkdir -p ./NEW_test_data/bag
 singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' deriva-download-cli dev.gudmap.org --catalog 2 ./workflow/conf/replicate_export_config.json . rid=Q-Y5F6
-cp Replicate_Q-Y5F6.zip ./NEW_test_data/bagit/Replicate_Q-Y5F6.zip
+cp Replicate_Q-Y5F6.zip ./NEW_test_data/bag/Replicate_Q-Y5F6.zip
 
 mkdir -p ./NEW_test_data/fastq
-unzip ./test_data/bagit/Replicate_Q-Y5F6.zip
+unzip ./test_data/bag/Replicate_Q-Y5F6.zip
 singularity run 'docker://bicf/gudmaprbkfilexfer:1.3' bash ./workflow/scripts/bdbagFetch.sh Replicate_Q-Y5F6 Replicate_Q-Y5F6
 cp Replicate_Q-Y5F6.R1.fastq.gz ./NEW_test_data/fastq/Replicate_Q-Y5F6.R1.fastq.gz
 cp Replicate_Q-Y5F6.R2.fastq.gz ./NEW_test_data/fastq/Replicate_Q-Y5F6.R2.fastq.gz
@@ -81,10 +81,14 @@ cp Q-Y5F6_1M.se.sorted.deduped.chrY.bam.bai ./NEW_test_data/bam/small/Q-Y5F6_1M.
 
 mkdir -p ./NEW_test_data/counts
 mkdir -p ./NEW_test_data/counts/small
-singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' -o Q-Y5F6_1M.se.featureCounts -s 1 -R SAM --primary --ignoreDup ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
-singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5F6_1M.se.featureCounts
-cp Q-Y5F6_1M.se.featureCounts ./NEW_test_data/counts/small/Q-Y5F6_1M.se.featureCounts
+ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/geneID.tsv
+ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/Entrez.tsv
+singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se.countData -s 1 -R SAM --primary --ignoreDup ./NEW_test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
+singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count Q-Y5F6_1M.se.countData
+singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
+cp Q-Y5F6_1M.se.featureCounts ./NEW_test_data/counts/small/Q-Y5F6_1M.se.countData
 cp Q-Y5F6_1M.se.countTable.csv ./NEW_test_data/counts/small/Q-Y5F6_1M.se.countTable.csv
+cp Q-Y5F6_1M.se.countTable.csv ./NEW_test_data/counts/small/Q-Y5F6_1M.se.tpmTable.csv
 
 mkdir -p ./NEW_test_data/bw
 mkdir -p ./NEW_test_data/bw/small

@@ -19,6 +19,11 @@ params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
 
+// Define override input variable
+params.inputBagForce = ""
+params.fastqsForce = ""
+params.speciesForce = ""
+
 // Parse input variables
 deriva = Channel
   .fromPath(params.deriva)
@@ -32,6 +37,9 @@ refHuVersion = params.refHuVersion
 refERCCVersion = params.refERCCVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
+inputBagForce = params.inputBagForce
+fastqsForce = params.fastqsForce
+speciesForce = params.speciesForce
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
@@ -117,7 +125,10 @@ process getBag {
     path derivaConfig
 
   output:
-    path ("Replicate_*.zip") into bagit
+    path ("Replicate_*.zip") into bag
+
+  when:
+    inputBagForce == ""
 
   script:
     """
@@ -131,10 +142,19 @@ process getBag {
     echo -e "LOG: linked" >> ${repRID}.getBag.log
 
     # deriva-download replicate RID
-    echo -e "LOG: fetching bagit for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
+    echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
     deriva-download-cli ${source} --catalog 2 ${derivaConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
     """
+}
+
+// Set inputBag to downloaded or forced input
+if (inputBagForce != "") {
+  inputBag = Channel
+    .fromPath(inputBagForce)
+    .ifEmpty { exit 1, "override inputBag file not found: ${inputBagForce}" }
+} else {
+  inputBag = bag
 }
 
 /*
@@ -146,7 +166,7 @@ process getData {
   input:
     path script_bdbagFetch
     path cookies, stageAs: "deriva-cookies.txt" from bdbag
-    path bagit
+    path inputBag
 
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
@@ -158,33 +178,43 @@ process getData {
     """
     hostname > ${repRID}.getData.log
     ulimit -a >> ${repRID}.getData.log
-    
+
     # link deriva cookie for authentication
     echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
     mkdir -p ~/.bdbag
     ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
     echo -e "LOG: linked" >> ${repRID}.getData.log
     
-    # get bagit basename
-    replicate=\$(basename "${bagit}" | cut -d "." -f1)
-    echo -e "LOG: bagit replicate name \${replicate}" >> ${repRID}.getData.log
+    # get bag basename
+    replicate=\$(basename "${inputBag}" | cut -d "." -f1)
+    echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
     
-    # unzip bagit
-    echo -e "LOG: unzipping replicate bagit" >> ${repRID}.getData.log
-    unzip ${bagit}
+    # unzip bag
+    echo -e "LOG: unzipping replicate bag" >> ${repRID}.getData.log
+    unzip ${inputBag}
     echo -e "LOG: unzipped" >> ${repRID}.getData.log
     
-    # bagit fetch fastq's only and rename by repRID
+    # bag fetch fastq's only and rename by repRID
     echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
     sh ${script_bdbagFetch} \${replicate} ${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getData.log
     """
 }
 
-// Replicate raw fastq's for multiple process inputs
-fastqs.into {
-  fastqs_trimData
-  fastqs_fastqc
+// Set raw fastq to downloaded or forced input and replicate them for multiple process inputs
+if (fastqsForce != "") {
+  Channel
+    .fromPath(fastqsForce)
+    .ifEmpty { exit 1, "override inputBag file not found: ${fastqsForce}" }
+    .collect().into {
+      fastqs_trimData
+      fastqs_fastqc
+    }
+} else {
+  fastqs.into {
+    fastqs_trimData
+    fastqs_fastqc
+  }
 }
 
 /*
@@ -533,7 +563,24 @@ process inferMetadata {
       bed="./GRCm/bed/genome.bed"
     else
       echo -e "LOG: ERROR - inference of species returns an ambiguous result: hu=\${align_hu} mo=\${align_mo}" >> ${repRID}.inferMetadata.log
-      exit 1
+      if [ "${speciesForce}" == "" ]
+      then
+        exit 1
+      fi
+    fi
+    if [ "${speciesForce}" != "" ]
+    then
+      echo -e "LOG: species overridden to: ${speciesForce}"
+      species="${speciesForce}"
+      if [ "${speciesForce}" == "Homo sapiens" ]
+      then
+        bam="GRCh.sampled.sorted.bam"
+        bed="./GRCh/bed/genome.bed"
+      elif [ "${speciesForce}" == "Mus musculus" ]
+      then
+        bam="GRCm.sampled.sorted.bam"
+        bed="./GRCm/bed/genome.bed"
+      fi
     fi
     echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
 
@@ -875,10 +922,10 @@ process countData {
     echo -e "LOG: counting ${ends} features" >> ${repRID}.countData.log
     if [ "${ends}" == "se" ]
     then
-      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}.countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
     elif [ "${ends}" == "pe" ]
     then
-      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
     fi
     echo -e "LOG: counted" >> ${repRID}.countData.log
     
@@ -1034,17 +1081,52 @@ process aggrQC {
     hostname > ${repRID}.aggrQC.log
     ulimit -a >> ${repRID}.aggrQC.log
 
+    # make run table
+    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ]
+    then
+      input="default"
+    else
+      input="override:"
+      if [ "${params.inputBagForce}" != "" ]
+      then
+        input=\$(echo \${input} inputBag)
+      fi
+      if [ "${params.fastqsForce}" != "" ]
+      then
+        input=\$(echo \${input} fastq)
+      fi
+      if [ "${params.speciesForce}" != "" ]
+      then
+        input=\$(echo \${input} species)
+      fi
+    fi
+    echo -e "LOG: creating run table" >> ${repRID}.aggrQC.log
+    echo -e "Session\tSession ID\tPipeline Version\tInput" > run.tsv
+    echo -e "Session\t${workflow.sessionId}\t${workflow.manifest.version}\t\${input}" >> run.tsv
+    
+    
     # make RID table
     echo -e "LOG: creating RID table" >> ${repRID}.aggrQC.log
-    echo -e "Replicate RID\tExperiment RID\tStudy RID" > rid.tsv
-    echo -e "${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
+    echo -e "Replicate\tReplicate RID\tExperiment RID\tStudy RID" > rid.tsv
+    echo -e "Replicate\t${repRID}\t${expRID}\t${studyRID}" >> rid.tsv
 
     # make metadata table
     echo -e "LOG: creating metadata table" >> ${repRID}.aggrQC.log
     echo -e "Source\tSpecies\tEnds\tStranded\tSpike-in\tRaw Reads\tAssigned Reads\tMedian Read Length\tMedian TIN" > metadata.tsv
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
-    echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+    if [ "${params.speciesForce}" == "" ]
+    then
+      echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+    else
+      echo -e "Infered\t${speciesI} (FORCED)\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+    fi
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
+
+    # make reference table
+    echo -e "LOG: creating referencerun table" >> ${repRID}.aggrQC.log
+    echo -e "Species\tGenome Reference Consortium Build\tGenome Reference Consortium Patch\tGENCODE Annotation Release" > reference.tsv
+    echo -e "Human\tGRCh\$(echo `echo ${params.refHuVersion} | cut -d "." -f 1`)\t\$(echo `echo ${params.refHuVersion} | cut -d "." -f 2`)\t'\$(echo `echo ${params.refHuVersion} | cut -d "." -f 3 | sed "s/^v//"`)'" >> reference.tsv
+    echo -e "Mouse\tGRCm\$(echo `echo ${params.refMoVersion} | cut -d "." -f 1`)\t\$(echo `echo ${params.refMoVersion} | cut -d "." -f 2`)\t'\$(echo `echo ${params.refMoVersion} | cut -d "." -f 3 | sed "s/^v//"`)'" >> reference.tsv
 
     # remove inner distance report if it is empty (SE repRID)
     echo -e "LOG: removing dummy inner distance file" >> ${repRID}.aggrQC.log
@@ -1082,4 +1164,3 @@ process outputBag {
   bdbag Replicate_${repRID}.outputBag --archiver zip
   """
 }
-

@@ -48,6 +48,13 @@ To Run:
   * reference version consists of Genome Reference Consortium version, patch release and GENCODE annotation release # (leaving the params blank will use the default version tied to the pipeline version)
     * *current mouse* **38.p6.vM22** = GRCm38.p6 with GENCODE annotation release M22
     * *current human* **38.p6.v31** = GRCh38.p12 with GENCODE annotation release 31
+* ***Optional*** input overrides
+  * `--inputBagForce` utilizes a local replicate inputBag instead of downloading from the data-hub (still requires accurate repRID input)
+    * eg: `--inputBagForce test_data/bag/Replicate_Q-Y5F6.zip` (must be the expected bag structure)
+  * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)
+    * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order)
+  * `--speciesForce` forces the species to be "Mus musculus" or "Homo sapiens", it bypasses ambiguous species error
+    * eg: `--speciesForce 'Mus musculus'`
 * Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
   * `--ci` boolean (default = false)
   * `--dev` boolean (default = false)
