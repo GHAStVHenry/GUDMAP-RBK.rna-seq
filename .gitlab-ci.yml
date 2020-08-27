@@ -30,8 +30,7 @@ getData:
     - push
     - tags
   except:
-    - merge_requests
-  script:
+    - merge_requests    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bag/Replicate_Q-Y5F6.zip
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bash ./workflow/scripts/bdbagFetch.sh Replicate_Q-Y5F6 Replicate_Q-Y5F6 TEST
@@ -215,7 +214,7 @@ integration_se:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
   - hostname
   - ulimit -a
@@ -238,7 +237,7 @@ integration_pe:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
   - hostname
   - ulimit -a
@@ -262,7 +261,7 @@ override_inputBag:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
   - hostname
   - ulimit -a
@@ -283,7 +282,7 @@ override_fastq:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
   - hostname
   - ulimit -a
@@ -304,7 +303,7 @@ override_species:
   stage: integration
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
   - hostname
   - ulimit -a
@@ -326,7 +325,7 @@ consistency:
   stage: consistency
   only: [merge_requests]
   except:
-    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
   - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
   - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
