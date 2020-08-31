@@ -1101,8 +1101,8 @@ process aggrQC {
       fi
     fi
     echo -e "LOG: creating run table" >> ${repRID}.aggrQC.log
-    echo -e "Session\tSession ID\tPipeline Version\tInput" > run.tsv
-    echo -e "Session\t${workflow.sessionId}\t${workflow.manifest.version}\t\${input}" >> run.tsv
+    echo -e "Session\tSession ID\tStart Time\tPipeline Version\tInput" > run.tsv
+    echo -e "Session\t${workflow.sessionId}\t${workflow.start}\t${workflow.manifest.version}\t\${input}" >> run.tsv
     
     
     # make RID table
