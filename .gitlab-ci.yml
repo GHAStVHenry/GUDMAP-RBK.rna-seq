@@ -9,7 +9,7 @@ before_script:
 
 stages:
   - unit
-  - references
+  - reference
   - integration
   - consistency
 
@@ -229,17 +229,17 @@ humanDataHub:
   except:
     - merge_requests
   script:
-    referenceBase=dev.gudmap.org
-    refName=GRCh
-    refHuVersion=38.p12.v31
-    references=$(echo ${referenceBase}/${refName}${refHuVersion})
-    GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-    GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-    GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-    query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
-    curl --request GET ${query} > refQuery.json
-    refURL=$(python ./workflow/scripts/extractRefData.py)
-    deriva-hatrac-cli --host ${referenceBase} get ${refURL}
+  - referenceBase=dev.gudmap.org
+  - refName=GRCh
+  - refHuVersion=38.p12.v31
+  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+  - curl --request GET ${query} > refQuery.json
+  - refURL=$(python ./workflow/scripts/extractRefData.py)
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host ${referenceBase} get ${refURL}
 
 mousenDataHub:
   stage: reference
@@ -249,17 +249,17 @@ mousenDataHub:
   except:
     - merge_requests
   script:
-    referenceBase=dev.gudmap.org
-    refName=GRCm
-    refHuVersion=38.p6.vM22
-    references=$(echo ${referenceBase}/${refName}${refHuVersion})
-    GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-    GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-    GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-    query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
-    curl --request GET ${query} > refQuery.json
-    refURL=$(python ./workflow/scripts/extractRefData.py)
-    deriva-hatrac-cli --host ${referenceBase} get ${refURL}
+  - referenceBase=dev.gudmap.org
+  - refName=GRCm
+  - refHuVersion=38.p6.vM22
+  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+  - curl --request GET ${query} > refQuery.json
+  - refURL=$(python ./workflow/scripts/extractRefData.py)
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host ${referenceBase} get ${refURL}
 
 
 integration_se:
