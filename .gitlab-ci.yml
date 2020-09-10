@@ -9,6 +9,7 @@ before_script:
 
 stages:
   - unit
+  - references
   - integration
   - consistency
 
@@ -73,19 +74,6 @@ inferMetadata:
     ended=`singularity run 'docker://bicf/python3:1.3' python3 ./workflow/scripts/inferMeta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
     if [[ ${ended} == "" ]]; then exit 1; fi
   - pytest -m inferMetadata
-
-getRef:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-  script:
-  - mkdir -p hu
-  - mkdir -p mo
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
 
 trimData:
   stage: unit
@@ -209,6 +197,69 @@ outputBag:
   - mkdir test
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bdbag test --archiver zip
   - pytest -m outputBag
+
+
+humanBioHPC:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - mkdir -p hu
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
+
+mouseBioHPC:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - mkdir -p mo
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
+
+humanDataHub:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+    referenceBase=dev.gudmap.org
+    refName=GRCh
+    refHuVersion=38.p12.v31
+    references=$(echo ${referenceBase}/${refName}${refHuVersion})
+    GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+    curl --request GET ${query} > refQuery.json
+    refURL=$(python ./workflow/scripts/extractRefData.py)
+    deriva-hatrac-cli --host ${referenceBase} get ${refURL}
+
+mousenDataHub:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+    referenceBase=dev.gudmap.org
+    refName=GRCm
+    refHuVersion=38.p6.vM22
+    references=$(echo ${referenceBase}/${refName}${refHuVersion})
+    GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+    curl --request GET ${query} > refQuery.json
+    refURL=$(python ./workflow/scripts/extractRefData.py)
+    deriva-hatrac-cli --host ${referenceBase} get ${refURL}
 
 
 integration_se:
