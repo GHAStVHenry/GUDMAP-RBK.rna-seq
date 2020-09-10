@@ -20,6 +20,7 @@ params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
 
 // Define override input variable
+params.refSource = "biohpc"
 params.inputBagForce = ""
 params.fastqsForce = ""
 params.speciesForce = ""
@@ -50,8 +51,13 @@ if (params.source == "dev") {
 } else if (params.source == "production") {
   source = "www.gudmap.org"
 }
-referenceBase = "s3://bicf-references"
-//referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
+if (params.refSource == "biohpc") {
+  referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
+} else if (params.refSource == "aws") {
+  referenceBase = "s3://bicf-references"
+} else if (params.refSource == "datahub") {
+  referenceBase = "dev.gudmap.org"
+}
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
 multiqcConfig = Channel.fromPath("${baseDir}/conf/multiqc_config.yaml")
 bicfLogo = Channel.fromPath("${baseDir}/../docs/bicf_logo.png")
