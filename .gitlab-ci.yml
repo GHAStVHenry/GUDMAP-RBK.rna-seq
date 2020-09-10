@@ -229,6 +229,7 @@ humanDataHub:
   except:
     - merge_requests
   script:
+  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=dev.gudmap.org
   - refName=GRCh
   - refHuVersion=38.p12.v31
@@ -249,6 +250,7 @@ mousenDataHub:
   except:
     - merge_requests
   script:
+  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=dev.gudmap.org
   - refName=GRCm
   - refHuVersion=38.p6.vM22
