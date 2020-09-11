@@ -1,6 +1,6 @@
 before_script:
   - module load python/3.6.4-anaconda
-  - pip install --user  attrs==19.0.1 pytest-pythonpath==0.7.1 pytest-cov==2.5.1 
+  - pip install --user  attrs==19.1.0 pytest-pythonpath==0.7.1 pytest-cov==2.5.1 
   - module load singularity/3.5.3
   - module load nextflow/20.01.0
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
