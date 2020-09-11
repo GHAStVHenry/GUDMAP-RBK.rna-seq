@@ -240,8 +240,10 @@ humanDataHub:
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
   - refURL=$(python ./workflow/scripts/extractRefData.py)
-  ##- singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host ${referenceBase} get ${refURL}
-  - 
+  - conda create --name deriva1.3 python=3.6 -y
+  - source activate deriva1.3
+  - pip install deriva==1.3.0 --user
+  - deriva-hatrac-cli --host ${referenceBase} get ${refURL}
 
 mousenDataHub:
   stage: reference
@@ -262,12 +264,10 @@ mousenDataHub:
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
   - refURL=$(python ./workflow/scripts/extractRefData.py)
-  ##- singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host ${referenceBase} get ${refURL}
   - conda create --name deriva1.3 python=3.6 -y
   - source activate deriva1.3
   - pip install deriva==1.3.0 --user
   - deriva-hatrac-cli --host ${referenceBase} get ${refURL}
-
 
 
 integration_se:
