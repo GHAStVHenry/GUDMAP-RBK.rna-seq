@@ -415,6 +415,18 @@ process getRefInfer {
       ln -s "\${references}"/bed ${refName}/bed
       ln -s "\${references}"/genome.fna
       ln -s "\${references}"/genome.gtf
+    elif [ ${referenceBase} == "dev.gudmap.org" ]
+    then
+      GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+      GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+      GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+      query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+      curl --request GET ${query} > refQuery.json
+      refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+      loc=$(dirname ${refURL})
+      if [ "${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
+      filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+      deriva-hatrac-cli --host ${referenceBase} get ${refURL}
     fi
     echo -e "LOG: fetched" >> ${repRID}.${refName}.getRefInfer.log
 
@@ -729,6 +741,19 @@ process getRef {
       ln -s "\${references}"/genome.gtf
       ln -s "\${references}"/geneID.tsv
       ln -s "\${references}"/Entrez.tsv
+    elif [ ${referenceBase} == "dev.gudmap.org" ]
+    then
+      GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+      GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+      GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+      query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+      curl --request GET ${query} > refQuery.json
+      refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+      loc=$(dirname ${refURL})
+      if [ "${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
+      filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+      deriva-hatrac-cli --host ${referenceBase} get ${refURL}
+    fi
     fi
     echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
