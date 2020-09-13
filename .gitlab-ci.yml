@@ -241,7 +241,8 @@ humanDataHub:
   - curl --request GET ${query} > refQuery.json
   - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
   - refMD5=$(python ./workflow/scripts/extractRefData.py --returnParam MD5)
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls /hatrac/resources/rnaseq/pipeline/reference_genome/ | grep -o ${refMD5})
+  - test=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls /hatrac/resources/rnaseq/pipeline/reference_genome/)
+  - test=$(echo ${test} | grep -o ${refMD5})
   - if [ "${test}" == "" ]; then exit 1; fi
 
 mousenDataHub:
@@ -264,7 +265,8 @@ mousenDataHub:
   - curl --request GET ${query} > refQuery.json
   - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
   - refMD5=$(python ./workflow/scripts/extractRefData.py --returnParam MD5)
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls /hatrac/resources/rnaseq/pipeline/reference_genome/ | grep -o ${refMD5})
+  - test=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls /hatrac/resources/rnaseq/pipeline/reference_genome/)
+  - test=$(echo ${test} | grep -o ${refMD5})
   - if [ "${test}" == "" ]; then exit 1; fi
 
 
