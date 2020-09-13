@@ -113,6 +113,7 @@ Source Server          : ${params.source}
 Mouse Reference Version: ${params.refMoVersion}
 Human Reference Version: ${params.refHuVersion}
 ERCC Reference Version : ${params.refERCCVersion}
+Reference source       : ${params.refSource}
 Output Directory       : ${params.outDir}
 ------------------------------------
 Nextflow Version       : ${workflow.nextflow.version}
