@@ -29,6 +29,11 @@ params.speciesForce = ""
 deriva = Channel
   .fromPath(params.deriva)
   .ifEmpty { exit 1, "deriva credential file not found: ${params.deriva}" }
+deriva.into {
+  deriva_getBag
+  deriva_getRefInfer
+  deriva_getRef
+}
 bdbag = Channel
   .fromPath(params.bdbag)
   .ifEmpty { exit 1, "deriva cookie file for bdbag not found: ${params.bdbag}" }
@@ -127,7 +132,7 @@ process getBag {
   publishDir "${outDir}/inputBag", mode: 'copy', pattern: "Replicate_*.zip"
 
   input:
-    path credential, stageAs: "credential.json" from deriva
+    path credential, stageAs: "credential.json" from deriva_getBag
     path derivaConfig
 
   output:
@@ -374,6 +379,7 @@ process getRefInfer {
   tag "${refName}"
 
   input:
+    path credential, stageAs: "credential.json" from deriva_getRefInfer
     val refName from referenceInfer
 
   output:
@@ -384,6 +390,12 @@ process getRefInfer {
     """
     hostname > ${repRID}.${refName}.getRefInfer.log
     ulimit -a >> ${repRID}.${refName}.getRefInfer.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.getRefInfer.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.getRefInfer.log
 
     # set the reference name
     if [ "${refName}" == "ERCC" ]
@@ -430,8 +442,8 @@ process getRefInfer {
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
       deriva-hatrac-cli --host ${referenceBase} get \${refURL}
       unzip \$(basename \${refURL})
-      mkdir -p \${references}
-      mv \${fName}/* \${references}/
+      mv \${fName}/* .
+      mv bed ${refName}/
     fi
     echo -e "LOG: fetched" >> ${repRID}.${refName}.getRefInfer.log
 
@@ -696,6 +708,7 @@ process getRef {
   tag "${species}"
 
   input:
+    path credential, stageAs: "credential.json" from deriva_getRef
     val spike from spikeInfer_getRef
     val species from speciesInfer_getRef
 
@@ -706,6 +719,12 @@ process getRef {
     """
     hostname > ${repRID}.getRef.log
     ulimit -a >> ${repRID}.getRef.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.getRef.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.getRef.log
 
     # set the reference name
     if [ "${species}" == "Mus musculus" ]
@@ -762,8 +781,8 @@ process getRef {
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
       deriva-hatrac-cli --host ${referenceBase} get \${refURL}
       unzip \$(basename \${refURL})
-      mkdir -p \${references}
-      mv \${fName}/* \${references}/
+      mv \${fName}/* .
+      mv bed ${refName}/
     fi
     echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
