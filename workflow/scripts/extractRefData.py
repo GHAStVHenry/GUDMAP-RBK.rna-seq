@@ -17,7 +17,9 @@ def main():
     if refQuery["File_URL"].count() == 1:
         if args.returnParam == "URL":
             print(refQuery["File_URL"].values[0])
-        elif args.returnParam == "":
+        elif args.returnParam == "fName":
+            print(refQuery["File_Name"].values[0])
+        elif args.returnParam == "MD5":
             print(refQuery["File_MD5"].values[0])
     else:
         raise Exception("Multple references found: \n%s" %

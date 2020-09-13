@@ -53,8 +53,8 @@ if (params.source == "dev") {
 }
 if (params.refSource == "biohpc") {
   referenceBase = "/project/BICF/BICF_Core/shared/gudmap/references"
-} else if (params.refSource == "aws") {
-  referenceBase = "s3://bicf-references"
+//} else if (params.refSource == "aws") {
+//  referenceBase = "s3://bicf-references"
 } else if (params.refSource == "datahub") {
   referenceBase = "dev.gudmap.org"
 }
@@ -403,30 +403,35 @@ process getRefInfer {
 
     # retreive appropriate reference appropriate location
     echo -e "LOG: fetching ${refName} reference files from ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
-    if [ ${referenceBase} == "s3://bicf-references" ]
-    then
-      aws s3 cp "\${references}"/hisat2 ./hisat2 --recursive
-      aws s3 cp "\${references}"/bed ./${refName}/bed --recursive
-      aws s3 cp "\${references}"/genome.fna ./
-      aws s3 cp "\${references}"/genome.gtf ./
-    elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
+    if [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
       ln -s "\${references}"/hisat2
       ln -s "\${references}"/bed ${refName}/bed
       ln -s "\${references}"/genome.fna
       ln -s "\${references}"/genome.gtf
+    #elif [ ${referenceBase} == "s3://bicf-references" ]
+    #then
+    #  aws s3 cp "\${references}"/hisat2 ./hisat2 --recursive
+    #  aws s3 cp "\${references}"/bed ./${refName}/bed --recursive
+    #  aws s3 cp "\${references}"/genome.fna ./
+    #  aws s3 cp "\${references}"/genome.gtf ./
     elif [ ${referenceBase} == "dev.gudmap.org" ]
     then
-      GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-      GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-      GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-      query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
-      curl --request GET ${query} > refQuery.json
-      refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
-      loc=$(dirname ${refURL})
-      if [ "${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
-      filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-      deriva-hatrac-cli --host ${referenceBase} get ${refURL}
+      GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
+      GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
+      GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
+      query=\$(echo 'https://'"${referenceBase}"'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      curl --request GET \${query} > refQuery.json
+      refURL=\$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+      loc=\$(dirname \${refURL})
+      fName=\$(python ./workflow/scripts/extractRefData.py --returnParam fName)
+      fName=\${fName%.*}
+      if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
+      filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
+      deriva-hatrac-cli --host ${referenceBase} get \${refURL}
+      unzip \$(basename \${refURL})
+      mkdir -p \${references}
+      mv \${fName}/* \${references}/
     fi
     echo -e "LOG: fetched" >> ${repRID}.${refName}.getRefInfer.log
 
@@ -724,36 +729,41 @@ process getRef {
 
     # retreive appropriate reference appropriate location
     echo -e "LOG: fetching ${species} reference files from ${referenceBase}" >> ${repRID}.getRef.log
-    if [ ${referenceBase} == "s3://bicf-references" ]
+    if [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
     then
-      echo -e "LOG: grabbing reference files from S3" >> ${repRID}.getRef.log
-      aws s3 cp "\${references}"/hisat2 ./hisat2 --recursive
-      aws s3 cp "\${references}"/bed ./bed --recursive
-      aws s3 cp "\${references}"/genome.fna ./
-      aws s3 cp "\${references}"/genome.gtf ./
-      aws s3 cp "\${references}"/geneID.tsv ./
-      aws s3 cp "\${references}"/Entrez.tsv ./
-    elif [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references" ]
-    then
+      echo -e "LOG: grabbing reference files from local (BioHPC)" >> ${repRID}.getRef.log
       ln -s "\${references}"/hisat2
       ln -s "\${references}"/bed
       ln -s "\${references}"/genome.fna
       ln -s "\${references}"/genome.gtf
       ln -s "\${references}"/geneID.tsv
       ln -s "\${references}"/Entrez.tsv
+    #elif [ ${referenceBase} == "s3://bicf-references" ]
+    #then
+    #  echo -e "LOG: grabbing reference files from S3" >> ${repRID}.getRef.log
+    #  aws s3 cp "\${references}"/hisat2 ./hisat2 --recursive
+    #  aws s3 cp "\${references}"/bed ./bed --recursive
+    #  aws s3 cp "\${references}"/genome.fna ./
+    #  aws s3 cp "\${references}"/genome.gtf ./
+    #  aws s3 cp "\${references}"/geneID.tsv ./
+    #  aws s3 cp "\${references}"/Entrez.tsv ./
     elif [ ${referenceBase} == "dev.gudmap.org" ]
     then
-      GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-      GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-      GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-      query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
-      curl --request GET ${query} > refQuery.json
-      refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
-      loc=$(dirname ${refURL})
-      if [ "${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
-      filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-      deriva-hatrac-cli --host ${referenceBase} get ${refURL}
-    fi
+      GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
+      GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
+      GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
+      query=\$(echo 'https://'"${referenceBase}"'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      curl --request GET \${query} > refQuery.json
+      refURL=\$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+      loc=\$(dirname \${refURL})
+      fName=\$(python ./workflow/scripts/extractRefData.py --returnParam fName)
+      fName=\${fName%.*}
+      if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
+      filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
+      deriva-hatrac-cli --host ${referenceBase} get \${refURL}
+      unzip \$(basename \${refURL})
+      mkdir -p \${references}
+      mv \${fName}/* \${references}/
     fi
     echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
