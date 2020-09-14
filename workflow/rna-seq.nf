@@ -453,7 +453,7 @@ process getRefInfer {
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
       deriva-hatrac-cli --host ${referenceBase} get \${refURL}
       unzip \$(basename \${refURL})
-      mv \${fName}/* .
+      mv \${fName}/data/* .
     fi
     echo -e "LOG: fetched" >> ${repRID}.${refName}.getRefInfer.log
 
