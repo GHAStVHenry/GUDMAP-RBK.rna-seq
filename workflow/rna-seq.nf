@@ -71,9 +71,12 @@ bicfLogo = Channel.fromPath("${baseDir}/../docs/bicf_logo.png")
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
 script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
 script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
+script_refDataInfer = Channel.fromPath("${baseDir}/scripts/extractRefData.py")
+script_refData = Channel.fromPath("${baseDir}/scripts/extractRefData.py")
 script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
 script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
+
 
 /*
  * trackStart: track start of pipeline
@@ -381,6 +384,7 @@ process getRefInfer {
 
   input:
     path credential, stageAs: "credential.json" from deriva_getRefInfer
+    path script_refDataInfer
     val refName from referenceInfer
 
   output:
@@ -710,6 +714,7 @@ process getRef {
 
   input:
     path credential, stageAs: "credential.json" from deriva_getRef
+    path script_refData
     val spike from spikeInfer_getRef
     val species from speciesInfer_getRef
 
