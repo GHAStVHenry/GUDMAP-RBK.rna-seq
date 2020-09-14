@@ -454,7 +454,6 @@ process getRefInfer {
       deriva-hatrac-cli --host ${referenceBase} get \${refURL}
       unzip \$(basename \${refURL})
       mv \${fName}/* .
-      mv bed ${refName}/
     fi
     echo -e "LOG: fetched" >> ${repRID}.${refName}.getRefInfer.log
 
@@ -465,6 +464,8 @@ process getRefInfer {
       rm -rf ${refName}/bed
       mkdir ${refName}/bed
       touch ${refName}/bed/temp
+    else
+      mv bed ${refName}/
     fi
     """
 }
