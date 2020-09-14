@@ -783,6 +783,7 @@ process getRef {
     #  aws s3 cp "\${references}"/Entrez.tsv ./
     elif [ ${referenceBase} == "dev.gudmap.org" ]
     then
+      echo -e "LOG: grabbing reference files from datahub" >> ${repRID}.getRef.log
       GRCv=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f3)
@@ -796,8 +797,7 @@ process getRef {
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
       deriva-hatrac-cli --host ${referenceBase} get \${refURL}
       unzip \$(basename \${refURL})
-      mv \${fName}/* .
-      mv bed \${refName}/
+      mv \${fName}/data/* .
     fi
     echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
