@@ -378,13 +378,13 @@ fastqsTrim.into {
 
 /*
   * getRefInfer: dowloads appropriate reference for metadata inference
-*/
+*/  
 process getRefInfer {
   tag "${refName}"
 
   input:
-    path credential, stageAs: "credential.json" from deriva_getRefInfer.collect()
-    path script_refDataInfer.collect()
+    path credential, stageAs: "credential.json" from deriva_getRefInfer
+    path script_refDataInfer
     val refName from referenceInfer
 
   output:
