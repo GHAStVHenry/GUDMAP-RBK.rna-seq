@@ -743,9 +743,11 @@ process getRef {
     if [ "${species}" == "Mus musculus" ]
     then
       references=\$(echo ${referenceBase}/GRCm${refMoVersion})
+      refName=GRCm
     elif [ '${species}' == "Homo sapiens" ]
     then
       references=\$(echo ${referenceBase}/GRCh${refHuVersion})
+      refName=GRCh
     else
       echo -e "LOG: ERROR - References could not be set!\nSpecies reference found: ${species}" >> ${repRID}.getRef.log
       exit 1
@@ -781,9 +783,9 @@ process getRef {
     #  aws s3 cp "\${references}"/Entrez.tsv ./
     elif [ ${referenceBase} == "dev.gudmap.org" ]
     then
-      GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
-      GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
-      GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
+      GRCv=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f1)
+      GRCp=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f2)
+      GENCODE=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f3)
       query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
       refURL=\$(python extractRefData.py --returnParam URL)
@@ -795,7 +797,7 @@ process getRef {
       deriva-hatrac-cli --host ${referenceBase} get \${refURL}
       unzip \$(basename \${refURL})
       mv \${fName}/* .
-      mv bed ${refName}/
+      mv bed \${refName}/
     fi
     echo -e "LOG: fetched" >> ${repRID}.getRef.log
     """
