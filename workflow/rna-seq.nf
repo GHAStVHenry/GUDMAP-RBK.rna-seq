@@ -383,8 +383,8 @@ process getRefInfer {
   tag "${refName}"
 
   input:
-    path credential, stageAs: "credential.json" from deriva_getRefInfer
-    path script_refDataInfer
+    path credential, stageAs: "credential.json" from deriva_getRefInfer.collect()
+    path script_refDataInfer.collect()
     val refName from referenceInfer
 
   output:
@@ -439,9 +439,9 @@ process getRefInfer {
       GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
       query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
-      refURL=\$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+      refURL=\$(python extractRefData.py --returnParam URL)
       loc=\$(dirname \${refURL})
-      fName=\$(python ./workflow/scripts/extractRefData.py --returnParam fName)
+      fName=\$(python extractRefData.py --returnParam fName)
       fName=\${fName%.*}
       if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
@@ -779,9 +779,9 @@ process getRef {
       GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
       query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
-      refURL=\$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+      refURL=\$(python extractRefData.py --returnParam URL)
       loc=\$(dirname \${refURL})
-      fName=\$(python ./workflow/scripts/extractRefData.py --returnParam fName)
+      fName=\$(python extractRefData.py --returnParam fName)
       fName=\${fName%.*}
       if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
