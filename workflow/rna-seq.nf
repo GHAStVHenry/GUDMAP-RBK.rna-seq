@@ -464,7 +464,7 @@ process getRefInfer {
       rm -rf ${refName}/bed
       mkdir ${refName}/bed
       touch ${refName}/bed/temp
-    else
+    elif [ ${referenceBase} == "dev.gudmap.org" ]
       mv bed ${refName}/
     fi
     """
