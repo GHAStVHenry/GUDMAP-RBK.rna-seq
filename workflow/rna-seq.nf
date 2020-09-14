@@ -376,6 +376,9 @@ fastqsTrim.into {
   fastqsTrim_downsampleData
 }
 
+// Combine inputs of getRefInfer
+getRefInferInput = referenceInfer.combine(deriva_getRefInfer.combine(script_refDataInfer))
+
 /*
   * getRefInfer: dowloads appropriate reference for metadata inference
 */  
@@ -383,9 +386,7 @@ process getRefInfer {
   tag "${refName}"
 
   input:
-    path credential, stageAs: "credential.json" from deriva_getRefInfer
-    path script_refDataInfer
-    val refName from referenceInfer
+    tuple val (refName), path (credential, stageAs: "credential.json"), path (script_refDataInfer) from getRefInferInput
 
   output:
     tuple val (refName), path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
@@ -684,6 +685,7 @@ inferMetadata.splitCsv(sep: ",", header: false).separate(
   percentRInfer,
   failInfer
 )
+
 // Replicate metadata for multiple process inputs
 endsInfer.into {
   endsInfer_alignData
