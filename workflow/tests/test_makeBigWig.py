@@ -6,7 +6,7 @@ import os
 import utils
 
 data_output_path = os.path.dirname(os.path.abspath(__file__)) + \
-	'/../../'
+    '/../../'
 
 
 @pytest.mark.makeBigWig
