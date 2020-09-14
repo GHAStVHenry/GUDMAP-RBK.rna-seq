@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 
-#
-# * --------------------------------------------------------------------------
-# * Licensed under MIT (https://git.biohpc.swmed.edu/BICF/Astrocyte/chipseq_analysis/LICENSE.md)
-# * --------------------------------------------------------------------------
-#
-
-'''General utilities.'''
-
-
 import shlex
 import logging
 import subprocess
@@ -32,7 +23,8 @@ def run_pipe(steps, outfile=None):
         if n == first_step_n:
             if n == last_step_n and outfile:  # one-step pipeline with outfile
                 with open(outfile, 'w') as fh:
-                    print("one step shlex: %s to file: %s" % (shlex.split(step), outfile))
+                    print("one step shlex: %s to file: %s" %
+                          (shlex.split(step), outfile))
                     p = Popen(shlex.split(step), stdout=fh)
                 break
             print("first step shlex to stdout: %s" % (shlex.split(step)))
@@ -40,12 +32,14 @@ def run_pipe(steps, outfile=None):
             p = Popen(shlex.split(step), stdout=PIPE)
         elif n == last_step_n and outfile:  # only treat the last step specially if you're sending stdout to a file
             with open(outfile, 'w') as fh:
-                print("last step shlex: %s to file: %s" % (shlex.split(step), outfile))
+                print("last step shlex: %s to file: %s" %
+                      (shlex.split(step), outfile))
                 p_last = Popen(shlex.split(step), stdin=p.stdout, stdout=fh)
                 p.stdout.close()
                 p = p_last
         else:  # handles intermediate steps and, in the case of a pipe to stdout, the last step
-            print("intermediate step %d shlex to stdout: %s" % (n, shlex.split(step)))
+            print("intermediate step %d shlex to stdout: %s" %
+                  (n, shlex.split(step)))
             p_next = Popen(shlex.split(step), stdin=p.stdout, stdout=PIPE)
             p.stdout.close()
             p = p_next
@@ -54,7 +48,8 @@ def run_pipe(steps, outfile=None):
 
 
 def block_on(command):
-    process = subprocess.Popen(shlex.split(command), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    process = subprocess.Popen(shlex.split(
+        command), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     for line in iter(process.stdout.readline, b''):
         sys.stdout.write(line.decode('utf-8'))
     process.communicate()
@@ -77,7 +72,7 @@ def count_lines(filename):
         "compress",
         "bzip2",
         "gzip"
-        ]
+    ]
     mime_type = mimetypes.guess_type(filename)[1]
     if mime_type in compressed_mimetypes:
         catcommand = 'gzip -dc'
@@ -86,7 +81,7 @@ def count_lines(filename):
     out, err = run_pipe([
         '%s %s' % (catcommand, filename),
         'wc -l'
-        ])
+    ])
     return int(out)
 
 

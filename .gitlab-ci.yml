@@ -1,6 +1,6 @@
 before_script:
-  - module add  python/3.6.4-anaconda
-  - pip install --user pytest-pythonpath==0.7.1 pytest-cov==2.5.1
+  - module load python/3.6.4-anaconda
+  - pip install --user  attrs==19.1.0 pytest-pythonpath==0.7.1 pytest-cov==2.5.1 deriva==1.3.0
   - module load singularity/3.5.3
   - module load nextflow/20.01.0
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
@@ -9,6 +9,7 @@ before_script:
 
 stages:
   - unit
+  - reference
   - integration
   - consistency
 
@@ -73,19 +74,6 @@ inferMetadata:
     ended=`singularity run 'docker://bicf/python3:1.3' python3 ./workflow/scripts/inferMeta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
     if [[ ${ended} == "" ]]; then exit 1; fi
   - pytest -m inferMetadata
-
-getRef:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-  script:
-  - mkdir -p hu
-  - mkdir -p mo
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
 
 trimData:
   stage: unit
@@ -209,6 +197,81 @@ outputBag:
   - mkdir test
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bdbag test --archiver zip
   - pytest -m outputBag
+
+
+humanBioHPC:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - mkdir -p hu
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
+
+mouseBioHPC:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - mkdir -p mo
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
+
+humanDataHub:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+  - referenceBase=dev.gudmap.org
+  - refName=GRCh
+  - refHuVersion=38.p12.v31
+  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+  - curl --request GET ${query} > refQuery.json
+  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - loc=$(dirname ${refURL})
+  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+  - test=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+  - test=$(echo ${test} | grep -o ${filename})
+  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
+
+mousenDataHub:
+  stage: reference
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+  - referenceBase=dev.gudmap.org
+  - refName=GRCm
+  - refHuVersion=38.p6.vM22
+  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
+  - curl --request GET ${query} > refQuery.json
+  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - loc=$(dirname ${refURL})
+  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+  - test=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+  - test=$(echo ${test} | grep -o ${filename})
+  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
 
 integration_se:
