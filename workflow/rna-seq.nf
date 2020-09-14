@@ -438,7 +438,12 @@ process getRefInfer {
       GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
-      query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      if [ "${refName}" != "ERCC" ]
+      then
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      else
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version=${refName}${refERCCVersion}/Annotation_Version=${refName}${refERCCVersion}')
+      fi
       curl --request GET \${query} > refQuery.json
       refURL=\$(python extractRefData.py --returnParam URL)
       loc=\$(dirname \${refURL})
@@ -651,7 +656,6 @@ process inferMetadata {
     elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
     then
       stranded="reverse"
-
     else
       stranded="unstranded"
     fi
