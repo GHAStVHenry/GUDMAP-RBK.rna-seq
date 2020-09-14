@@ -49,6 +49,9 @@ To Run:
     * *current mouse* **38.p6.vM22** = GRCm38.p6 with GENCODE annotation release M22
     * *current human* **38.p6.v31** = GRCh38.p12 with GENCODE annotation release 31
 * ***Optional*** input overrides
+  * `--refSource` source for pulling references
+    * **biohpc** = source references from BICF_Core gudmap reference local location (workflow must be run on BioHPC system)
+    * **datahub** = source references from GUDMAP/RBK reference_table location (currently uses dev.gudmap.org)
   * `--inputBagForce` utilizes a local replicate inputBag instead of downloading from the data-hub (still requires accurate repRID input)
     * eg: `--inputBagForce test_data/bag/Replicate_Q-Y5F6.zip` (must be the expected bag structure)
   * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)

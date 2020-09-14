@@ -1,11 +1,13 @@
 # v0.0.4 (in development)
 **User Facing**
-* 
+* Add option to pull references from datahub
 
 **Background**
-* 
+* Remove (comment out) option to pull references from S3
+* Make pull references from BioHPC default (including in biohpc.config)
 
 *Known Bugs*
+* Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
 * outputBag does not contain fetch for processed data
 * Does not include automatic data upload
 * Override params (inputBag, fastq, species) aren't checked for integrity
