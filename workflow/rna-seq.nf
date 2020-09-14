@@ -433,7 +433,7 @@ process getRefInfer {
       GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
-      query=\$(echo 'https://'"${referenceBase}"'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ./workflow/scripts/extractRefData.py --returnParam URL)
       loc=\$(dirname \${refURL})
@@ -772,7 +772,7 @@ process getRef {
       GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
-      query=\$(echo 'https://'"${referenceBase}"'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ./workflow/scripts/extractRefData.py --returnParam URL)
       loc=\$(dirname \${refURL})
