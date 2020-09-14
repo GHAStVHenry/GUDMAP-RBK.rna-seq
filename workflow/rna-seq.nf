@@ -381,7 +381,7 @@ process getRefInfer {
 
   input:
     path credential, stageAs: "credential.json" from deriva_getRefInfer
-    val refName from referenceInfer
+    each val refName from referenceInfer
 
   output:
     tuple val (refName), path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
