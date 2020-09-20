@@ -599,12 +599,12 @@ process inferMetadata {
     echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
 
     # determine species
-    if [ 1 -eq \$(echo \$(expr \${align_hu} ">=" 25)) ] && [ 1 -eq \$(echo \$(expr \${align_mo} "<" 25)) ]
+    if [ 1 -eq \$(echo \$(expr \${align_hu} ">=" 40)) ] && [ 1 -eq \$(echo \$(expr \${align_mo} "<" 40)) ]
     then
       species="Homo sapiens"
       bam="GRCh.sampled.sorted.bam"
       bed="./GRCh/bed/genome.bed"
-    elif [ 1 -eq \$(echo \$(expr \${align_mo} ">=" 25)) ] && [ 1 -eq \$(echo \$(expr \${align_hu} "<" 25)) ]
+    elif [ 1 -eq \$(echo \$(expr \${align_mo} ">=" 40)) ] && [ 1 -eq \$(echo \$(expr \${align_hu} "<" 40)) ]
     then
       species="Mus musculus"
       bam="GRCm.sampled.sorted.bam"
