@@ -1247,7 +1247,7 @@ process outputBag {
 
 
 workflow.onError = {
-  subject = "$$workflow.manifest.name FAILED: $params.repRID"
+  subject = "$workflow.manifest.name FAILED: $params.repRID"
 
   def msg = """\
 
