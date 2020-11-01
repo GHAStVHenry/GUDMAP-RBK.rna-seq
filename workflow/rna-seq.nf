@@ -18,12 +18,15 @@ params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
+params.email = ""
+
 
 // Define override input variable
 params.refSource = "biohpc"
 params.inputBagForce = ""
 params.fastqsForce = ""
 params.speciesForce = ""
+
 
 // Parse input variables
 deriva = Channel
@@ -46,6 +49,7 @@ logsDir = "${outDir}/Logs"
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
+email = params.email
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
@@ -1241,16 +1245,23 @@ process outputBag {
   """
 }
 
+
 workflow.onError = {
+  subject = "$$workflow.manifest.name FAILED: $params.repRID"
+
   def msg = """\
 
       Pipeline error summary
       ---------------------------
       RID         : ${params.repRID}
+      Version     : ${workflow.manifest.version}
+      Duration    : ${workflow.duration}
+      Nf Version  : ${workflow.nextflow.version}
       Message     : ${workflow.errorMessage}
       exit status : ${workflow.exitStatus}
       """
       .stripIndent()
-
-  sendMail(to: 'venkat.malladi@utsouthwestern.edu', subject: 'GUDMAP RNA-seq error execution', body: msg)
+  if (email != '') {
+    sendMail(to: email, subject: subject , body: msg)
+  }
 }
