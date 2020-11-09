@@ -286,7 +286,7 @@ outputBag:
 
 
 generateVersions:
-  stage: aggregate
+  stage: aggregation
   only:
     - push
     - tags
