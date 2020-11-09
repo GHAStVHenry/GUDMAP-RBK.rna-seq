@@ -6,6 +6,8 @@ These are the most common things requested on pull requests.
  - [ ] If you've fixed a bug or added code that should be tested, add tests!
  - [ ] Documentation in `docs` is updated
  - [ ] Replace dag.png with the most recent CI pipleine integrated_pe artifact
+ - [ ] Replace software_versions_mqc.yaml with the most recent CI pipleine generateVersions artifact
+ - [ ] Replace software_references_mqc.yaml with the most recent CI pipleine generateVersions artifact
  - [ ] `CHANGELOG.md` is updated
  - [ ] `README.md` is updated
  - [ ] `LICENSE.md` is updated with new contributors
