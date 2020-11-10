@@ -182,7 +182,6 @@ dedupData:
       done | singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' parallel -j 20 -k
   - pytest -m dedupData
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools --version > version_samtools.txt
-  - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates --version &> version_markdups.txt
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
