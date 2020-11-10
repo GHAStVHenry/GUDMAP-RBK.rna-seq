@@ -43,6 +43,9 @@ To Run:
     * **biohpc_max** = process on high power BioHPC cluster nodes (=> 128GB nodes), for resource testing
     * **aws_ondemand** = AWS Batch on-demand instant requests
     * **aws_spot** = AWS Batch spot instance requests
+  * `--email` email address(es) to send failure notification (comma separated) ***(optional)***:
+    * e.g: `--email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'`
+    
 * NOTES:
   * once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)
   * reference version consists of Genome Reference Consortium version, patch release and GENCODE annotation release # (leaving the params blank will use the default version tied to the pipeline version)

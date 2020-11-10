@@ -1,12 +1,12 @@
 #!/usr/bin/env nextflow
 
-//  ########  ####  ######  ######## 
-//  ##     ##  ##  ##    ## ##       
-//  ##     ##  ##  ##       ##       
-//  ########   ##  ##       ######   
-//  ##     ##  ##  ##       ##       
-//  ##     ##  ##  ##    ## ##       
-//  ########  ####  ######  ##       
+//  ########  ####  ######  ########
+//  ##     ##  ##  ##    ## ##
+//  ##     ##  ##  ##       ##
+//  ########   ##  ##       ######
+//  ##     ##  ##  ##       ##
+//  ##     ##  ##  ##    ## ##
+//  ########  ####  ######  ##
 
 // Define input variables
 params.deriva = "${baseDir}/../test_data/auth/credential.json"
@@ -18,12 +18,15 @@ params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
+params.email = ""
+
 
 // Define override input variable
 params.refSource = "biohpc"
 params.inputBagForce = ""
 params.fastqsForce = ""
 params.speciesForce = ""
+
 
 // Parse input variables
 deriva = Channel
@@ -46,6 +49,7 @@ logsDir = "${outDir}/Logs"
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
+email = params.email
 
 // Define fixed files
 derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
@@ -89,7 +93,7 @@ process trackStart {
   """
   hostname
   ulimit -a
-  
+
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "sessionId": "${workflow.sessionId}", \
@@ -199,16 +203,16 @@ process getData {
     mkdir -p ~/.bdbag
     ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
     echo -e "LOG: linked" >> ${repRID}.getData.log
-    
+
     # get bag basename
     replicate=\$(basename "${inputBag}" | cut -d "." -f1)
     echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
-    
+
     # unzip bag
     echo -e "LOG: unzipping replicate bag" >> ${repRID}.getData.log
     unzip ${inputBag}
     echo -e "LOG: unzipped" >> ${repRID}.getData.log
-    
+
     # bag fetch fastq's only and rename by repRID
     echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
     sh ${script_bdbagFetch} \${replicate} ${repRID}
@@ -259,7 +263,7 @@ process parseMetadata {
     # get experiment RID metadata
     exp=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p expRID)
     echo -e "LOG: experiment RID metadata parsed: \${exp}" >> ${repRID}.parseMetadata.log
-    
+
     # get study RID metadata
     study=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p studyRID)
     echo -e "LOG: study RID metadata parsed: \${study}" >> ${repRID}.parseMetadata.log
@@ -267,7 +271,7 @@ process parseMetadata {
     # get endedness metadata
     endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p endsMeta)
     echo -e "LOG: endedness metadata parsed: \${endsMeta}" >> ${repRID}.parseMetadata.log
-    
+
     # ganually get endness
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p endsManual)
     echo -e "LOG: endedness manually detected: \${endsManual}" >> ${repRID}.parseMetadata.log
@@ -275,11 +279,11 @@ process parseMetadata {
     # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p stranded)
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
-    
+
     # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
-    
+
     # get species metadata
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p species)
     echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
@@ -358,7 +362,7 @@ process trimData {
     fi
     echo -e "LOG: trimmed" >> ${repRID}.trimData.log
     echo -e "LOG: average trimmed read length: \${readLength}" >> ${repRID}.trimData.log
-    
+
     # save read length file
     echo -e "\${readLength}" > readLength.csv
     """
@@ -381,7 +385,7 @@ getRefInferInput = referenceInfer.combine(deriva_getRefInfer.combine(script_refD
 
 /*
   * getRefInfer: dowloads appropriate reference for metadata inference
-*/  
+*/
 process getRefInfer {
   tag "${refName}"
 
@@ -391,7 +395,7 @@ process getRefInfer {
   output:
     tuple val (refName), path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
     path ("${refName}", type: 'dir') into bedInfer
- 
+
   script:
     """
     hostname > ${repRID}.${refName}.getRefInfer.log
@@ -532,14 +536,14 @@ process alignSampleData {
     echo -e "LOG: aligning ${ends}" >> ${repRID}.${ref}.alignSampleData.log
     if [ "${ends}" == "se" ]
     then
-     
+
       hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${ref}.alignSampleSummary.txt --new-summary
     elif [ "${ends}" == "pe" ]
     then
       hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq1} -2 ${fastq2} --summary-file ${ref}.alignSampleSummary.txt --new-summary
     fi
     echo -e "LOG: aliged" >> ${repRID}.${ref}.alignSampleData.log
-    
+
     # convert the output sam file to a sorted bam file using Samtools
     echo -e "LOG: converting from sam to bam" >> ${repRID}.${ref}.alignSampleData.log
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${ref}.sampled.bam ${ref}.sampled.sam
@@ -639,7 +643,7 @@ process inferMetadata {
 
     ended=`bash inferMeta.sh endness ${repRID}.infer_experiment.txt`
     fail=`bash inferMeta.sh fail ${repRID}.infer_experiment.txt`
-    if [ \${ended} == "PairEnd" ] 
+    if [ \${ended} == "PairEnd" ]
     then
       ends="pe"
       percentF=`bash inferMeta.sh pef ${repRID}.infer_experiment.txt`
@@ -728,7 +732,7 @@ process getRef {
 
   output:
     tuple path ("hisat2", type: 'dir'), path ("bed", type: 'dir'), path ("*.fna"), path ("*.gtf"), path ("geneID.tsv"), path ("Entrez.tsv")  into reference
- 
+
   script:
     """
     hostname > ${repRID}.getRef.log
@@ -847,7 +851,7 @@ process alignData {
         strandedParam="--rna-strandness R"
     elif [ "${stranded}" == "reverse" ] && [ "${ends}" == "pe" ]
     then
-      strandedParam="--rna-strandness RF"    
+      strandedParam="--rna-strandness RF"
     fi
 
     # align the reads with Hisat2
@@ -860,7 +864,7 @@ process alignData {
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary
     fi
     echo -e "LOG: alignined" >> ${repRID}.align.log
-    
+
     # convert the output sam file to a sorted bam file using Samtools
     echo -e "LOG: converting from sam to bam" >> ${repRID}.align.log
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam
@@ -892,7 +896,7 @@ process dedupData {
 
   output:
     tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
-    tuple path ("${repRID}.sorted.deduped.*.bam"), path ("${repRID}.sorted.deduped.*.bam.bai") into dedupChrBam 
+    tuple path ("${repRID}.sorted.deduped.*.bam"), path ("${repRID}.sorted.deduped.*.bam.bai") into dedupChrBam
     path ("*.deduped.Metrics.txt") into dedupQC
 
   script:
@@ -908,7 +912,7 @@ process dedupData {
     # sort the bam file using Samtools
     echo -e "LOG: sorting the bam file" >> ${repRID}.dedup.log
     samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam
-    
+
     # index the sorted bam using Samtools
     echo -e "LOG: indexing sorted bam file" >> ${repRID}.dedup.log
     samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai
@@ -1004,7 +1008,7 @@ process countData {
       featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
     fi
     echo -e "LOG: counted" >> ${repRID}.countData.log
-    
+
     # extract assigned reads
     grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)' > assignedReads.csv
 
@@ -1069,12 +1073,12 @@ process dataQC {
     tuple path (bam), path (bai) from dedupBam_dataQC
     tuple path (chrBam), path (chrBai) from dedupChrBam
     val ends from endsInfer_dataQC
-    
+
   output:
     path "${repRID}.tin.hist.tsv" into tinHist
     path "${repRID}.tin.med.csv" into inferMetadata_tinMed
     path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
-  
+
   script:
     """
     hostname > ${repRID}.dataQC.log
@@ -1179,8 +1183,8 @@ process aggrQC {
     echo -e "LOG: creating run table" >> ${repRID}.aggrQC.log
     echo -e "Session\tSession ID\tStart Time\tPipeline Version\tInput" > run.tsv
     echo -e "Session\t${workflow.sessionId}\t${workflow.start}\t${workflow.manifest.version}\t\${input}" >> run.tsv
-    
-    
+
+
     # make RID table
     echo -e "LOG: creating RID table" >> ${repRID}.aggrQC.log
     echo -e "Replicate\tReplicate RID\tExperiment RID\tStudy RID" > rid.tsv
@@ -1224,11 +1228,11 @@ process aggrQC {
 process outputBag {
   tag "${repRID}"
   publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
-  
+
   input:
     path multiqc
     path multiqcJSON
-  
+
   output:
     path ("Replicate_*.zip") into outputBag
 
@@ -1239,4 +1243,25 @@ process outputBag {
   cp ${multiqcJSON} Replicate_${repRID}.outputBag
   bdbag Replicate_${repRID}.outputBag --archiver zip
   """
+}
+
+
+workflow.onError = {
+  subject = "$workflow.manifest.name FAILED: $params.repRID"
+
+  def msg = """\
+
+      Pipeline error summary
+      ---------------------------
+      RID         : ${params.repRID}
+      Version     : ${workflow.manifest.version}
+      Duration    : ${workflow.duration}
+      Nf Version  : ${workflow.nextflow.version}
+      Message     : ${workflow.errorMessage}
+      exit status : ${workflow.exitStatus}
+      """
+      .stripIndent()
+  if (email != '') {
+    sendMail(to: email, subject: subject , body: msg)
+  }
 }

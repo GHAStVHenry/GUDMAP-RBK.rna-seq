@@ -130,7 +130,7 @@ dedupData:
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.deduped.bam ./test_data/bam/small/Q-Y5F6_1M.se.deduped.bam
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools index -@ 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.sorted.deduped.bam.bai
   - >
-    for i in {"chr8","chr4","chrY"}; do 
+    for i in {"chr8","chr4","chrY"}; do
       echo "samtools view -b Q-Y5F6_1M.se.sorted.deduped.bam ${i} > Q-Y5F6_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.${i}.bam Q-Y5F6_1M.se.sorted.deduped.${i}.bam.bai;";
       done | singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' parallel -j 20 -k
   - pytest -m dedupData
@@ -145,7 +145,7 @@ countData:
   script:
   - ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/geneID.tsv
   - ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/Entrez.tsv
-  - singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se.countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam 
+  - singularity run 'docker://bicf/subread2:2.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se.countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
   - singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/calculateTPM.R --count ./test_data/counts/small/Q-Y5F6_1M.se.countData
   - singularity run 'docker://bicf/subread2:2.0.0' Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
   - assignedReads=$(grep -m 1 'Assigned' *.summary | grep -oe '\([0-9.]*\)')
@@ -283,7 +283,7 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true --email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'
   - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -366,7 +366,7 @@ override_fastq:
     max: 1
     when:
       - always
-    
+
 override_species:
   stage: integration
   only: [merge_requests]
@@ -388,7 +388,7 @@ override_species:
     max: 1
     when:
       - always
-  
+
 
 consistency:
   stage: consistency
