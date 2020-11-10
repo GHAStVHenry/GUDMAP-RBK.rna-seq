@@ -47,6 +47,7 @@ top_modules:
       path_filters:
         - '*infer_experiment*'
 
+
 report_section_order:
     run:
       order: 4000
@@ -57,9 +58,9 @@ report_section_order:
     ref:
       order: 1000
     Software_Versions:
-      order: -1200
+      after: 'Inference: Stranded'
     Software_References:
-      order: -1300
+      after: 'Software_Versions'
 
 
 skip_generalstats: true
