@@ -46,13 +46,6 @@ top_modules:
       info: '1M Downsampled Reads Strandedness Inference Results'
       path_filters:
         - '*infer_experiment*'
-  - Software_Versions:
-      path_filters:
-        - 'software_versions_mqc.yaml'
-  - Software_References:
-      path_filters:
-        - 'software_references_mqc.yaml'
-
 
 report_section_order:
     run:
@@ -63,7 +56,10 @@ report_section_order:
       order: 2000
     ref:
       order: 1000
-
+    Software_Versions:
+        order: -1000
+    Software_References:
+        order: -2000
 
 skip_generalstats: true
 
@@ -161,3 +157,7 @@ sp:
         fn: 'reference.tsv'
     tin:
         fn: '*.tin.hist.tsv'
+    Software_Versions:
+      fn: 'software_versions_mqc.yaml'
+    Software_References:
+      fn: 'software_references_mqc.yaml'
