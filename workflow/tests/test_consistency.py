@@ -18,7 +18,7 @@ def test_consistencySE():
     with open(os.path.join(
         test_output_path, 'SE_multiqc_data.json')) as f:
         assigned_reads_json = json.load(f)
-    assigned_reads = assigned_reads_json['report_general_stats_data'][0]['16-1ZX4']['Assigned']
+    assigned_reads = assigned_reads_json['report_general_stats_data'][3]['16-1ZX4']['Assigned']
     assert  assigned_reads == 7742416
 
 
@@ -30,5 +30,5 @@ def test_consistencyPE():
     with open(os.path.join(
         test_output_path, 'PE_multiqc_data.json')) as f:
         assigned_reads_json = json.load(f)
-    assigned_reads = assigned_reads_json['report_general_stats_data'][0]['Q-Y5JA']['Assigned']
+    assigned_reads = assigned_reads_json['report_general_stats_data'][3]['Q-Y5JA']['Assigned']
     assert  assigned_reads == 2599140
