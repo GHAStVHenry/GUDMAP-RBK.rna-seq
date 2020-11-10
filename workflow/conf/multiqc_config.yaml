@@ -46,6 +46,12 @@ top_modules:
       info: '1M Downsampled Reads Strandedness Inference Results'
       path_filters:
         - '*infer_experiment*'
+  - Software_Versions:
+      path_filters:
+        - 'software_versions_mqc.yaml'
+  - Software_References:
+      path_filters:
+        - 'software_references_mqc.yaml'
 
 
 report_section_order:
@@ -57,10 +63,6 @@ report_section_order:
       order: 2000
     ref:
       order: 1000
-    Software_Versions:
-      after: 'Inference: Stranded'
-    Software_References:
-      after: 'Software_Versions'
 
 
 skip_generalstats: true
