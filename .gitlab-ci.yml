@@ -181,7 +181,7 @@ dedupData:
       echo "samtools view -b Q-Y5F6_1M.se.sorted.deduped.bam ${i} > Q-Y5F6_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.${i}.bam Q-Y5F6_1M.se.sorted.deduped.${i}.bam.bai;";
       done | singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' parallel -j 20 -k
   - pytest -m dedupData
-  - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates --version &> version_markdups.txt
+  - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates &> version_markdups.txt
   - singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' samtools --version > version_samtools.txt
   artifacts:
     name: "$CI_JOB_NAME"

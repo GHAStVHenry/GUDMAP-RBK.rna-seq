@@ -38,13 +38,13 @@ SOFTWARE_REGEX = {
     'Trim Galore!': ['version_trimgalore.txt', r"version (\S+)"],
     'HISAT2': ['version_hisat.txt', r"/hisat2-2.1.0/hisat2-align-s version (\S+)"],
     'Samtools': ['version_samtools.txt', r"samtools (\S+)"],
-    'picard (MarkDuplicates)': ['version_markdups.txt', r"(\S+)"],
+    'picard (MarkDuplicates)': ['version_markdups.txt', r"Version: (\S+)"],
     'featureCounts': ['version_featurecounts.txt', r"featureCounts v(\S+)"],
     'R': ['version_r.txt', r"R version (\S+)"],
     'deepTools': ['version_deeptools.txt', r"deeptools (\S+)"],
     'FastQC': ['version_fastqc.txt', r"FastQC v(\S+)"],
     'MultiQC': ['version_multiqc.txt', r"multiqc, version (\S+)"],
-    "Pipeline Version": ['./workflow/nextflow.config', r"version = 'v(\S+)'"]
+    'Pipeline Version': ['./workflow/nextflow.config', r"version = 'v(\S+)'"]
 }
 
 
