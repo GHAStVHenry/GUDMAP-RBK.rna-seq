@@ -36,7 +36,6 @@ SOFTWARE_REGEX = {
     'BDBag': ['version_bdbag.txt', r"BDBag (\S+) \(Bagit \S+\)"],
     'RSeQC': ['version_rseqc.txt', r"infer_experiment.py (\S+)"],
     'Trim Galore!': ['version_trimgalore.txt', r"version (\S+)"],
-    'seqtk': ['version_seqtk.txt', r"Version: (\S+)"],
     'HISAT2': ['version_hisat.txt', r"/hisat2-2.1.0/hisat2-align-s version (\S+)"],
     'Samtools': ['version_samtools.txt', r"samtools (\S+)"],
     'picard (MarkDuplicates)': ['version_markdups.txt', r"(\S+)"],
