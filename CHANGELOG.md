@@ -1,6 +1,7 @@
 # v0.0.4 (in development)
 **User Facing**
 * Add option to pull references from datahub
+* Add option to send email on workflow error, with pipeline error message
 
 **Background**
 * Remove (comment out) option to pull references from S3
