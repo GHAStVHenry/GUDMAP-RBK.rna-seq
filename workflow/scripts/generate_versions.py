@@ -38,7 +38,7 @@ SOFTWARE_REGEX = {
     'Trim Galore!': ['version_trimgalore.txt', r"version (\S+)"],
     'HISAT2': ['version_hisat2.txt', r"version (\S+)"],
     'Samtools': ['version_samtools.txt', r"samtools (\S+)"],
-    'picard (MarkDuplicates)': ['version_markdups.txt', r"Version: (\S+)"],
+    'picard (MarkDuplicates)': ['version_markdups.txt', r"(\S\.\S{2}\.\S+)"],
     'featureCounts': ['version_featurecounts.txt', r"featureCounts v(\S+)"],
     'R': ['version_r.txt', r"R version (\S+)"],
     'deepTools': ['version_deeptools.txt', r"deeptools (\S+)"],
