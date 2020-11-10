@@ -44,7 +44,7 @@ SOFTWARE_REGEX = {
     'deepTools': ['version_deeptools.txt', r"deeptools (\S+)"],
     'FastQC': ['version_fastqc.txt', r"FastQC v(\S+)"],
     'MultiQC': ['version_multiqc.txt', r"multiqc, version (\S+)"],
-    "Pipeline Version": ['./workflow/nextflow.config', r"version = '(\S+)'"]
+    "Pipeline Version": ['./workflow/nextflow.config', r"version = 'v(\S+)'"]
 }
 
 
