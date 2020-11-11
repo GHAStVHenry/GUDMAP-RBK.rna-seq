@@ -56,10 +56,10 @@ report_section_order:
       order: 2000
     ref:
       order: 1000
-    Software_Versions:
+    software_versions:
       order: -1000
-    Software_References:
-      order: -1100
+    software_references:
+      order: -2000
 
 skip_generalstats: true
 
@@ -157,7 +157,3 @@ sp:
         fn: 'reference.tsv'
     tin:
         fn: '*.tin.hist.tsv'
-    Software_Versions:
-        fn: 'software_versions_mqc.yaml'
-    Software_References:
-        fn: 'software_references_mqc.yaml'
