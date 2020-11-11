@@ -2,6 +2,7 @@
 **User Facing**
 * Add option to pull references from datahub
 * Add option to send email on workflow error, with pipeline error message
+* Add versions and paper references of software used to report
 
 **Background**
 * Remove (comment out) option to pull references from S3

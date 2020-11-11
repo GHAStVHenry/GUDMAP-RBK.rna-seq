@@ -70,6 +70,8 @@ if (params.refSource == "biohpc") {
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
 multiqcConfig = Channel.fromPath("${baseDir}/conf/multiqc_config.yaml")
 bicfLogo = Channel.fromPath("${baseDir}/../docs/bicf_logo.png")
+softwareReferences = Channel.fromPath("${baseDir}/../docs/software_references_mqc.yaml")
+softwareVersions = Channel.fromPath("${baseDir}/../docs/software_versions_mqc.yaml")
 
 // Define script files
 script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
@@ -1126,6 +1128,8 @@ process aggrQC {
   input:
     path multiqcConfig
     path bicfLogo
+    path softwareReferences
+    path softwareVersions
     path fastqc
     path trimQC
     path alignQC

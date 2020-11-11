@@ -56,6 +56,10 @@ report_section_order:
       order: 2000
     ref:
       order: 1000
+    software_versions:
+      order: -1000
+    software_references:
+      order: -2000
 
 skip_generalstats: true
 
