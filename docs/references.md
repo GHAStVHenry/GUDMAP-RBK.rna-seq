@@ -16,9 +16,7 @@
   * trimgalore [https://github.com/FelixKrueger/TrimGalore](https://github.com/FelixKrueger/TrimGalore)
 
 6. **hisat2**:
-  * Kim ,D.,Paggi, J.M., Park, C., Bennett, C., Salzberg, S.L. Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. Nat Biotechnol. 2019 Aug;37(8):907-915. doi: 10.1038/s41587-019-0201-4.
-
-  Kim D, Paggi JM, Park C, Bennett C, Salzberg SL. Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. 2019 Nat Biotechnol. Aug;37(8):907-915. doi:[10.1038/s41587-019-0201-4](https://doi.org/10.1038/s41587-019-0201-4).
+  * Kim ,D.,Paggi, J.M., Park, C., Bennett, C., Salzberg, S.L. 2019 Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. Nat Biotechnol. Aug;37(8):907-915. doi:[10.1038/s41587-019-0201-4](https://doi.org/10.1038/s41587-019-0201-4).
 
 7. **samtools**:
   * Li H., B. Handsaker, A. Wysoker, T. Fennell, J. Ruan, N. Homer, G. Marth, G. Abecasis, R. Durbin, and 1000 Genome Project Data Processing Subgroup. 2009. The Sequence alignment/map (SAM) format and SAMtools. Bioinformatics 25: 2078-9. doi:[10.1093/bioinformatics/btp352](http://dx.doi.org/10.1093/bioinformatics/btp352)

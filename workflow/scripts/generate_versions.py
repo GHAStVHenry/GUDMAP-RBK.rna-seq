@@ -125,9 +125,9 @@ def main():
         '''
         id: 'Software Versions'
         section_name: 'Software Versions'
-        section_href: 'https://git.biohpc.swmed.edu/BICF/Astrocyte/chipseq_analysis/'
+        section_href: 'https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/78-tool_version/docs/RNA-Seq%20Pipeline%20Design%20Process%20Table.pdf'
         plot_type: 'html'
-        description: 'are collected at run time from the software output.'
+        description: 'are collected for pipeline version.'
         data: |
             <dl class="dl-horizontal">
         '''
