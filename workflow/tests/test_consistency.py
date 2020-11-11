@@ -31,4 +31,4 @@ def test_consistencyPE():
         test_output_path, 'PE_multiqc_data.json')) as f:
         assigned_reads_json = json.load(f)
     assigned_reads = assigned_reads_json['report_general_stats_data'][4]['Q-Y5JA']['Assigned']
-    assert  assigned_reads == 2599140
+    assert  assigned_reads == 2599149
