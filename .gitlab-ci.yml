@@ -397,10 +397,6 @@ consistency:
     variables:
         - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - grep -m 1 \"Assigned\":.[0-9] SE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedSE.txt
-  - grep -m 1 \"Assigned\":.[0-9] PE_multiqc_data.json | grep -oe '\([0-9.]*\)' > assignedPE.txt
-  - echo 7742416 > assignedExpectSE.txt
-  - echo 2599140 > assignedExpectPE.txt
   - pytest -m consistencySE
   - pytest -m consistencyPE
   artifacts:
@@ -409,8 +405,4 @@ consistency:
     paths:
       - SE_multiqc_data.json
       - PE_multiqc_data.json
-      - assignedSE.txt
-      - assignedPE.txt
-      - assignedExpectSE.txt
-      - assignedExpectPE.txt
     expire_in: 7 days

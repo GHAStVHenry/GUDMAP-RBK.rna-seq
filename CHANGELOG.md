@@ -7,6 +7,7 @@
 * Remove (comment out) option to pull references from S3
 * Make pull references from BioHPC default (including in biohpc.config)
 * Start using new gudmaprbk dockerhub (images autobuilt)
+* Moved consistency checks to be fully python
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
