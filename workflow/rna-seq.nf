@@ -354,11 +354,11 @@ process trimData {
     echo -e "LOG: trimming ${ends}" >> ${repRID}.trimData.log
     if [ "${ends}" == "se" ]
     then
-      trim_galore --gzip -q 25 --length 35 --basename ${repRID} -j 4 ${fastq[0]}
+      trim_galore --gzip -q 25 --length 35 --basename ${repRID} ${fastq[0]}
       readLength=\$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length(\$1)}' | sort -n | awk '{a[NR]=\$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     elif [ "${ends}" == "pe" ]
     then
-      trim_galore --gzip -q 25 --length 35 --paired --basename ${repRID} -j 4 ${fastq[0]} ${fastq[1]}
+      trim_galore --gzip -q 25 --length 35 --paired --basename ${repRID} ${fastq[0]} ${fastq[1]}
       readLength=\$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length(\$1)}' | sort -n | awk '{a[NR]=\$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     fi
     echo -e "LOG: trimmed" >> ${repRID}.trimData.log
