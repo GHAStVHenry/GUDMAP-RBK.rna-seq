@@ -227,11 +227,11 @@ if (fastqsForce != "") {
   Channel
     .fromPath(fastqsForce)
     .ifEmpty { exit 1, "override inputBag file not found: ${fastqsForce}" }
-    .collect().into {
+    .collect().set {
       fastqs_trimData
     }
 } else {
-  fastqs.into {
+  fastqs.set {
     fastqs_trimData
   }
 }
@@ -341,7 +341,7 @@ process trimData {
 
   output:
     path ("*.fq.gz") into fastqsTrim
-    path ("*.R{1,2}.fastq.gz") into fastqs_fastqc
+    path ("*.fastq.gz") into fastqs_fastqc
     path ("*_trimming_report.txt") into trimQC
     path ("readLength.csv") into inferMetadata_readLength
 
@@ -881,7 +881,7 @@ process alignData {
 }
 
 // Replicate rawBam for multiple process inputs
-rawBam.into {
+rawBam.set {
   rawBam_dedupData
 }
 
