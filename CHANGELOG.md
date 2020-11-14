@@ -9,7 +9,7 @@
 * Make pull references from BioHPC default (including in biohpc.config)
 * Start using new gudmaprbk dockerhub (images autobuilt)
 * Moved consistency checks to be fully python
-* Added back parallel form of trim_galore and now use fastqc after trim step
+* Changed order of steps so that fastqc is done after the trim step
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production

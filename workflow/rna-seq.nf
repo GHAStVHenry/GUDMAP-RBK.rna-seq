@@ -341,7 +341,7 @@ process trimData {
 
   output:
     path ("*.fq.gz") into fastqsTrim
-    path ("*.fastq.gz") into fastqs_fastqc
+    path ("*.fastq.gz") includeInput:true into fastqs_fastqc
     path ("*_trimming_report.txt") into trimQC
     path ("readLength.csv") into inferMetadata_readLength
 
@@ -881,7 +881,7 @@ process alignData {
 }
 
 // Replicate rawBam for multiple process inputs
-rawBam.set {
+rawBam.into {
   rawBam_dedupData
 }
 
