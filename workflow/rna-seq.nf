@@ -164,7 +164,7 @@ process getBag {
 
     # deriva-download replicate RID
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
-    deriva-download-cli ${source} --catalog 2 ${derivaConfig} . rid=${repRID}
+    deriva-download-cli staging.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
     """
 }
