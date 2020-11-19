@@ -716,6 +716,7 @@ spikeInfer.into{
 speciesInfer.into {
   speciesInfer_getRef
   speciesInfer_aggrQC
+  speciesInfer_outputBag
 }
 
 
@@ -1235,6 +1236,7 @@ process outputBag {
   input:
     path multiqc
     path multiqcJSON
+    val species from speciesInfer_outputBag
 
   output:
     path ("Replicate_*.zip") into outputBag
@@ -1242,6 +1244,19 @@ process outputBag {
   script:
   """
   mkdir Replicate_${repRID}.outputBag
+  echo -e "### Run Details" >> runDetails.md
+  echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
+  echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
+  echo -e "**Description:** This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub. It is designed to run on the HPC cluster (BioHPC) at UT Southwestern Medical Center (in conjunction with the standard nextflow profile: config biohpc.config)" >> runDetails.md
+  if [ "${species}" == "Mus musculus" ]
+  then
+    echo -e "**Genome Version:** GRCm${refMoVersion}" >> runDetails.md
+  elif [ "${species}" == "Homo sapiens" ]
+  then
+    echo -e "**Genome Version:** GRCh${refHuVersion}" >> runDetails.md
+  fi
+  echo -e "**Run ID:** ${repRID}" >> runDetails.md
+  cp runDetails.md Replicate_${repRID}.outputBag
   cp ${multiqc} Replicate_${repRID}.outputBag
   cp ${multiqcJSON} Replicate_${repRID}.outputBag
   bdbag Replicate_${repRID}.outputBag --archiver zip
