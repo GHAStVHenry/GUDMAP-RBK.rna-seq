@@ -1247,13 +1247,15 @@ process outputBag {
   echo -e "### Run Details" >> runDetails.md
   echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
   echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
-  echo -e "**Description:** This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub. It is designed to run on the HPC cluster (BioHPC) at UT Southwestern Medical Center (in conjunction with the standard nextflow profile: config biohpc.config)" >> runDetails.md
+  echo -e "**Description:** ${workflow.manifest.description}" >> runDetails.md
   if [ "${species}" == "Mus musculus" ]
   then
-    echo -e "**Genome Version:** GRCm${refMoVersion}" >> runDetails.md
+    echo -e "**Genome Assembly Version:** GRCm38 patch p6" >> runDetails.md
+    echo -e "**Annotation Version:** GENCODE release M22" >> runDetails.md
   elif [ "${species}" == "Homo sapiens" ]
   then
-    echo -e "**Genome Version:** GRCh${refHuVersion}" >> runDetails.md
+    echo -e "**Genome Assembly Version:** GRCh38 patch p12" >> runDetails.md
+    echo -e "**Annotation Version:** GENCODE release 31" >> runDetails.md
   fi
   echo -e "**Run ID:** ${repRID}" >> runDetails.md
   cp runDetails.md Replicate_${repRID}.outputBag
