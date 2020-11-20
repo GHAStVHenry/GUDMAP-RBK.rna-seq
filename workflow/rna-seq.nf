@@ -12,7 +12,7 @@
 params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
-params.repRID = "Q-Y5JA"
+params.repRID = "Q-Y5F6"
 params.source = "dev"
 params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
