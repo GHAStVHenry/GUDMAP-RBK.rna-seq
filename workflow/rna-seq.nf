@@ -12,7 +12,7 @@
 params.deriva = "${baseDir}/../test_data/auth/credential.json"
 params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
-params.repRID = "Q-Y5JA"
+params.repRID = "Q-Y5F6"
 params.source = "dev"
 params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
@@ -164,7 +164,7 @@ process getBag {
 
     # deriva-download replicate RID
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
-    deriva-download-cli ${source} --catalog 2 ${derivaConfig} . rid=${repRID}
+    deriva-download-cli staging.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
     """
 }
@@ -716,6 +716,7 @@ spikeInfer.into{
 speciesInfer.into {
   speciesInfer_getRef
   speciesInfer_aggrQC
+  speciesInfer_outputBag
 }
 
 
@@ -1235,6 +1236,7 @@ process outputBag {
   input:
     path multiqc
     path multiqcJSON
+    val species from speciesInfer_outputBag
 
   output:
     path ("Replicate_*.zip") into outputBag
@@ -1242,6 +1244,23 @@ process outputBag {
   script:
   """
   mkdir Replicate_${repRID}.outputBag
+  echo -e "### Run Details" >> runDetails.md
+  echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
+  echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
+  echo -e "**Description:** ${workflow.manifest.description}" >> runDetails.md
+  if [ "${species}" == "Mus musculus" ]; then
+    genome=\$(echo GRCm${refMoVersion} | cut -d '.' -f1)
+    patch=\$(echo ${refMoVersion} | cut -d '.' -f2)
+    annotation=\$(echo ${refMoVersion} | cut -d '.' -f3 | tr -d 'v')
+  elif [ "${species}" == "Homo sapiens" ]; then
+    genome=\$(echo GRCh${refHuVersion} | cut -d '.' -f1)
+    patch=\$(echo ${refHuVersion} | cut -d '.' -f2)
+    annotation=\$(echo ${refHuVersion} | cut -d '.' -f3 | tr -d 'v')
+  fi
+  echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
+  echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
+  echo -e "**Run ID:** ${repRID}" >> runDetails.md
+  cp runDetails.md Replicate_${repRID}.outputBag
   cp ${multiqc} Replicate_${repRID}.outputBag
   cp ${multiqcJSON} Replicate_${repRID}.outputBag
   bdbag Replicate_${repRID}.outputBag --archiver zip
