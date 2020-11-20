@@ -1248,15 +1248,17 @@ process outputBag {
   echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
   echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
   echo -e "**Description:** ${workflow.manifest.description}" >> runDetails.md
-  if [ "${species}" == "Mus musculus" ]
-  then
-    echo -e "**Genome Assembly Version:** GRCm38 patch p6" >> runDetails.md
-    echo -e "**Annotation Version:** GENCODE release M22" >> runDetails.md
-  elif [ "${species}" == "Homo sapiens" ]
-  then
-    echo -e "**Genome Assembly Version:** GRCh38 patch p12" >> runDetails.md
-    echo -e "**Annotation Version:** GENCODE release 31" >> runDetails.md
+  if [ "${species}" == "Mus musculus" ]; then
+    genome=\$(echo GRCm${refMoVersion} | cut -d '.' -f1)
+    patch=\$(echo ${refMoVersion} | cut -d '.' -f2)
+    annotation=\$(echo ${refMoVersion} | cut -d '.' -f3 | tr -d 'v')
+  elif [ "${species}" == "Homo sapiens" ]; then
+    genome=\$(echo GRCh${refHuVersion} | cut -d '.' -f1)
+    patch=\$(echo ${refHuVersion} | cut -d '.' -f2)
+    annotation=\$(echo ${refHuVersion} | cut -d '.' -f3 | tr -d 'v')
   fi
+  echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
+  echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
   echo -e "**Run ID:** ${repRID}" >> runDetails.md
   cp runDetails.md Replicate_${repRID}.outputBag
   cp ${multiqc} Replicate_${repRID}.outputBag
