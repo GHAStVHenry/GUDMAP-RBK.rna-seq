@@ -287,7 +287,7 @@ uploadInputBag:
     - merge_requests
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - hatrac=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o TEST)
+  - hatrac=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o /TEST$)
   - >
     if [ -z "${hatrac}" ]; then
       singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
@@ -301,7 +301,7 @@ uploadInputBag:
       cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"')
       cookie=${cookie:11:-1}
       loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt)
-      inputBag_rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie})
+      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie}
     fi
 
 
