@@ -290,7 +290,7 @@ uploadInputBag:
   - hatrac=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o TEST)
   - >
     if [ -z "${hatrac}" ]; then
-      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host $dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
+      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
     fi
   - echo THIS IS A TEST FILE > test.txt
   - md5=$(md5sum ./test.txt | awk '{ print $1 }')
