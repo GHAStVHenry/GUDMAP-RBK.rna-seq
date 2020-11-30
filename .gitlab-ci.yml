@@ -308,8 +308,8 @@ uploadInputBag:
       rid=singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie} &&
       echo ${rid} test input bag created
     else
-      rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT') &&
-      rid=\${rid:8:-6} &&
+      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
+      rid=${rid:8:-6} &&
       echo ${rid} test input bag already exists
     fi
 
