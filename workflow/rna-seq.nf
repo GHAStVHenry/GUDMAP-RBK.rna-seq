@@ -36,6 +36,7 @@ deriva.into {
   deriva_getBag
   deriva_getRefInfer
   deriva_getRef
+  deriva_uploadInputBag
 }
 bdbag = Channel
   .fromPath(params.bdbag)
@@ -82,7 +83,7 @@ script_refData = Channel.fromPath("${baseDir}/scripts/extractRefData.py")
 script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
 script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
-
+script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/uploadInputBag.py")
 
 /*
  * trackStart: track start of pipeline
@@ -177,6 +178,10 @@ if (inputBagForce != "") {
 } else {
   inputBag = bag
 }
+inputBag.into {
+  inputBag_getData
+  inputBag_uploadInputBag
+}
 
 /*
  * getData: fetch study files from consortium with downloaded bdbag.zip
@@ -187,7 +192,7 @@ process getData {
   input:
     path script_bdbagFetch
     path cookies, stageAs: "deriva-cookies.txt" from bdbag
-    path inputBag
+    path inputBag from inputBag_getData
 
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
@@ -1267,6 +1272,67 @@ process outputBag {
   """
 }
 
+/* 
+ * uploadInputBag: uploads the input bag
+*/
+process uploadInputBag {
+  tag "${repRID}"
+
+  input:
+    path script_uploadInputBag
+    path inputBag from inputBag_uploadInputBag
+    path credential, stageAs: "credential.json" from deriva_uploadInputBag
+
+  output:
+    path ("inputBagRID.csv") into inputBagRIDfl
+
+  script:
+  """
+  hostname > ${repRID}.uploadInputBag.log
+  ulimit -a >> ${repRID}.uploadInputBag.log
+
+  yr=\$(date +'%Y')
+  mn=\$(date +'%m')
+  dy=\$(date +'%d')
+
+  hatrac=\$(deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o \${yr}_\${mn}_\${dy})
+  if [ -z "\${hatrac}" ]
+  then
+    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}
+    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
+  else
+    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
+  fi
+
+  file=\$(basename -a ${inputBag})
+  md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
+  echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
+  size=\$(wc -c < ./\${file})
+  echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
+  if [ "\${exist}" == "[]" ]
+  then
+      cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+      cookie=\${cookie:11:-1}
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}/\${file})
+      inputBag_rid=\$(python3 uploadInputBag.py -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+      echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
+      rid=\${inputBag_rid}
+  else
+      exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      exist=\${exist:8:-6}
+      echo LOG: input bag RID already exists - \${exist} >> ${repRID}.uploadInputBag.log
+      rid=\${exist}
+  fi
+
+  echo \${rid} > inputBagRID.csv
+  """
+}
+
+inputBagRID = Channel.create()
+inputBagRIDfl.splitCsv(sep: ",", header: false).separate(
+  inputBagRID
+)
 
 workflow.onError = {
   subject = "$workflow.manifest.name FAILED: $params.repRID"
