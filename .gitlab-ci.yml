@@ -181,7 +181,7 @@ dedupData:
   - >
     for i in {"chr8","chr4","chrY"}; do
       echo "samtools view -b Q-Y5F6_1M.se.sorted.deduped.bam ${i} > Q-Y5F6_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.${i}.bam Q-Y5F6_1M.se.sorted.deduped.${i}.bam.bai;";
-      done | singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' parallel -j 20 -k
+    done | singularity run 'docker://bicf/gudmaprbkdedup:2.0.0' parallel -j 20 -k
   - pytest -m dedupData
   artifacts:
     name: "$CI_JOB_NAME"
@@ -278,7 +278,7 @@ outputBag:
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bdbag test --archiver zip
   - pytest -m outputBag
 
-outputBag:
+uploadInputBag:
   stage: unit
   only:
     - push
@@ -290,20 +290,20 @@ outputBag:
   - hatrac=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o TEST)
   - >
     if [ -z "${hatrac}" ]; then
-      singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
+      singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host $dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
     fi
-  - echo "THIS IS A TEST FILE" > test.txt
+  - echo THIS IS A TEST FILE > test.txt
   - md5=$(md5sum ./test.txt | awk '{ print $1 }')
   - size=$(wc -c < ./test.txt)
   - exist=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5})
   - >
-    if [ "\${exist}" == "[]" ]; then
-      cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org": {' | grep -o '\"cookie\": \".*\"')
+    if [ "${exist}" == "[]" ]; then
+      cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"')
       cookie=${cookie:11:-1}
       loc=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt)
       inputBag_rid=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' python3 uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie})
     fi
-  - #pytest -m uploadInputBag
+
 
 generateVersions:
   stage: aggregation
@@ -448,6 +448,7 @@ integration_pe:
     max: 1
     when:
       - always
+
 
 override_inputBag:
   stage: integration
