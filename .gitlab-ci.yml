@@ -287,21 +287,21 @@ uploadInputBag:
     - merge_requests
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - hatrac=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o TEST)
+  - hatrac=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o TEST)
   - >
     if [ -z "${hatrac}" ]; then
-      singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host $dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
+      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host $dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
     fi
   - echo THIS IS A TEST FILE > test.txt
   - md5=$(md5sum ./test.txt | awk '{ print $1 }')
   - size=$(wc -c < ./test.txt)
-  - exist=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5})
+  - exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5})
   - >
     if [ "${exist}" == "[]" ]; then
       cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"')
       cookie=${cookie:11:-1}
-      loc=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt)
-      inputBag_rid=$(singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' python3 uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie})
+      loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt)
+      inputBag_rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie})
     fi
 
 
