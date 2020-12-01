@@ -289,9 +289,8 @@ uploadInputBag:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
     hatrac=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o '/TEST$')
-    echo &&
     if [ -z "${hatrac}" ]; then
-      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST &&
+      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
       echo /hatrac/resources/rnaseq/pipeline/input_bag/TEST created
     else
       echo /hatrac/resources/rnaseq/pipeline/input_bag/TEST already exists
