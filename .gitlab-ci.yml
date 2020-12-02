@@ -362,8 +362,8 @@ uploadExecutionRun:
       rid=$(python3 uploadExecutionRun.py -r 18-MJ3A -w 18-DT5T -g 17-BPD4 -i 18-MHWC -s Error -d 'Run in process' -o dev.gudmap.org -c ${cookie} -u F)
       echo ${rid} test execution run created
     else
-      rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-      rid=\${rid:7:-6}
+      rid=$(echo ${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      rid=${rid:7:-6}
       rid=$(python3 uploadExecutionRun.py -r 18-MJ3A -w 18-DT5T -g 17-BPD4 -i 18-MHWC -s Error -d 'Run in process' -o dev.gudmap.org -c ${cookie} -u ${rid})
       echo ${rid} test execution run already exists
     fi
