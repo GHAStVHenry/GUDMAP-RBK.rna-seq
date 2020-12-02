@@ -356,15 +356,15 @@ uploadExecutionRun:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
     exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=18-DT5T/Reference_Genome=17-BPD4/Input_Bag=18-MHWC/Replicate=18-MJ3A) &&
+    cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+    cookie=${cookie:11:-1} &&
     if [ "${exist}" == "[]" ]; then
-      cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-      cookie=${cookie:11:-1} &&
       rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadExecutionRun.py -r 18-MJ3A -w 18-DT5T -g 17-BPD4 -i 18-MHWC -s Error -d 'Run in process' -o dev.gudmap.org -c ${cookie} -u F) &&
       echo ${rid} test execution run created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
       rid=${rid:7:-6} &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadExecutionRun.py -r 18-MJ3A -w 18-DT5T -g 17-BPD4 -i 18-MHWC -s Error -d 'Run in process' -o dev.gudmap.org -c ${cookie} -u ${rid})
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadExecutionRun.py -r 18-MJ3A -w 18-DT5T -g 17-BPD4 -i 18-MHWC -s Error -d 'Run in process' -o dev.gudmap.org -c ${cookie} -u ${rid}) &&
       echo ${rid} test execution run already exists
     fi
 
