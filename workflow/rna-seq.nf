@@ -37,6 +37,7 @@ deriva.into {
   deriva_getRefInfer
   deriva_getRef
   deriva_uploadInputBag
+  deriva_uploadExecutionRun
 }
 bdbag = Channel
   .fromPath(params.bdbag)
@@ -84,6 +85,7 @@ script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
 script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/uploadInputBag.py")
+script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/uploadExecutionRun.py")
 
 /*
  * trackStart: track start of pipeline
@@ -717,11 +719,13 @@ strandedInfer.into {
 spikeInfer.into{
   spikeInfer_getRef
   spikeInfer_aggrQC
+  spikeInfer_uploadExecutionRun
 }
 speciesInfer.into {
   speciesInfer_getRef
   speciesInfer_aggrQC
   speciesInfer_outputBag
+  speciesInfer_uploadExecutionRun
 }
 
 
@@ -1295,8 +1299,7 @@ process uploadInputBag {
   mn=\$(date +'%m')
   dy=\$(date +'%d')
 
-  hatrac=\$(deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o \${yr}_\${mn}_\${dy})
-  if [ -z "\${hatrac}" ]
+  if [ ! `deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
   then
     deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}
     echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
@@ -1309,11 +1312,13 @@ process uploadInputBag {
   echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
   size=\$(wc -c < ./\${file})
   echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
+  
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
   if [ "\${exist}" == "[]" ]
   then
       cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
       cookie=\${cookie:11:-1}
+
       loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}/\${file})
       inputBag_rid=\$(python3 uploadInputBag.py -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
       echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
@@ -1332,6 +1337,74 @@ process uploadInputBag {
 inputBagRID = Channel.create()
 inputBagRIDfl.splitCsv(sep: ",", header: false).separate(
   inputBagRID
+)
+
+/* 
+ * uploadExecutionRun: uploads the execution run
+*/
+process uploadExecutionRun {
+  tag "${repRID}"
+
+  input:
+    path script_uploadExecutionRun
+    path credential, stageAs: "credential.json" from deriva_uploadExecutionRun
+    val spike from spikeInfer_uploadExecutionRun
+    val species from speciesInfer_uploadExecutionRun
+    val inputBagRID
+    
+  output:
+    path ("executionRunRID.csv") into executionRunRIDfl
+
+  script:
+  """
+  hostname > ${repRID}.uploadExecutionRun.log
+  ulimit -a >> ${repRID}.uploadExecutionRun.log
+
+  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
+  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA/Version=${workflow.manifest.version})
+  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  workflow=\${workflow:7:-6}
+  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.uploadExecutionRun.log
+
+  if [ "${species}" == "Homo sapiens" ]
+  then
+    genomeName=\$(echo GRCh${refHuVersion})
+  elif [ "${species}" == "Mus musculus" ]
+  then
+    genomeName=\$(echo GRCm${refMoVersion})
+  fi
+  if [ "${spike}" == "yes" ]
+  then
+    genomeName=\$(echo \${genomeName}-S)
+  fi
+  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.uploadExecutionRun.log
+  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName}_indev)
+  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  genome=\${genome:7:-6}
+  echo LOG: genome RID extracted - \${genome} >> ${repRID}.uploadExecutionRun.log
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Reference_Genome=\${genome}/Input_Bag=${inputBagRID}/Replicate=${repRID})
+  if [ "\${exist}" == "[]" ]
+  then
+    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d 'Run in process' -o ${source} -c \${cookie} -u F)
+    echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+  else
+    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    rid=\${rid:7:-6}
+    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
+    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+  fi
+
+  echo \${executionRun_rid} > executionRunRID.csv
+  """
+}
+
+executionRunRID = Channel.create()
+executionRunRIDfl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID
 )
 
 workflow.onError = {
