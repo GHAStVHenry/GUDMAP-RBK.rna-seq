@@ -38,6 +38,7 @@ deriva.into {
   deriva_getRef
   deriva_uploadInputBag
   deriva_uploadExecutionRun
+  deriva_uploadQC
 }
 bdbag = Channel
   .fromPath(params.bdbag)
@@ -86,6 +87,7 @@ script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymb
 script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/uploadInputBag.py")
 script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/uploadExecutionRun.py")
+script_uploadQC = Channel.fromPath("${baseDir}/scripts/uploadQC.py")
 
 /*
  * trackStart: track start of pipeline
@@ -256,7 +258,7 @@ process parseMetadata {
     path experiment from experimentMeta
 
   output:
-    path "design.csv" into metadata
+    path "design.csv" into metadata_fl
 
   script:
     """
@@ -317,7 +319,7 @@ speciesMeta = Channel.create()
 readLengthMeta = Channel.create()
 expRID = Channel.create()
 studyRID = Channel.create()
-metadata.splitCsv(sep: ",", header: false).separate(
+metadata_fl.splitCsv(sep: ",", header: false).separate(
   endsMeta,
   endsManual,
   strandedMeta,
@@ -327,6 +329,7 @@ metadata.splitCsv(sep: ",", header: false).separate(
   expRID,
   studyRID
 )
+
 // Replicate metadata for multiple process inputs
 endsManual.into {
   endsManual_trimData
@@ -350,7 +353,7 @@ process trimData {
     path ("*.fq.gz") into fastqsTrim
     path ("*.fastq.gz", includeInputs:true) into fastqs_fastqc
     path ("*_trimming_report.txt") into trimQC
-    path ("readLength.csv") into inferMetadata_readLength
+    path ("readLength.csv") into readLengthInfer_fl
 
   script:
     """
@@ -378,11 +381,16 @@ process trimData {
 
 // Extract calculated read length metadata into channel
 readLengthInfer = Channel.create()
-inferMetadata_readLength.splitCsv(sep: ",", header: false).separate(
+readLengthInfer_fl.splitCsv(sep: ",", header: false).separate(
   readLengthInfer
 )
 
-// Replicate trimmed fastq's
+// Replicate infered read length for multiple process inputs
+readLengthInfer.into {
+  readLengthInfer_aggrQC
+  readLengthInfer_uploadQC
+}
+// Replicate trimmed fastq's for multiple process inputs
 fastqsTrim.into {
   fastqsTrim_alignData
   fastqsTrim_downsampleData
@@ -582,7 +590,7 @@ process inferMetadata {
     path alignSummary from alignSampleQC_inferMetadata.collect()
 
   output:
-    path "infer.csv" into inferMetadata
+    path "infer.csv" into inferMetadata_fl
     path "${repRID}.infer_experiment.txt" into inferExperiment
 
   script:
@@ -691,7 +699,7 @@ align_moInfer = Channel.create()
 percentFInfer = Channel.create()
 percentRInfer = Channel.create()
 failInfer = Channel.create()
-inferMetadata.splitCsv(sep: ",", header: false).separate(
+inferMetadata_fl.splitCsv(sep: ",", header: false).separate(
   endsInfer,
   strandedInfer,
   spikeInfer,
@@ -710,11 +718,13 @@ endsInfer.into {
   endsInfer_countData
   endsInfer_dataQC
   endsInfer_aggrQC
+  endsInfer_uploadQC
 }
 strandedInfer.into {
   strandedInfer_alignData
   strandedInfer_countData
   strandedInfer_aggrQC
+  strandedInfer_uploadQC
 }
 spikeInfer.into{
   spikeInfer_getRef
@@ -986,7 +996,7 @@ process countData {
   output:
     path ("*.tpmTable.csv") into counts
     path ("*.countData.summary") into countsQC
-    path ("assignedReads.csv") into inferMetadata_assignedReads
+    path ("assignedReads.csv") into assignedReadsInfer_fl
 
   script:
     """
@@ -1035,9 +1045,15 @@ process countData {
 
 // Extract number of assigned reads metadata into channel
 assignedReadsInfer = Channel.create()
-inferMetadata_assignedReads.splitCsv(sep: ",", header: false).separate(
+assignedReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   assignedReadsInfer
 )
+
+// Replicate infered assigned reads for multiple process inputs
+assignedReadsInfer.into {
+  assignedReadsInfer_aggrQC
+  assignedReadsInfer_uploadQC
+}
 
 /*
  *fastqc: run fastqc on untrimmed fastq's
@@ -1050,7 +1066,7 @@ process fastqc {
 
   output:
     path ("*_fastqc.zip") into fastqc
-    path ("rawReads.csv") into inferMetadata_rawReads
+    path ("rawReads.csv") into rawReadsInfer_fl
 
   script:
     """
@@ -1068,9 +1084,15 @@ process fastqc {
 
 // Extract number of raw reads metadata into channel
 rawReadsInfer = Channel.create()
-inferMetadata_rawReads.splitCsv(sep: ",", header: false).separate(
+rawReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   rawReadsInfer
 )
+
+// Replicate infered raw reads for multiple process inputs
+rawReadsInfer.into {
+  rawReadsInfer_aggrQC
+  rawReadsInfer_uploadQC
+}
 
 /*
  *dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
@@ -1087,7 +1109,7 @@ process dataQC {
 
   output:
     path "${repRID}.tin.hist.tsv" into tinHist
-    path "${repRID}.tin.med.csv" into inferMetadata_tinMed
+    path "${repRID}.tin.med.csv" into  tinMedInfer_fl
     path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
 
   script:
@@ -1122,7 +1144,7 @@ process dataQC {
 
 // Extract median TIN metadata into channel
 tinMedInfer = Channel.create()
-inferMetadata_tinMed.splitCsv(sep: ",", header: false).separate(
+tinMedInfer_fl.splitCsv(sep: ",", header: false).separate(
   tinMedInfer
 )
 
@@ -1158,9 +1180,9 @@ process aggrQC {
     val spikeI from spikeInfer_aggrQC
     val speciesI from speciesInfer_aggrQC
     val readLengthM from readLengthMeta
-    val readLengthI from readLengthInfer
-    val rawReadsI from rawReadsInfer
-    val assignedReadsI from assignedReadsInfer
+    val readLengthI from readLengthInfer_aggrQC
+    val rawReadsI from rawReadsInfer_aggrQC
+    val assignedReadsI from assignedReadsInfer_aggrQC
     val tinMedI from tinMedInfer
     val expRID
     val studyRID
@@ -1288,7 +1310,7 @@ process uploadInputBag {
     path credential, stageAs: "credential.json" from deriva_uploadInputBag
 
   output:
-    path ("inputBagRID.csv") into inputBagRIDfl
+    path ("inputBagRID.csv") into inputBagRID_fl
 
   script:
   """
@@ -1334,8 +1356,9 @@ process uploadInputBag {
   """
 }
 
+// Extract input bag RID into channel
 inputBagRID = Channel.create()
-inputBagRIDfl.splitCsv(sep: ",", header: false).separate(
+inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
   inputBagRID
 )
 
@@ -1353,7 +1376,7 @@ process uploadExecutionRun {
     val inputBagRID
     
   output:
-    path ("executionRunRID.csv") into executionRunRIDfl
+    path ("executionRunRID.csv") into executionRunRID_fl
 
   script:
   """
@@ -1402,10 +1425,69 @@ process uploadExecutionRun {
   """
 }
 
+// Extract execution run RID into channel
 executionRunRID = Channel.create()
-executionRunRIDfl.splitCsv(sep: ",", header: false).separate(
+executionRunRID_fl.splitCsv(sep: ",", header: false).separate(
   executionRunRID
 )
+
+/* 
+ * uploadQC: uploads the mRNA QC
+*/
+process uploadQC {
+  tag "${repRID}"
+
+  input:
+    path script_uploadQC
+    path credential, stageAs: "credential.json" from deriva_uploadQC
+    val executionRunRID
+    val ends from endsInfer_uploadQC
+    val stranded from strandedInfer_uploadQC
+    val length from readLengthInfer_uploadQC
+    val rawCount from rawReadsInfer_uploadQC
+    val finalCount from assignedReadsInfer_uploadQC
+    
+  output:
+    path ("qcRID.csv") into qcRID_fl
+
+  script:
+  """
+  hostname > ${repRID}.uploadQC.log
+  ulimit -a >> ${repRID}.uploadQC.log
+
+  if [ "${ends}" == "pe" ]
+  then
+    end="Paired End"
+  elif [ "${ends}" == "se" ]
+  then
+    end="Single Read"
+  fi
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID}/Execution_Run=${executionRunRID})
+  if [ "\${exist}" == "[]" ]
+  then
+    qc_rid=\$(python3 uploadQC.py -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
+    echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
+  else
+    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    rid=\${rid:7:-6}
+    qc_rid=\$(python3 uploadQC.py -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u \${rid})
+    echo LOG: mRNA QC RID updated - \${qc_rid} >> ${repRID}.uploadQC.log
+  fi
+
+  echo \${qc_rid} > qcRID.csv
+  """
+}
+
+// Extract mRNA qc RID into channel
+qcRID = Channel.create()
+qcRID_fl.splitCsv(sep: ",", header: false).separate(
+  qcRID
+)
+
 
 workflow.onError = {
   subject = "$workflow.manifest.name FAILED: $params.repRID"

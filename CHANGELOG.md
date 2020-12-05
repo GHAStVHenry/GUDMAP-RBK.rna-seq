@@ -4,6 +4,8 @@
 * Add option to send email on workflow error, with pipeline error message
 * Add versions and paper references of software used to report
 * Upload input bag
+* Upload execution run
+* Upload mRNA QC
 
 **Background**
 * Remove (comment out) option to pull references from S3

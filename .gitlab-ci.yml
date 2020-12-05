@@ -368,6 +368,29 @@ uploadExecutionRun:
       echo ${rid} test execution run already exists
     fi
 
+uploadQC:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+  - >
+    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=18-MJ3A/Execution_Run=18-MJ3C) &&
+    cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+    cookie=${cookie:11:-1} &&
+    if [ "${exist}" == "[]" ]; then
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 18-MJ3A -e 18-MJ3C -p "Single Read" -s forward -l 35 -w 5 -f 1 -o dev.gudmap.org -c ${cookie} -u F) &&
+      echo ${rid} test execution run created
+    else
+      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
+      rid=${rid:7:-6} &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 18-MJ3A -e 18-MJ3C -p "Single Read" -s forward -l 35 -w 5 -f 1 -o dev.gudmap.org -c ${cookie} -u ${rid}) &&
+      echo ${rid} test execution run already exists
+    fi
+
 generateVersions:
   stage: aggregation
   only:
