@@ -288,7 +288,7 @@ uploadInputBag:
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
-    if [ ! `deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q '/TEST$'` ]; then
+    if [ `deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q '/TEST$'` ]; then
       singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
       echo /hatrac/resources/rnaseq/pipeline/input_bag/TEST created
     else
@@ -308,40 +308,6 @@ uploadInputBag:
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
       rid=${rid:8:-6} &&
-      echo ${rid} test input bag already exists
-    fi
-
-    uploadInputBag:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-  script:
-  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - >
-    hatrac=`singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -o '/TEST$'` &&
-    if [ -z "${hatrac}" ]; then
-      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
-      echo /hatrac/resources/rnaseq/pipeline/input_bag/TEST created
-    else
-      echo /hatrac/resources/rnaseq/pipeline/input_bag/TEST already exists
-    fi
-  - echo THIS IS A TEST FILE > test.txt
-  - >
-    md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
-    size=$(wc -c < ./test.txt) &&
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5}) &&
-    if [ "${exist}" == "[]" ]; then
-      cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-      cookie=${cookie:11:-1} &&
-      loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt) &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie}) &&
-      echo ${rid} test input bag created
-    else
-      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
-      rid=${rid:7:-6} &&
       echo ${rid} test input bag already exists
     fi
 
@@ -390,6 +356,40 @@ uploadQC:
       rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 18-MJ3A -e 18-MJ3C -p "Single Read" -s forward -l 35 -w 5 -f 1 -o dev.gudmap.org -c ${cookie} -u ${rid}) &&
       echo ${rid} test execution run already exists
     fi
+
+uploadOutputBag:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+  script:
+  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+  - >
+    if [ `deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/output_bag/ | grep -q '/TEST$'` ]; then
+      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/output_bag/TEST
+      echo /hatrac/resources/rnaseq/pipeline/output_bag/TEST created
+    else
+      echo /hatrac/resources/rnaseq/pipeline/output_bag/TEST already exists
+    fi
+  - echo THIS IS A TEST FILE > test.txt
+  - >
+    md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
+    size=$(wc -c < ./test.txt) &&
+    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=${md5}) &&
+    if [ "${exist}" == "[]" ]; then
+      cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+      cookie=${cookie:11:-1} &&
+      loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt) &&
+      rid=singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadOutputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie} &&
+      echo ${rid} test output bag created
+    else
+      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
+      rid=${rid:8:-6} &&
+      echo ${rid} test output bag already exists
+    fi
+
 
 generateVersions:
   stage: aggregation

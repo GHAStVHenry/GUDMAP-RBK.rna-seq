@@ -39,6 +39,7 @@ deriva.into {
   deriva_uploadInputBag
   deriva_uploadExecutionRun
   deriva_uploadQC
+  deriva_uploadOutputBag
 }
 bdbag = Channel
   .fromPath(params.bdbag)
@@ -88,6 +89,7 @@ script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
 script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/uploadInputBag.py")
 script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/uploadExecutionRun.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/uploadQC.py")
+script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/uploadOutputBag.py")
 
 /*
  * trackStart: track start of pipeline
@@ -1321,7 +1323,7 @@ process uploadInputBag {
   mn=\$(date +'%m')
   dy=\$(date +'%d')
 
-  if [ ! `deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
+  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
   then
     deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}
     echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
@@ -1347,7 +1349,7 @@ process uploadInputBag {
       rid=\${inputBag_rid}
   else
       exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-      exist=\${exist:8:-6}
+      exist=\${exist:7:-6}
       echo LOG: input bag RID already exists - \${exist} >> ${repRID}.uploadInputBag.log
       rid=\${exist}
   fi
@@ -1410,6 +1412,7 @@ process uploadExecutionRun {
   cookie=\${cookie:11:-1}
 
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Reference_Genome=\${genome}/Input_Bag=${inputBagRID}/Replicate=${repRID})
+  echo \${exist} >> ${repRID}.uploadExecutionRun.log
   if [ "\${exist}" == "[]" ]
   then
     executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d 'Run in process' -o ${source} -c \${cookie} -u F)
@@ -1417,6 +1420,7 @@ process uploadExecutionRun {
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
+    echo \${rid} >> ${repRID}.uploadExecutionRun.log
     executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
   fi
@@ -1431,6 +1435,12 @@ executionRunRID_fl.splitCsv(sep: ",", header: false).separate(
   executionRunRID
 )
 
+//
+executionRunRID.into {
+  executionRunRID_uploadQC
+  executionRunRID_uploadOutputBag
+}
+
 /* 
  * uploadQC: uploads the mRNA QC
 */
@@ -1440,7 +1450,7 @@ process uploadQC {
   input:
     path script_uploadQC
     path credential, stageAs: "credential.json" from deriva_uploadQC
-    val executionRunRID
+    val executionRunRID from executionRunRID_uploadQC
     val ends from endsInfer_uploadQC
     val stranded from strandedInfer_uploadQC
     val length from readLengthInfer_uploadQC
@@ -1486,6 +1496,71 @@ process uploadQC {
 qcRID = Channel.create()
 qcRID_fl.splitCsv(sep: ",", header: false).separate(
   qcRID
+)
+
+/* 
+ * uploadOutputBag: uploads the output bag
+*/
+process uploadOutputBag {
+  tag "${repRID}"
+
+  input:
+    path script_uploadOutputBag
+    path outputBag
+    val executionRunRID from executionRunRID_uploadOutputBag
+    path credential, stageAs: "credential.json" from deriva_uploadOutputBag
+
+  output:
+    path ("outputBagRID.csv") into outputBagRID_fl
+
+  script:
+  """
+  hostname > ${repRID}.uploadOutputBag.log
+  ulimit -a >> ${repRID}.uploadOutputBag.log
+
+  yr=\$(date +'%Y')
+  mn=\$(date +'%m')
+  dy=\$(date +'%d')
+
+  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/output_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
+  then
+    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}
+    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
+  else
+    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
+  fi
+
+  file=\$(basename -a ${outputBag})
+  md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
+  echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
+  size=\$(wc -c < ./\${file})
+  echo LOG: ${repRID} output bag size - \${size} bytes >> ${repRID}.uploadOutputBag.log
+  
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=\${md5})
+  if [ "\${exist}" == "[]" ]
+  then
+      cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+      cookie=\${cookie:11:-1}
+
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}/\${file})
+      outputBag_rid=\$(python3 uploadOutputBag.py -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+      echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
+      rid=\${outputBag_rid}
+  else
+      exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      exist=\${exist:8:-6}
+      echo LOG: output bag RID already exists - \${exist} >> ${repRID}.uploadOutputBag.log
+      rid=\${exist}
+  fi
+
+  echo \${rid} > outputBagRID.csv
+  """
+}
+
+// Extract output bag RID into channel
+outputBagRID = Channel.create()
+outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
+  outputBagRID
 )
 
 
