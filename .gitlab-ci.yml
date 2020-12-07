@@ -288,7 +288,7 @@ uploadInputBag:
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
-    if [ `deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q '/TEST$'` ]; then
+    if [ `singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q '/TEST$'` ]; then
       singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
       echo /hatrac/resources/rnaseq/pipeline/input_bag/TEST created
     else
@@ -367,7 +367,7 @@ uploadOutputBag:
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
-    if [ `deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/output_bag/ | grep -q '/TEST$'` ]; then
+    if [ `singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/output_bag/ | grep -q '/TEST$'` ]; then
       singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/output_bag/TEST
       echo /hatrac/resources/rnaseq/pipeline/output_bag/TEST created
     else
