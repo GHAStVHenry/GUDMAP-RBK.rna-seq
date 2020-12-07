@@ -288,7 +288,7 @@ uploadInputBag:
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
-    if [ `singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q '/TEST$'` ]; then
+    if [ ! `singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q '/TEST$'` ]; then
       singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org mkdir /hatrac/resources/rnaseq/pipeline/input_bag/TEST
       echo /hatrac/resources/rnaseq/pipeline/input_bag/TEST created
     else
@@ -303,7 +303,7 @@ uploadInputBag:
       cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt) &&
-      rid=singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie} &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie}) &&
       echo ${rid} test input bag created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
@@ -382,7 +382,7 @@ uploadOutputBag:
       cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt) &&
-      rid=singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadOutputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie} &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadOutputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -o dev.gudmap.org -c ${cookie}) &&
       echo ${rid} test output bag created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
