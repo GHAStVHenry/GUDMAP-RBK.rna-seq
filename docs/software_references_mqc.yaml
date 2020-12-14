@@ -4,7 +4,7 @@
         description: 'This section describes references for the tools used.'
         plot_type: 'html'
         data: |
-
+        
                 <h3 id="references">References</h3>
                 <ol style="list-style-type: decimal">
                 <li><strong>python</strong>:</li>
@@ -41,7 +41,7 @@
                 <li><strong>hisat2</strong>:</li>
                 </ol>
                 <ul>
-                <li>Kim ,D.,Paggi, J.M., Park, C., Bennett, C., Salzberg, S.L. Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. 2019 Nat Biotechnol. 2019 Aug;37(8):907-915. doi:<a href="https://doi.org/10.1038/s41587-019-0201-4">10.1038/s41587-019-0201-4</a></li>
+                <li>Kim ,D.,Paggi, J.M., Park, C., Bennett, C., Salzberg, S.L. 2019 Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. Nat Biotechnol. Aug;37(8):907-915. doi:<a href="https://doi.org/10.1038/s41587-019-0201-4">10.1038/s41587-019-0201-4</a>.</li>
                 </ul>
                 <ol start="7" style="list-style-type: decimal">
                 <li><strong>samtools</strong>:</li>

@@ -6,7 +6,7 @@
         description: 'are collected for pipeline version.'
         data: |
             <dl class="dl-horizontal">
-
+        
             <dt>Python</dt><dd>v3.7.7</dd>
             <dt>DERIVA</dt><dd>v1.0.0</dd>
             <dt>BDBag</dt><dd>v1.5.6</dd>
