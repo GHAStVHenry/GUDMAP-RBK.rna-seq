@@ -1480,7 +1480,6 @@ qcRID_fl.splitCsv(sep: ",", header: false).separate(
   qcRID
 )
 
-
 /*
  *ouputBag: create ouputBag
 */
@@ -1519,28 +1518,11 @@ process outputBag {
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:20:-1}
-  deriva-upload-cli --catalog 2 --token \${cookie} ${source} ./deriva --purge-state
-
-  fileBam=\$(basename -a ${bam})
-  md5Bam=\$(md5sum ./\${fileBam} | awk '{ print \$1 }')
-  fileBigwig=\$(basename -a ${bigwig})
-  md5Bigwig=\$(md5sum ./\${fileBigwig} | awk '{ print \$1 }')
-  fileCounts=\$(basename -a ${counts})
-  md5Counts=\$(md5sum ./\${fileCounts} | awk '{ print \$1 }')
-  urlBam=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Bam})
-  urlBam=\$(echo \${urlBam} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
-  urlBam=\${urlBam:12:-12}
-  urlBigwig=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Bigwig})
-  urlBigwig=\$(echo \${urlBigwig} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
-  urlBigwig=\${urlBigwig:12:-12}
-  urlCounts=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Counts})
-  urlCounts=\$(echo \${urlCounts} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
-  urlCounts=\${urlCounts:12:-12}
-  echo \${urlBam} > url.txt
-  echo \${urlBigwig} >> url.txt
-  echo \${urlCounts} >> url.txt
+  deriva-upload-cli --catalog 2 --token \${cookie} ${source} ./deriva
+  echo LOG: processed files uploaded >> ${repRID}.outputBag.log
 
   deriva-download-cli --catalog 2 --token \${cookie} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
+  echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
 
   echo -e "### Run Details" >> runDetails.md
   echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
@@ -1558,6 +1540,7 @@ process outputBag {
   echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
   echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
   echo -e "**Run ID:** ${repRID}" >> runDetails.md
+  echo LOG: runDetails.md created >> ${repRID}.outputBag.log
 
   unzip Execution_Run_${executionRunRID}.zip 
   mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag
@@ -1568,6 +1551,7 @@ process outputBag {
   cp ${multiqcJSON} \${loc}
 
   bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
+  echo LOG: output bag created >> ${repRID}.outputBag.log
   """
 }
 
