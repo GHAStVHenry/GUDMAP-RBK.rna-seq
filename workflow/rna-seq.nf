@@ -1504,6 +1504,9 @@ process outputBag {
   output:
     path ("${repRID}_Output_Bag.zip") into outputBag
 
+  when:
+    upload
+
   script:
   """
   hostname > ${repRID}.outputBag.log
