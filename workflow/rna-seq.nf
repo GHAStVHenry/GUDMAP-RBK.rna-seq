@@ -18,6 +18,7 @@ params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
+params.upload = true
 params.email = ""
 
 
@@ -51,6 +52,7 @@ refHuVersion = params.refHuVersion
 refERCCVersion = params.refERCCVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
+upload = params.upload
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
@@ -1284,6 +1286,9 @@ process uploadInputBag {
   output:
     path ("inputBagRID.csv") into inputBagRID_fl
 
+  when:
+    upload
+
   script:
   """
   hostname > ${repRID}.uploadInputBag.log
@@ -1349,6 +1354,9 @@ process uploadExecutionRun {
     
   output:
     path ("executionRunRID.csv") into executionRunRID_fl
+
+  when:
+    upload
 
   script:
   """
@@ -1430,6 +1438,9 @@ process uploadQC {
     
   output:
     path ("qcRID.csv") into qcRID_fl
+
+  when:
+    upload
 
   script:
   """
@@ -1571,6 +1582,9 @@ process uploadOutputBag {
 
   output:
     path ("outputBagRID.csv") into outputBagRID_fl
+
+  when:
+    upload
 
   script:
   """
