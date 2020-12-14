@@ -36,6 +36,7 @@ deriva.into {
   deriva_getBag
   deriva_getRefInfer
   deriva_getRef
+  deriva_outputBag
   deriva_uploadInputBag
   deriva_uploadExecutionRun
   deriva_uploadQC
@@ -56,7 +57,8 @@ speciesForce = params.speciesForce
 email = params.email
 
 // Define fixed files
-derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
+replicateExportConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
+executionRunExportConfig = Channel.fromPath("${baseDir}/conf/Execution_Run_For_Output_Bag.json")
 if (params.source == "dev") {
   source = "dev.gudmap.org"
 } else if (params.source == "staging") {
@@ -150,7 +152,7 @@ process getBag {
 
   input:
     path credential, stageAs: "credential.json" from deriva_getBag
-    path derivaConfig
+    path replicateExportConfig
 
   output:
     path ("Replicate_*.zip") into bag
@@ -171,7 +173,7 @@ process getBag {
 
     # deriva-download replicate RID
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
-    deriva-download-cli staging.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID}
+    deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
     """
 }
@@ -339,6 +341,14 @@ endsManual.into {
   endsManual_alignSampleData
   endsManual_aggrQC
 }
+studyRID.into {
+  studyRID_aggrQC
+  studyRID_outputBag
+}
+expRID.into {
+  expRID_aggrQC
+  expRID_outputBag
+}
 
 
 /*
@@ -348,8 +358,8 @@ process trimData {
   tag "${repRID}"
 
   input:
-    val ends from endsManual_trimData
     path (fastq) from fastqs_trimData
+    val ends from endsManual_trimData
 
   output:
     path ("*.fq.gz") into fastqsTrim
@@ -500,8 +510,8 @@ process downsampleData {
   tag "${repRID}"
 
   input:
-    val ends from endsManual_downsampleData
     path fastq from fastqsTrim_downsampleData
+    val ends from endsManual_downsampleData
 
   output:
     path ("sampled.1.fq") into fastqs1Sample
@@ -748,8 +758,8 @@ process getRef {
   tag "${species}"
 
   input:
-    path credential, stageAs: "credential.json" from deriva_getRef
     path script_refData
+    path credential, stageAs: "credential.json" from deriva_getRef
     val spike from spikeInfer_getRef
     val species from speciesInfer_getRef
 
@@ -845,10 +855,10 @@ process alignData {
   tag "${repRID}"
 
   input:
-    val ends from endsInfer_alignData
-    val stranded from strandedInfer_alignData
     path fastq from fastqsTrim_alignData
     path reference_alignData
+    val ends from endsInfer_alignData
+    val stranded from strandedInfer_alignData
 
   output:
     tuple path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
@@ -953,6 +963,7 @@ dedupBam.into {
   dedupBam_countData
   dedupBam_makeBigWig
   dedupBam_dataQC
+  dedupBam_outputBag
 }
 
 /*
@@ -966,7 +977,7 @@ process makeBigWig {
     tuple path (bam), path (bai) from dedupBam_makeBigWig
 
   output:
-    path ("${repRID}.bw")
+    path ("${repRID}.bw") into bigwig
 
   script:
     """
@@ -1186,8 +1197,8 @@ process aggrQC {
     val rawReadsI from rawReadsInfer_aggrQC
     val assignedReadsI from assignedReadsInfer_aggrQC
     val tinMedI from tinMedInfer
-    val expRID
-    val studyRID
+    val studyRID from studyRID_aggrQC
+    val expRID from expRID_aggrQC
 
   output:
     path "${repRID}.multiqc.html" into multiqc
@@ -1259,47 +1270,6 @@ process aggrQC {
     """
 }
 
-/*
- *ouputBag: create ouputBag
-*/
-process outputBag {
-  tag "${repRID}"
-  publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
-
-  input:
-    path multiqc
-    path multiqcJSON
-    val species from speciesInfer_outputBag
-
-  output:
-    path ("Replicate_*.zip") into outputBag
-
-  script:
-  """
-  mkdir Replicate_${repRID}.outputBag
-  echo -e "### Run Details" >> runDetails.md
-  echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
-  echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
-  echo -e "**Description:** ${workflow.manifest.description}" >> runDetails.md
-  if [ "${species}" == "Mus musculus" ]; then
-    genome=\$(echo GRCm${refMoVersion} | cut -d '.' -f1)
-    patch=\$(echo ${refMoVersion} | cut -d '.' -f2)
-    annotation=\$(echo ${refMoVersion} | cut -d '.' -f3 | tr -d 'v')
-  elif [ "${species}" == "Homo sapiens" ]; then
-    genome=\$(echo GRCh${refHuVersion} | cut -d '.' -f1)
-    patch=\$(echo ${refHuVersion} | cut -d '.' -f2)
-    annotation=\$(echo ${refHuVersion} | cut -d '.' -f3 | tr -d 'v')
-  fi
-  echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
-  echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
-  echo -e "**Run ID:** ${repRID}" >> runDetails.md
-  cp runDetails.md Replicate_${repRID}.outputBag
-  cp ${multiqc} Replicate_${repRID}.outputBag
-  cp ${multiqcJSON} Replicate_${repRID}.outputBag
-  bdbag Replicate_${repRID}.outputBag --archiver zip
-  """
-}
-
 /* 
  * uploadInputBag: uploads the input bag
 */
@@ -1308,8 +1278,8 @@ process uploadInputBag {
 
   input:
     path script_uploadInputBag
-    path inputBag from inputBag_uploadInputBag
     path credential, stageAs: "credential.json" from deriva_uploadInputBag
+    path inputBag from inputBag_uploadInputBag
 
   output:
     path ("inputBagRID.csv") into inputBagRID_fl
@@ -1323,13 +1293,13 @@ process uploadInputBag {
   mn=\$(date +'%m')
   dy=\$(date +'%d')
 
-  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
-  then
-    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}
-    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
-  else
-    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
-  fi
+#  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
+#  then
+#    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}
+#    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
+#  else
+#    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
+#  fi
 
   file=\$(basename -a ${inputBag})
   md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
@@ -1343,7 +1313,7 @@ process uploadInputBag {
       cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
       cookie=\${cookie:11:-1}
 
-      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}/\${file})
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}/\${file} --parents)
       inputBag_rid=\$(python3 uploadInputBag.py -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
       echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
       rid=\${inputBag_rid}
@@ -1437,6 +1407,7 @@ executionRunRID_fl.splitCsv(sep: ",", header: false).separate(
 
 //
 executionRunRID.into {
+  executionRunRID_outputBag
   executionRunRID_uploadQC
   executionRunRID_uploadOutputBag
 }
@@ -1498,6 +1469,94 @@ qcRID_fl.splitCsv(sep: ",", header: false).separate(
   qcRID
 )
 
+
+/*
+ *ouputBag: create ouputBag
+*/
+process outputBag {
+  tag "${repRID}"
+  publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
+
+  input:
+    path credential, stageAs: "credential.json" from deriva_outputBag
+    path executionRunExportConfig
+    path multiqc
+    path multiqcJSON
+    tuple path (bam),path (bai) from dedupBam_outputBag
+    path bigwig
+    path counts
+    val species from speciesInfer_outputBag
+    val studyRID from studyRID_outputBag
+    val expRID from expRID_outputBag
+    val executionRunRID from executionRunRID_outputBag
+
+  output:
+    path ("${repRID}_Output_Bag.zip") into outputBag
+
+  script:
+  """
+  hostname > ${repRID}.outputBag.log
+  ulimit -a >> ${repRID}.outputBag.log
+
+  mkdir -p ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
+  cp ${bam} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
+  cp ${bigwig} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
+  cp ${counts} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:20:-1}
+  deriva-upload-cli --catalog 2 --token \${cookie} ${source} ./deriva --purge-state
+
+  fileBam=\$(basename -a ${bam})
+  md5Bam=\$(md5sum ./\${fileBam} | awk '{ print \$1 }')
+  fileBigwig=\$(basename -a ${bigwig})
+  md5Bigwig=\$(md5sum ./\${fileBigwig} | awk '{ print \$1 }')
+  fileCounts=\$(basename -a ${counts})
+  md5Counts=\$(md5sum ./\${fileCounts} | awk '{ print \$1 }')
+  urlBam=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Bam})
+  urlBam=\$(echo \${urlBam} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
+  urlBam=\${urlBam:12:-12}
+  urlBigwig=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Bigwig})
+  urlBigwig=\$(echo \${urlBigwig} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
+  urlBigwig=\${urlBigwig:12:-12}
+  urlCounts=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Counts})
+  urlCounts=\$(echo \${urlCounts} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
+  urlCounts=\${urlCounts:12:-12}
+  echo \${urlBam} > url.txt
+  echo \${urlBigwig} >> url.txt
+  echo \${urlCounts} >> url.txt
+
+  deriva-download-cli --catalog 2 --token \${cookie} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
+
+  echo -e "### Run Details" >> runDetails.md
+  echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
+  echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
+  echo -e "**Description:** ${workflow.manifest.description}" >> runDetails.md
+  if [ "${species}" == "Mus musculus" ]; then
+    genome=\$(echo GRCm${refMoVersion} | cut -d '.' -f1)
+    patch=\$(echo ${refMoVersion} | cut -d '.' -f2)
+    annotation=\$(echo ${refMoVersion} | cut -d '.' -f3 | tr -d 'v')
+  elif [ "${species}" == "Homo sapiens" ]; then
+    genome=\$(echo GRCh${refHuVersion} | cut -d '.' -f1)
+    patch=\$(echo ${refHuVersion} | cut -d '.' -f2)
+    annotation=\$(echo ${refHuVersion} | cut -d '.' -f3 | tr -d 'v')
+  fi
+  echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
+  echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
+  echo -e "**Run ID:** ${repRID}" >> runDetails.md
+
+  unzip Execution_Run_${executionRunRID}.zip 
+  mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag
+  loc=./${repRID}_Output_Bag/data/assets/Study/${studyRID}/Experiment/${expRID}/Replicate/${repRID}/Execution_Run/${executionRunRID}/Output_Files/
+  mkdir -p \${loc}
+  cp runDetails.md \${loc}
+  cp ${multiqc} \${loc}
+  cp ${multiqcJSON} \${loc}
+
+  bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
+  """
+}
+
 /* 
  * uploadOutputBag: uploads the output bag
 */
@@ -1506,9 +1565,9 @@ process uploadOutputBag {
 
   input:
     path script_uploadOutputBag
+    path credential, stageAs: "credential.json" from deriva_uploadOutputBag
     path outputBag
     val executionRunRID from executionRunRID_uploadOutputBag
-    path credential, stageAs: "credential.json" from deriva_uploadOutputBag
 
   output:
     path ("outputBagRID.csv") into outputBagRID_fl
@@ -1522,13 +1581,13 @@ process uploadOutputBag {
   mn=\$(date +'%m')
   dy=\$(date +'%d')
 
-  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/output_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
-  then
-    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}
-    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
-  else
-    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
-  fi
+#  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/output_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
+#  then
+#    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}
+#    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
+#  else
+#    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
+#  fi
 
   file=\$(basename -a ${outputBag})
   md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
@@ -1542,7 +1601,7 @@ process uploadOutputBag {
       cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
       cookie=\${cookie:11:-1}
 
-      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}/\${file})
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}/\${file} --parents)
       outputBag_rid=\$(python3 uploadOutputBag.py -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
       echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
       rid=\${outputBag_rid}
