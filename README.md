@@ -44,7 +44,7 @@ To Run:
     * **aws_ondemand** = AWS Batch on-demand instant requests
     * **aws_spot** = AWS Batch spot instance requests
   * `--email` email address(es) to send failure notification (comma separated) ***(optional)***:
-    * e.g: `--email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'`
+    * e.g: `--email 'Venkat.Malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'`
     
 * NOTES:
   * once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)

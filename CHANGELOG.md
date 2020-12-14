@@ -6,6 +6,7 @@
 * Upload input bag
 * Upload execution run
 * Upload mRNA QC
+* Create and upload output bag
 
 **Background**
 * Remove (comment out) option to pull references from S3
