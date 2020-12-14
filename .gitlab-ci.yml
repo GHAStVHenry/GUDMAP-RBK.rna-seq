@@ -344,6 +344,8 @@ outputBag:
   stage: unit
   only:
     - push
+    - tags
+  except:
     - merge_requests
   script:
   - mkdir test
