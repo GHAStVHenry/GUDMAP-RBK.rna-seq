@@ -7,7 +7,7 @@ option_list=list(
 opt=parse_args(OptionParser(option_list=option_list))
 rm(option_list)
 
-countTable <- read.csv(paste0(opt$repRID,".countTable.csv"), stringsAsFactors=FALSE)
+countTable <- read.csv(paste0(opt$repRID,"_countTable.csv"), stringsAsFactors=FALSE)
 geneID <- read.delim("geneID.tsv", header=FALSE, stringsAsFactors=FALSE)
 Entrez <- read.delim("Entrez.tsv", header=FALSE, stringsAsFactors=FALSE)
 
