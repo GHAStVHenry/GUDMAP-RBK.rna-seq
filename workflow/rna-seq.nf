@@ -939,8 +939,8 @@ process dedupData {
     tuple path (bam), path (bai) from rawBam_dedupData
 
   output:
-    tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
-    tuple path ("${repRID}.sorted.deduped.*.bam"), path ("${repRID}.sorted.deduped.*.bam.bai") into dedupChrBam
+    tuple path ("${repRID}_sorted.deduped.bam"), path ("${repRID}_sorted.deduped.bam.bai") into dedupBam
+    tuple path ("${repRID}_sorted.deduped.*.bam"), path ("${repRID}_sorted.deduped.*.bam.bai") into dedupChrBam
     path ("*.deduped.Metrics.txt") into dedupQC
 
   script:
@@ -955,16 +955,16 @@ process dedupData {
 
     # sort the bam file using Samtools
     echo -e "LOG: sorting the bam file" >> ${repRID}.dedup.log
-    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam
+    samtools sort -@ `nproc` -O BAM -o ${repRID}_sorted.deduped.bam ${repRID}.deduped.bam
 
     # index the sorted bam using Samtools
     echo -e "LOG: indexing sorted bam file" >> ${repRID}.dedup.log
-    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai
+    samtools index -@ `nproc` -b ${repRID}_sorted.deduped.bam ${repRID}_sorted.deduped.bam.bai
 
     # split the deduped BAM file for multi-threaded tin calculation
-    for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
+    for i in `samtools view ${repRID}_sorted.deduped.bam | cut -f3 | sort | uniq`;
       do
-      echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\"; samtools view -b ${repRID}.sorted.deduped.bam \${i} 1>> ${repRID}.sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}.sorted.deduped.\${i}.bam ${repRID}.sorted.deduped.\${i}.bam.bai"
+      echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\"; samtools view -b ${repRID}_sorted.deduped.bam \${i} 1>> ${repRID}_sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}_sorted.deduped.\${i}.bam ${repRID}_sorted.deduped.\${i}.bam.bai"
     done | parallel -j `nproc` -k
     """
 }
@@ -997,7 +997,7 @@ process makeBigWig {
 
     # create bigwig
     echo -e "LOG: creating bibWig" >> ${repRID}.makeBigWig.log
-    bamCoverage -p `nproc` -b ${bam} -o ${repRID}.bw
+    bamCoverage -p `nproc` -b ${bam} -o ${repRID}_sorted.deduped.bw
     echo -e "LOG: created" >> ${repRID}.makeBigWig.log
     """
 }
@@ -1007,7 +1007,7 @@ process makeBigWig {
 */
 process countData {
   tag "${repRID}"
-  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*.tpmTable.csv"
+  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*_tpmTable.csv"
 
   input:
     path script_calculateTPM
@@ -1018,7 +1018,7 @@ process countData {
     val stranded from strandedInfer_countData
 
   output:
-    path ("*.tpmTable.csv") into counts
+    path ("*_tpmTable.csv") into counts
     path ("*.countData.summary") into countsQC
     path ("assignedReads.csv") into assignedReadsInfer_fl
 
@@ -1047,10 +1047,10 @@ process countData {
     echo -e "LOG: counting ${ends} features" >> ${repRID}.countData.log
     if [ "${ends}" == "se" ]
     then
-      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}.countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}_countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}_sorted.deduped.bam
     elif [ "${ends}" == "pe" ]
     then
-      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}_countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}_sorted.deduped.bam
     fi
     echo -e "LOG: counted" >> ${repRID}.countData.log
 
@@ -1142,10 +1142,10 @@ process dataQC {
     ulimit -a >> ${repRID}.dataQC.log
 
     # calcualte TIN values per feature on each chromosome
-    echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > ${repRID}.sorted.deduped.tin.xls
+    echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > ${repRID}_sorted.deduped.tin.xls
     for i in `cat ./bed/genome.bed | cut -f1 | sort | uniq`; do
-      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.dataQC.log; tin.py -i ${repRID}.sorted.deduped.\${i}.bam  -r ./bed/genome.bed; cat ${repRID}.sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
-    done | parallel -j `nproc` -k 1>> ${repRID}.sorted.deduped.tin.xls
+      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.dataQC.log; tin.py -i ${repRID}_sorted.deduped.\${i}.bam  -r ./bed/genome.bed; cat ${repRID}_sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
+    done | parallel -j `nproc` -k 1>> ${repRID}_sorted.deduped.tin.xls
 
     # bin TIN values
     echo -e "LOG: binning TINs" >> ${repRID}.dataQC.log
