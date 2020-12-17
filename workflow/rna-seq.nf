@@ -345,7 +345,9 @@ endsManual.into {
 }
 studyRID.into {
   studyRID_aggrQC
+  studyRID_uploadInputBag
   studyRID_outputBag
+  studyRID_uploadOutputBag
 }
 expRID.into {
   expRID_aggrQC
@@ -1282,6 +1284,7 @@ process uploadInputBag {
     path script_uploadInputBag
     path credential, stageAs: "credential.json" from deriva_uploadInputBag
     path inputBag from inputBag_uploadInputBag
+    val studyRID from studyRID_uploadInputBag
 
   output:
     path ("inputBagRID.csv") into inputBagRID_fl
@@ -1298,14 +1301,6 @@ process uploadInputBag {
   mn=\$(date +'%m')
   dy=\$(date +'%d')
 
-#  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/input_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
-#  then
-#    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}
-#    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
-#  else
-#    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadInputBag.log
-#  fi
-
   file=\$(basename -a ${inputBag})
   md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
   echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
@@ -1318,7 +1313,7 @@ process uploadInputBag {
       cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
       cookie=\${cookie:11:-1}
 
-      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/\${yr}_\${mn}_\${dy}/\${file} --parents)
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
       inputBag_rid=\$(python3 uploadInputBag.py -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
       echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
       rid=\${inputBag_rid}
@@ -1566,6 +1561,7 @@ process uploadOutputBag {
     path script_uploadOutputBag
     path credential, stageAs: "credential.json" from deriva_uploadOutputBag
     path outputBag
+    val studyRID from studyRID_uploadOutputBag
     val executionRunRID from executionRunRID_uploadOutputBag
 
   output:
@@ -1583,14 +1579,6 @@ process uploadOutputBag {
   mn=\$(date +'%m')
   dy=\$(date +'%d')
 
-#  if [ `deriva-hatrac-cli --host ${source} ls /hatrac/resources/rnaseq/pipeline/output_bag/ | grep -q \${yr}_\${mn}_\${dy}` ]
-#  then
-#    deriva-hatrac-cli --host ${source} mkdir /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}
-#    echo LOG: hatrac folder created - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
-#  else
-#    echo LOG: hatrac folder already exists - /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy} >> ${repRID}.uploadOutputBag.log
-#  fi
-
   file=\$(basename -a ${outputBag})
   md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
   echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
@@ -1603,7 +1591,7 @@ process uploadOutputBag {
       cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
       cookie=\${cookie:11:-1}
 
-      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/\${yr}_\${mn}_\${dy}/\${file} --parents)
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
       outputBag_rid=\$(python3 uploadOutputBag.py -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
       echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
       rid=\${outputBag_rid}
