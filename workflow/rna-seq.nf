@@ -177,6 +177,13 @@ process getBag {
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
     deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
+
+    name=\$(ls *.zip)
+    name=\$(basename \${name} | cut -d "." -f1)
+    yr=\$(date +'%Y')
+    mn=\$(date +'%m')
+    dy=\$(date +'%d')
+    mv \${name}.zip \${name}_\${yr}\${mn}\${dy}.zip
     """
 }
 
@@ -1538,8 +1545,11 @@ process outputBag {
   echo -e "**Run ID:** ${repRID}" >> runDetails.md
   echo LOG: runDetails.md created >> ${repRID}.outputBag.log
 
-  unzip Execution_Run_${executionRunRID}.zip 
-  mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag
+  unzip Execution_Run_${executionRunRID}.zip
+  yr=\$(date +'%Y')
+  mn=\$(date +'%m')
+  dy=\$(date +'%d')
+  mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag_\${yr}\${mn}\${dy}
   loc=./${repRID}_Output_Bag/data/assets/Study/${studyRID}/Experiment/${expRID}/Replicate/${repRID}/Execution_Run/${executionRunRID}/Output_Files/
   mkdir -p \${loc}
   cp runDetails.md \${loc}
