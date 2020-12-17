@@ -16,4 +16,4 @@ def test_makeFeatureCounts():
     assert os.path.exists(os.path.join(
         data_output_path, 'Q-Y5F6_1M.se.countTable.csv'))
     assert os.path.exists(os.path.join(
-        data_output_path, 'Q-Y5F6_1M.se.tpmTable.csv'))
+        data_output_path, 'Q-Y5F6_1M.se_tpmTable.csv'))

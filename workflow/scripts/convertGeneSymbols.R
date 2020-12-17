@@ -7,7 +7,7 @@ option_list=list(
 opt=parse_args(OptionParser(option_list=option_list))
 rm(option_list)
 
-countTable <- read.csv(paste0(opt$repRID,"_countTable.csv"), stringsAsFactors=FALSE)
+countTable <- read.csv(paste0(opt$repRID,".countTable.csv"), stringsAsFactors=FALSE)
 geneID <- read.delim("geneID.tsv", header=FALSE, stringsAsFactors=FALSE)
 Entrez <- read.delim("Entrez.tsv", header=FALSE, stringsAsFactors=FALSE)
 
@@ -23,4 +23,4 @@ output <- merge(x=convert,y=countTable[,c("gene_name","gene_id","count","tpm")],
 colnames(output) <- c("GENCODE_Gene_Symbol","NCBI_GeneID","Ensembl_GeneID","count","tpm")
 output <- output[,c(1,3,2,4:5)]
 
-write.table(output,file=paste0(opt$repRID,".tpmTable.csv"),sep=",",row.names=FALSE,quote=FALSE)
+write.table(output,file=paste0(opt$repRID,"_tpmTable.csv"),sep=",",row.names=FALSE,quote=FALSE)
