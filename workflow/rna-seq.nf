@@ -18,6 +18,7 @@ params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
+params.upload = true
 params.email = ""
 
 
@@ -51,6 +52,7 @@ refHuVersion = params.refHuVersion
 refERCCVersion = params.refERCCVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
+upload = params.upload
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
@@ -155,7 +157,7 @@ process getBag {
     path replicateExportConfig
 
   output:
-    path ("Replicate_*.zip") into bag
+    path ("*.zip") into bag
 
   when:
     inputBagForce == ""
@@ -220,7 +222,7 @@ process getData {
     echo -e "LOG: linked" >> ${repRID}.getData.log
 
     # get bag basename
-    replicate=\$(basename "${inputBag}" | cut -d "." -f1)
+    replicate=\$(basename "${inputBag}" | cut -d "_" -f1)
     echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
 
     # unzip bag
@@ -1284,6 +1286,9 @@ process uploadInputBag {
   output:
     path ("inputBagRID.csv") into inputBagRID_fl
 
+  when:
+    upload
+
   script:
   """
   hostname > ${repRID}.uploadInputBag.log
@@ -1349,6 +1354,9 @@ process uploadExecutionRun {
     
   output:
     path ("executionRunRID.csv") into executionRunRID_fl
+
+  when:
+    upload
 
   script:
   """
@@ -1431,6 +1439,9 @@ process uploadQC {
   output:
     path ("qcRID.csv") into qcRID_fl
 
+  when:
+    upload
+
   script:
   """
   hostname > ${repRID}.uploadQC.log
@@ -1469,7 +1480,6 @@ qcRID_fl.splitCsv(sep: ",", header: false).separate(
   qcRID
 )
 
-
 /*
  *ouputBag: create ouputBag
 */
@@ -1493,40 +1503,27 @@ process outputBag {
   output:
     path ("${repRID}_Output_Bag.zip") into outputBag
 
+  when:
+    upload
+
   script:
   """
   hostname > ${repRID}.outputBag.log
   ulimit -a >> ${repRID}.outputBag.log
 
-  mkdir -p ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
-  cp ${bam} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
-  cp ${bigwig} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
-  cp ${counts} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
+  mkdir -p ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bam} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bai} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bigwig} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${counts} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:20:-1}
-  deriva-upload-cli --catalog 2 --token \${cookie} ${source} ./deriva --purge-state
-
-  fileBam=\$(basename -a ${bam})
-  md5Bam=\$(md5sum ./\${fileBam} | awk '{ print \$1 }')
-  fileBigwig=\$(basename -a ${bigwig})
-  md5Bigwig=\$(md5sum ./\${fileBigwig} | awk '{ print \$1 }')
-  fileCounts=\$(basename -a ${counts})
-  md5Counts=\$(md5sum ./\${fileCounts} | awk '{ print \$1 }')
-  urlBam=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Bam})
-  urlBam=\$(echo \${urlBam} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
-  urlBam=\${urlBam:12:-12}
-  urlBigwig=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Bigwig})
-  urlBigwig=\$(echo \${urlBigwig} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
-  urlBigwig=\${urlBigwig:12:-12}
-  urlCounts=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/File_MD5=\${md5Counts})
-  urlCounts=\$(echo \${urlCounts} | grep -o '\\"File_URL\\":\\".*\\",\\"File_Name')
-  urlCounts=\${urlCounts:12:-12}
-  echo \${urlBam} > url.txt
-  echo \${urlBigwig} >> url.txt
-  echo \${urlCounts} >> url.txt
+  deriva-upload-cli --catalog 2 --token \${cookie} ${source} ./deriva
+  echo LOG: processed files uploaded >> ${repRID}.outputBag.log
 
   deriva-download-cli --catalog 2 --token \${cookie} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
+  echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
 
   echo -e "### Run Details" >> runDetails.md
   echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
@@ -1544,6 +1541,7 @@ process outputBag {
   echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
   echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
   echo -e "**Run ID:** ${repRID}" >> runDetails.md
+  echo LOG: runDetails.md created >> ${repRID}.outputBag.log
 
   unzip Execution_Run_${executionRunRID}.zip 
   mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag
@@ -1554,6 +1552,7 @@ process outputBag {
   cp ${multiqcJSON} \${loc}
 
   bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
+  echo LOG: output bag created >> ${repRID}.outputBag.log
   """
 }
 
@@ -1571,6 +1570,9 @@ process uploadOutputBag {
 
   output:
     path ("outputBagRID.csv") into outputBagRID_fl
+
+  when:
+    upload
 
   script:
   """

@@ -494,7 +494,7 @@ integration_se:
       - SE_multiqc_data.json
     expire_in: 7 days
   retry:
-    max: 1
+    max: 0
     when:
       - always
 
@@ -519,7 +519,7 @@ integration_pe:
       - PE_multiqc_data.json
     expire_in: 7 days
   retry:
-    max: 1
+    max: 0
     when:
       - always
 
@@ -533,7 +533,7 @@ override_inputBag:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --inputBagForce ./test_data/bag/staging/Replicate_Q-Y5F6.zip --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --inputBagForce ./test_data/bag/staging/Replicate_Q-Y5F6.zip --upload false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -542,7 +542,7 @@ override_inputBag:
       - inputBagOverride_PE_multiqc_data.json
     expire_in: 7 days
   retry:
-    max: 1
+    max: 0
     when:
       - always
 
@@ -555,7 +555,7 @@ override_fastq:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -564,7 +564,7 @@ override_fastq:
       - fastqOverride_PE_multiqc_data.json
     expire_in: 7 days
   retry:
-    max: 1
+    max: 0
     when:
       - always
 
@@ -577,7 +577,7 @@ override_species:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --speciesForce 'Homo sapiens' --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --speciesForce 'Homo sapiens' --upload false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -586,7 +586,7 @@ override_species:
       - speciesOverride_PE_multiqc_data.json
     expire_in: 7 days
   retry:
-    max: 1
+    max: 0
     when:
       - always
 
