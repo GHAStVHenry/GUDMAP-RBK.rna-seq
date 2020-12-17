@@ -37,10 +37,10 @@ deriva.into {
   deriva_getBag
   deriva_getRefInfer
   deriva_getRef
-  deriva_outputBag
   deriva_uploadInputBag
   deriva_uploadExecutionRun
   deriva_uploadQC
+  deriva_uploadProcessedFile
   deriva_uploadOutputBag
 }
 bdbag = Channel
@@ -353,12 +353,12 @@ endsManual.into {
 studyRID.into {
   studyRID_aggrQC
   studyRID_uploadInputBag
-  studyRID_outputBag
+  studyRID_uploadProcessedFile
   studyRID_uploadOutputBag
 }
 expRID.into {
   expRID_aggrQC
-  expRID_outputBag
+  expRID_uploadProcessedFile
 }
 
 
@@ -757,8 +757,8 @@ spikeInfer.into{
 speciesInfer.into {
   speciesInfer_getRef
   speciesInfer_aggrQC
-  speciesInfer_outputBag
   speciesInfer_uploadExecutionRun
+  speciesInfer_uploadProcessedFile
 }
 
 
@@ -974,7 +974,7 @@ dedupBam.into {
   dedupBam_countData
   dedupBam_makeBigWig
   dedupBam_dataQC
-  dedupBam_outputBag
+  dedupBam_uploadProcessedFile
 }
 
 /*
@@ -1417,8 +1417,8 @@ executionRunRID_fl.splitCsv(sep: ",", header: false).separate(
 
 //
 executionRunRID.into {
-  executionRunRID_outputBag
   executionRunRID_uploadQC
+  executionRunRID_uploadProcessedFile
   executionRunRID_uploadOutputBag
 }
 
@@ -1488,22 +1488,22 @@ qcRID_fl.splitCsv(sep: ",", header: false).separate(
 /*
  *ouputBag: create ouputBag
 */
-process outputBag {
+process uploadProcessedFile {
   tag "${repRID}"
   publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
 
   input:
-    path credential, stageAs: "credential.json" from deriva_outputBag
+    path credential, stageAs: "credential.json" from deriva_uploadProcessedFile
     path executionRunExportConfig
     path multiqc
     path multiqcJSON
-    tuple path (bam),path (bai) from dedupBam_outputBag
+    tuple path (bam),path (bai) from dedupBam_uploadProcessedFile
     path bigwig
     path counts
-    val species from speciesInfer_outputBag
-    val studyRID from studyRID_outputBag
-    val expRID from expRID_outputBag
-    val executionRunRID from executionRunRID_outputBag
+    val species from speciesInfer_uploadProcessedFile
+    val studyRID from studyRID_uploadProcessedFile
+    val expRID from expRID_uploadProcessedFile
+    val executionRunRID from executionRunRID_uploadProcessedFile
 
   output:
     path ("${repRID}_Output_Bag.zip") into outputBag
