@@ -157,7 +157,7 @@ process getBag {
     path replicateExportConfig
 
   output:
-    path ("Replicate_*.zip") into bag
+    path ("*.zip") into bag
 
   when:
     inputBagForce == ""
@@ -222,7 +222,7 @@ process getData {
     echo -e "LOG: linked" >> ${repRID}.getData.log
 
     # get bag basename
-    replicate=\$(basename "${inputBag}" | cut -d "." -f1)
+    replicate=\$(basename "${inputBag}" | cut -d "_" -f1)
     echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
 
     # unzip bag
@@ -1511,10 +1511,11 @@ process outputBag {
   hostname > ${repRID}.outputBag.log
   ulimit -a >> ${repRID}.outputBag.log
 
-  mkdir -p ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
-  cp ${bam} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
-  cp ${bigwig} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
-  cp ${counts} ./deriva/Seq/Workflow_Runs/${studyRID}/${executionRunRID}/
+  mkdir -p ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bam} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bai} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bigwig} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${counts} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:20:-1}
