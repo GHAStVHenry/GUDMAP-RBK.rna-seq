@@ -281,7 +281,7 @@ uploadInputBag:
   - >
     md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
     size=$(wc -c < ./test.txt) &&
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5}) &&
+    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5}) &&
     if [ "${exist}" == "[]" ]; then
       cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
@@ -327,18 +327,19 @@ uploadQC:
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=18-MJ3A/Execution_Run=18-MJ3C) &&
-    cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=17-BTFJ) &&
+    cookie=$(cat credential.json | grep -A 1 '"staging.gudmap.org\: {' | grep -o '"cookie": ".*"') &&
     cookie=${cookie:11:-1} &&
-    if [ "${exist}" == "[]" ]; then
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 18-MJ3A -e 18-MJ3C -p "Single Read" -s forward -l 35 -w 5 -f 1 -n 'This is a test mRNA QC' -o dev.gudmap.org -c ${cookie} -u F) &&
-      echo ${rid} test execution run created
-    else
-      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
-      rid=${rid:7:-6} &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 18-MJ3A -e 18-MJ3C -p "Single Read" -s forward -l 35 -w 5 -f 1 -n 'This is a test mRNA QC' -o dev.gudmap.org -c ${cookie} -u ${rid}) &&
-      echo ${rid} test execution run already exists
+    if [ "${exist}" != "[]" ]; then
+      rids=$(echo $exist | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//')
+      for rid in ${rids}; do
+        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/deleteEntry.py -r ${rid} -t mRNA_QC -o $staging.gudmap.org -c ${cookie}
+        echo old mRNA QC RID deleted - ${rid}
+      done
+      echo all old mRNA QC RIDs deleted
     fi
+    rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 17-BTFJ -e  -p "Single Read" -s forward -l 35 -w 5 -f 1 -n 'This is a test mRNA QC' -o dev.gudmap.org -c ${cookie} -u F) &&
+    echo ${rid} test mRNA QC created
 
 outputBag:
   stage: unit
@@ -348,8 +349,27 @@ outputBag:
   except:
     - merge_requests
   script:
+  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+  - echo THIS IS A TEST FILE > 17-BTFJ_test.csv
+  - mkdir -p ./deriva/Seq/pipeline/17-BTFA//
+  - mv 17-BTFJ_test.csv ./deriva/Seq/pipeline/17-BTFA//17-BTFJ_test.csv
+  - >
+    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
+    cookie=$(cat credential.json | grep -A 1 '"staging.gudmap.org\: {' | grep -o '"cookie": ".*"') &&
+    cookie=${cookie:11:-1} &&
+    if [ "${exist}" != "[]" ]; then
+      rids=$(echo $exist | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//')
+      for rid in ${rids}; do
+        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/deleteEntry.py -r ${rid} -t Processed_File -o $staging.gudmap.org -c ${cookie}
+        echo old processed file RID deleted - ${rid}
+      done
+      echo all old processed file RIDs deleted
+    fi
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-upload-cli --catalog 2 --token ${cookie} staging.gudmap.org ./deriva
+  - echo test processed file uploaded
   - mkdir test
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bdbag test --archiver zip
+  - echo test output bag created
   - pytest -m outputBag
 
 uploadOutputBag:
@@ -365,12 +385,12 @@ uploadOutputBag:
   - >
     md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
     size=$(wc -c < ./test.txt) &&
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=${md5}) &&
+    exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=${md5}) &&
     if [ "${exist}" == "[]" ]; then
-      cookie=$(cat credential.json | grep -A 1 '\"dev.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+      cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
-      loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host dev.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadOutputBag.py -e 18-MJ3C -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o dev.gudmap.org -c ${cookie}) &&
+      loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadOutputBag.py -e 18-MJ3C -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
       echo ${rid} test output bag created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&

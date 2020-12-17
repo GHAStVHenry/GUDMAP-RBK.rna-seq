@@ -1459,8 +1459,8 @@ process uploadQC {
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:11:-1}
-singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID}/Execution_Run=${executionRunRID})
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID})
   if [ "\${exist}" != "[]" ]
   then
     rids=\$(echo $exist | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
@@ -1524,6 +1524,19 @@ process outputBag {
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:20:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${repRID})
+  if [ "\${exist}" != "[]" ]
+  then
+    rids=\$(echo $exist | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+    for rid in \${rids}
+    do
+      python3 deleteEntry.py -r \${rid} -t Processed_File -o ${source} -c \${cookie}
+      echo LOG: old processed file RID deleted - \${rid} >> ${repRID}.uploadQC.log
+    done
+    echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
+  fi
+
   deriva-upload-cli --catalog 2 --token \${cookie} ${source} ./deriva
   echo LOG: processed files uploaded >> ${repRID}.outputBag.log
 
