@@ -1366,7 +1366,7 @@ process uploadExecutionRun {
   ulimit -a >> ${repRID}.uploadExecutionRun.log
 
   echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
-  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA/Version=${workflow.manifest.version})
+  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
   workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
   workflow=\${workflow:7:-6}
   echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.uploadExecutionRun.log
@@ -1391,17 +1391,17 @@ process uploadExecutionRun {
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:11:-1}
 
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Reference_Genome=\${genome}/Input_Bag=${inputBagRID}/Replicate=${repRID})
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID})
   echo \${exist} >> ${repRID}.uploadExecutionRun.log
   if [ "\${exist}" == "[]" ]
   then
-    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d 'Run in process' -o ${source} -c \${cookie} -u F)
+    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
     echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
     echo \${rid} >> ${repRID}.uploadExecutionRun.log
-    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
+    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
   fi
 
