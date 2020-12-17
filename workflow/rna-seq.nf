@@ -1459,18 +1459,21 @@ process uploadQC {
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:11:-1}
-
+singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID}/Execution_Run=${executionRunRID})
-  if [ "\${exist}" == "[]" ]
+  if [ "\${exist}" != "[]" ]
   then
-    qc_rid=\$(python3 uploadQC.py -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
-    echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
-  else
-    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-    rid=\${rid:7:-6}
-    qc_rid=\$(python3 uploadQC.py -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u \${rid})
-    echo LOG: mRNA QC RID updated - \${qc_rid} >> ${repRID}.uploadQC.log
+    rids=\$(echo $exist | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+    for rid in \${rids}
+    do
+      python3 deleteEntry.py -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
+      echo LOG: old mRNA QC RID deleted - \${rid} >> ${repRID}.uploadQC.log
+    done
+    echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
   fi
+
+  qc_rid=\$(python3 uploadQC.py -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
+  echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
   echo \${qc_rid} > qcRID.csv
   """

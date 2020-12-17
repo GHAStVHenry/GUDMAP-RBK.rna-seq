@@ -45,8 +45,8 @@ getData:
   script:
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bdbag --version > version_bdbag.txt
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - unzip ./test_data/bag/staging/Replicate_Q-Y5F6.zip
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bash ./workflow/scripts/bdbagFetch.sh Replicate_Q-Y5F6 Replicate_Q-Y5F6 TEST
+  - unzip ./test_data/bag/staging/Q-Y5F6_inputBag.zip
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bash ./workflow/scripts/bdbagFetch.sh Q-Y5F6_inputBag Q-Y5F6_inputBag TEST
   - pytest -m getData
   artifacts:
     name: "$CI_JOB_NAME"
