@@ -1,4 +1,4 @@
-# v1.0.0 (in development)
+# v0.1.0 (in development)
 **User Facing**
 * Add option to pull references from datahub
 * Add option to send email on workflow error, with pipeline error message
