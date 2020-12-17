@@ -30,4 +30,4 @@ tpm <- rpk/scale
 output <- cbind(count,tpm)
 colnames(output)[7] <- "count"
 
-write.table(output,file=paste0(repRID,"_countTable.csv"),sep=",",row.names=FALSE,quote=FALSE)
+write.table(output,file=paste0(repRID,".countTable.csv"),sep=",",row.names=FALSE,quote=FALSE)
