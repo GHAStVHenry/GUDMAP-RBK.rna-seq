@@ -26,7 +26,7 @@ getBag:
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
   - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-download-cli --version > version_deriva.txt
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-download-cli dev.gudmap.org --catalog 2 ./workflow/conf/replicate_export_config.json . rid=Q-Y5F6
+  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-download-cli dev.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
   - pytest -m getBag
   artifacts:
     name: "$CI_JOB_NAME"

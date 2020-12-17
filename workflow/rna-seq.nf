@@ -59,7 +59,7 @@ speciesForce = params.speciesForce
 email = params.email
 
 // Define fixed files
-replicateExportConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
+replicateExportConfig = Channel.fromPath("${baseDir}/conf/Replicate_For_Input_Bag.json")
 executionRunExportConfig = Channel.fromPath("${baseDir}/conf/Execution_Run_For_Output_Bag.json")
 if (params.source == "dev") {
   source = "dev.gudmap.org"
