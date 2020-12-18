@@ -308,7 +308,7 @@ uploadExecutionRun:
     cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
     cookie=${cookie:11:-1} &&
     if [ "${exist}" == "[]" ]; then
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadExecutionRun.py -r 17-BTFJ -w 17-BTFM -g 17-BPD4 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadExecutionRun.py -r 17-BTFJ -w 17-BTFM -g 17-BT50 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
       echo ${rid} test execution run created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
