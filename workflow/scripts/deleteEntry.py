@@ -25,7 +25,7 @@ def main(hostname, catalog_number, credential):
     rid = args.RID
     
 
-    print(rid + "deleted")
+    print(rid + " deleted")
 
 
 if __name__ == '__main__':

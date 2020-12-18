@@ -328,7 +328,7 @@ uploadQC:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
     exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=17-BTFJ) &&
-    cookie=$(cat credential.json | grep -A 1 '"staging.gudmap.org\: {' | grep -o '"cookie": ".*"') &&
+    cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
     cookie=${cookie:11:-1} &&
     if [ "${exist}" != "[]" ]; then
       rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}\/\/')
