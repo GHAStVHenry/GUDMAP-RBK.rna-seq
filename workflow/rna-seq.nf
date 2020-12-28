@@ -988,7 +988,7 @@ process makeBigWig {
     tuple path (bam), path (bai) from dedupBam_makeBigWig
 
   output:
-    path ("${repRID}.bw") into bigwig
+    path ("${repRID}_sorted.deduped.bw") into bigwig
 
   script:
     """
@@ -1019,7 +1019,7 @@ process countData {
 
   output:
     path ("*_tpmTable.csv") into counts
-    path ("*.countData.summary") into countsQC
+    path ("*_countData.summary") into countsQC
     path ("assignedReads.csv") into assignedReadsInfer_fl
 
   script:
@@ -1055,11 +1055,11 @@ process countData {
     echo -e "LOG: counted" >> ${repRID}.countData.log
 
     # extract assigned reads
-    grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)' > assignedReads.csv
+    grep -m 1 'Assigned' *_countData.summary | grep -oe '\\([0-9.]*\\)' > assignedReads.csv
 
     # calculate TPM from the resulting countData table
     echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
-    Rscript calculateTPM.R --count "${repRID}.countData"
+    Rscript calculateTPM.R --count "${repRID}_countData"
 
     # convert gene symbols to Entrez id's
     echo -e "LOG: convert gene symbols to Entrez id's" >> ${repRID}.countData.log
@@ -1463,7 +1463,7 @@ process uploadQC {
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID})
   if [ "\${exist}" != "[]" ]
   then
-    rids=\$(echo $exist | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+    rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
     for rid in \${rids}
     do
       python3 deleteEntry.py -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
