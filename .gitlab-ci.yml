@@ -493,7 +493,7 @@ mouseDataHub_dev:
   - test=$(echo ${test} | grep -o ${filename})
   - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
-humanDataHub_dev:
+humanDataHub_staging:
   stage: reference
   only:
     - push
@@ -518,7 +518,7 @@ humanDataHub_dev:
   - test=$(echo ${test} | grep -o ${filename})
   - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
-mouseDataHub_dev:
+mouseDataHub_staging:
   stage: reference
   only:
     - push
