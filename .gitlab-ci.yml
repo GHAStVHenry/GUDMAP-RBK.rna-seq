@@ -338,8 +338,7 @@ uploadQC:
       done
       echo all old mRNA QC RIDs deleted
     fi
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 17-BTFJ -e 17-BTG4 -p "Single Read" -s forward -l 35 -1 5 -f 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
-    #qcrid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 17-BTFJ -e 17-BTG4 -p "Single Read" -s forward -l 35 -w 5 -f 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F) &&
+    rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 17-BTFJ -e 17-BTG4 -p "Single Read" -s forward -l 35 -w 5-1 5 -f 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
     echo ${rid} test mRNA QC created
 
 uploadProcessedFile:
