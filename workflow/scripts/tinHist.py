@@ -17,7 +17,7 @@ def get_args():
 
 def main():
     args = get_args()
-    tin = pd.read_csv(args.repRID + '.sorted.deduped.tin.xls',
+    tin = pd.read_csv(args.repRID + '_sorted.deduped.tin.xls',
                       sep="\t", header=0)
 
     hist = pd.cut(tin['TIN'], bins=pd.interval_range(
@@ -42,8 +42,8 @@ def main():
     hist = hist[['TOTAL'] + [i for i in hist.columns if i != 'TOTAL']]
     hist = hist.T.fillna(0.0).astype(int)
     #hist = hist.apply(lambda x: x/x.sum()*100, axis=1)
-    hist.to_csv(args.repRID + '.tin.hist.tsv', sep='\t')
-    medFile = open(args.repRID + '.tin.med.csv', "w")
+    hist.to_csv(args.repRID + '_tin.hist.tsv', sep='\t')
+    medFile = open(args.repRID + '_tin.med.csv', "w")
     medFile.write(str(round(tin['TIN'][(tin['TIN'] != 0)].median(), 2)))
     medFile.close()
 

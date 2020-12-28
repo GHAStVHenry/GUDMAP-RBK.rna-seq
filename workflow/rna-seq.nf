@@ -1133,8 +1133,8 @@ process dataQC {
     val ends from endsInfer_dataQC
 
   output:
-    path "${repRID}.tin.hist.tsv" into tinHist
-    path "${repRID}.tin.med.csv" into  tinMedInfer_fl
+    path "${repRID}_tin.hist.tsv" into tinHist
+    path "${repRID}_tin.med.csv" into  tinMedInfer_fl
     path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
 
   script:
@@ -1157,12 +1157,12 @@ process dataQC {
     if [ "${ends}" == "pe" ]
     then
       echo -e "LOG: calculating inner distances for ${ends}" >> ${repRID}.dataQC.log
-      inner_distance.py -i "${bam}" -o ${repRID}.insertSize -r ./bed/genome.bed
+      inner_distance.py -i "${bam}" -o ${repRID}_insertSize -r ./bed/genome.bed
       echo -e "LOG: calculated" >> ${repRID}.dataQC.log
     elif [ "${ends}" == "se" ]
     then
       echo -e "LOG: creating dummy inner distance file for ${ends}" >> ${repRID}.dataQC.log
-      touch ${repRID}.insertSize.inner_distance_freq.txt
+      touch ${repRID}_insertSize.inner_distance_freq.txt
     fi
     """
 }
