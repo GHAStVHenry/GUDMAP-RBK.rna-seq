@@ -355,7 +355,7 @@ uploadProcessedFile:
   - >
     exist=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
     cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-    cookie=${cookie:11:-1} &&
+    cookie=${cookie:11:-1}
     if [ "${exist}" != "[]" ]; then
       rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//')
       for rid in ${rids}; do
@@ -364,10 +364,10 @@ uploadProcessedFile:
       done
       echo all old processed file RIDs deleted
     fi
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' deriva-upload-cli --catalog 2 --token ${cookie} staging.gudmap.org ./deriva
+  - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-upload-cli --catalog 2 --token ${cookie} staging.gudmap.org ./deriva
   - echo test processed file uploaded
   - mkdir test
-  - singularity run 'docker://bicf/gudmaprbkfilexfer:2.0.1_indev' bdbag test --archiver zip
+  - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bdbag test --archiver zip
   - echo test output bag created
   - pytest -m outputBag
 
