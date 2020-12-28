@@ -1135,7 +1135,7 @@ process dataQC {
   output:
     path "${repRID}_tin.hist.tsv" into tinHist
     path "${repRID}_tin.med.csv" into  tinMedInfer_fl
-    path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
+    path "${repRID}_insertSize.inner_distance_freq.txt" into innerDistance
 
   script:
     """
@@ -1531,7 +1531,7 @@ process uploadProcessedFile {
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${repRID})
   if [ "\${exist}" != "[]" ]
   then
-    rids=\$(echo $exist | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+    rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
     for rid in \${rids}
     do
       python3 deleteEntry.py -r \${rid} -t Processed_File -o ${source} -c \${cookie}
