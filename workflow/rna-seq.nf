@@ -1528,7 +1528,7 @@ process uploadProcessedFile {
   cp ${counts} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:20:-1}
+  cookie=\${cookie:11:-1}
 
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${repRID})
   if [ "\${exist}" != "[]" ]
@@ -1537,15 +1537,14 @@ process uploadProcessedFile {
     for rid in \${rids}
     do
       python3 deleteEntry.py -r \${rid} -t Processed_File -o ${source} -c \${cookie}
-      echo LOG: old processed file RID deleted - \${rid} >> ${repRID}.uploadQC.log
     done
     echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
   fi
 
-  deriva-upload-cli --catalog 2 --token \${cookie} ${source} ./deriva
+  deriva-upload-cli --catalog 2 --token \${cookie:9} ${source} ./deriva
   echo LOG: processed files uploaded >> ${repRID}.outputBag.log
 
-  deriva-download-cli --catalog 2 --token \${cookie} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
+  deriva-download-cli --catalog 2 --token \${cookie:9} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
   echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
 
   echo -e "### Run Details" >> runDetails.md
