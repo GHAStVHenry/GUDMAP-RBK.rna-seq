@@ -30,7 +30,7 @@ def main(hostname, catalog_number, credential):
         "File_Bytes": args.bytes,
         "File_Creation_Time": datetime.now().replace(microsecond=0).isoformat(),
         "Notes": args.notes,
-        "Bag_Type": "Replicate_mRNA_Analysis"
+        "Bag_Type": "mRNA_Replicate_Analysis"
         }
 
     entities = outputBag_table.insert([outputBag_data])
