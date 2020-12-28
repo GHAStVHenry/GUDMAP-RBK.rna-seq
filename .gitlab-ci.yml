@@ -359,11 +359,11 @@ uploadProcessedFile:
     if [ "${exist}" != "[]" ]; then
       rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
       for rid in ${rids}; do
-        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/deleteEntry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie}
+        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/deleteEntry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie:9}
       done
       echo all old processed file RIDs deleted
     fi
-      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-upload-cli --catalog 2 --token ${cookie} staging.gudmap.org ./deriva
+      singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-upload-cli --catalog 2 --token ${cookie:9} staging.gudmap.org ./deriva
       echo test processed file uploaded
   - mkdir test
   - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bdbag test --archiver zip
