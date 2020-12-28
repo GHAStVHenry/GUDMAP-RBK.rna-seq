@@ -94,6 +94,7 @@ script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/uploadInputBag.py")
 script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/uploadExecutionRun.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/uploadQC.py")
 script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/uploadOutputBag.py")
+script_deleteEntry = Channel.fromPath("${baseDir}/scripts/deleteEntry.py")
 
 /*
  * trackStart: track start of pipeline
@@ -1429,6 +1430,7 @@ process uploadQC {
   tag "${repRID}"
 
   input:
+    path script_deleteEntry
     path script_uploadQC
     path credential, stageAs: "credential.json" from deriva_uploadQC
     val executionRunRID from executionRunRID_uploadQC
@@ -1437,6 +1439,7 @@ process uploadQC {
     val length from readLengthInfer_uploadQC
     val rawCount from rawReadsInfer_uploadQC
     val finalCount from assignedReadsInfer_uploadQC
+    
     
   output:
     path ("qcRID.csv") into qcRID_fl
