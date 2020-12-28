@@ -94,7 +94,8 @@ script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/uploadInputBag.py")
 script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/uploadExecutionRun.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/uploadQC.py")
 script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/uploadOutputBag.py")
-script_deleteEntry = Channel.fromPath("${baseDir}/scripts/deleteEntry.py")
+script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/deleteEntry.py")
+script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/deleteEntry.py")
 
 /*
  * trackStart: track start of pipeline
@@ -1430,7 +1431,7 @@ process uploadQC {
   tag "${repRID}"
 
   input:
-    path script_deleteEntry
+    path script_deleteEntry_uploadQC
     path script_uploadQC
     path credential, stageAs: "credential.json" from deriva_uploadQC
     val executionRunRID from executionRunRID_uploadQC
@@ -1496,6 +1497,7 @@ process uploadProcessedFile {
   publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
 
   input:
+    path script_deleteEntry_uploadProcessedFile
     path credential, stageAs: "credential.json" from deriva_uploadProcessedFile
     path executionRunExportConfig
     path multiqc
