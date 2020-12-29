@@ -231,7 +231,7 @@ process getData {
     echo -e "LOG: linked" >> ${repRID}.getData.log
 
     # get bag basename
-    replicate=\$(basename "${inputBag}" | cut -d "_" -f1)
+    replicate=\$(basename "${inputBag}")
     echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
 
     # unzip bag
