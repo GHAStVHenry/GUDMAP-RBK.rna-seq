@@ -15,11 +15,10 @@
 * Start using new gudmaprbk dockerhub (images autobuilt)
 * Moved consistency checks to be fully python
 * Changed order of steps so that fastqc is done after the trim step
+* Change docker images to production
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
-* outputBag does not contain fetch for processed data
-* Does not include automatic data upload
 * Override params (inputBag, fastq, species) aren't checked for integrity
 
 <hr>
