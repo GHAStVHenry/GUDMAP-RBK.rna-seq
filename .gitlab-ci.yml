@@ -460,7 +460,7 @@ human_dev:
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
   - loc=$(dirname ${refURL})
   - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
   - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
@@ -485,7 +485,7 @@ mouse_dev:
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
   - loc=$(dirname ${refURL})
   - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
   - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
@@ -510,7 +510,7 @@ human_staging:
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
   - loc=$(dirname ${refURL})
   - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
   - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
@@ -536,7 +536,7 @@ mouse_staging:
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
   - loc=$(dirname ${refURL})
   - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
   - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
@@ -561,7 +561,7 @@ human_prod:
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
   - loc=$(dirname ${refURL})
   - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
   - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
@@ -587,7 +587,7 @@ mouse_prod:
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
   - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE})
   - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extractRefData.py --returnParam URL)
+  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
   - loc=$(dirname ${refURL})
   - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
   - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
