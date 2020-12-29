@@ -67,7 +67,7 @@ parseMetadata:
   except:
     - merge_requests
   script:
-  - singularity run 'docker://gudmaprbk/python3::1.0.0' python3 --version > version_python.txt
+  - singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
   - rep=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
   - exp=$(singularity run 'docker://gudmaprbk/python3:' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
   - study=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
