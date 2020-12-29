@@ -241,7 +241,7 @@ process getData {
 
     # bag fetch fastq's only and rename by repRID
     echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
-    sh ${script_bdbagFetch} \${replicate} ${repRID}
+    sh ${script_bdbagFetch} \${replicate::-9} ${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getData.log
     """
 }
