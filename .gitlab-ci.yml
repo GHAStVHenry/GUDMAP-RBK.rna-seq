@@ -655,7 +655,7 @@ override_inputBag:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --inputBagForce ./test_data/bag/Q-Y5F6_inputBag.zip --upload false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
