@@ -39,8 +39,8 @@ cp Q-Y5F6_1M.R1.fastq.gz_trimming_report.txt ./NEW_test_data/meta/Q-Y5F6_1M.R1.f
 cp Q-Y5F6_1M.R2.fastq.gz_trimming_report.txt ./NEW_test_data/meta/Q-Y5F6_1M.R2.fastq.gz_trimming_report.txt
 
 touch metaTest.csv
-echo 'Replicate_RID,Experiment_RID,Study_RID,Paired_End,File_Type,Has_Strand_Specific_Information,Used_Spike_Ins,Species' > metaTest.csv
-echo 'Replicate_RID,Experiment_RID,Study_RID,uk,FastQ,no,no,Homo sapiens' >> metaTest.csv
+echo 'Replicate_RID,Experiment_RID,Study_RID,Paired_End,File_Type,Has_Strand_Specific_Information,Used_Spike_Ins,Species,Read_Length' > metaTest.csv
+echo 'Replicate_RID,Experiment_RID,Study_RID,uk,FastQ,no,no,Homo sapiens,75' >> metaTest.csv
 cp metaTest.csv ./NEW_test_data/meta/metaTest.csv
 
 mkdir -p ./NEW_test_data/bam
