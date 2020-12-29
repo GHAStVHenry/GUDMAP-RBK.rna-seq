@@ -11,4 +11,4 @@ data_output_path = os.path.dirname(os.path.abspath(__file__)) + \
 
 @pytest.mark.makeBigWig
 def test_makeBigWig():
-    assert os.path.exists(os.path.join(data_output_path, '16-DNBG_1M.se.bw'))
+    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5F6_1M.se.bw'))
