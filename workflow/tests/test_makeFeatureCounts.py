@@ -12,8 +12,8 @@ data_output_path = os.path.dirname(os.path.abspath(__file__)) + \
 @pytest.mark.makeFeatureCounts
 def test_makeFeatureCounts():
     assert os.path.exists(os.path.join(
-        data_output_path, '16-WJRA_1M.se.countData'))
+        data_output_path, '16-DNBG_1M.se.countData'))
     assert os.path.exists(os.path.join(
-        data_output_path, '16-WJRA_1M.se.countTable.csv'))
+        data_output_path, '16-DNBG_1M.se.countTable.csv'))
     assert os.path.exists(os.path.join(
-        data_output_path, '16-WJRA_1M.se_tpmTable.csv'))
+        data_output_path, '16-DNBG_1M.se_tpmTable.csv'))

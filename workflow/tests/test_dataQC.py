@@ -12,9 +12,9 @@ test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
 @pytest.mark.dataQC
 def test_dataQC():
     assert os.path.exists(os.path.join(
-        test_output_path, '16-WJRA_1M.se.sorted.deduped.tin.xls'))
+        test_output_path, '16-DNBG_1M.se.sorted.deduped.tin.xls'))
     assert countLines(os.path.join(test_output_path,
-                                   '16-WJRA_1M.se.sorted.deduped.tin.xls'))
+                                   '16-DNBG_1M.se.sorted.deduped.tin.xls'))
 
 
 def countLines(fileName):

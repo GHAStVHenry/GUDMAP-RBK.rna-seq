@@ -12,4 +12,4 @@ test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
 @pytest.mark.getBag
 def test_getBag():
     assert os.path.exists(os.path.join(
-        test_output_path, '16-WJRA_inputBag.zip'))
+        test_output_path, '16-DNBG_inputBag.zip'))

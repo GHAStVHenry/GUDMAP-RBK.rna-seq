@@ -12,4 +12,4 @@ test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
 @pytest.mark.fastqc
 def test_fastqc():
     assert os.path.exists(os.path.join(
-        test_output_path, '16-WJRA_1M.R1_fastqc.zip'))
+        test_output_path, '16-DNBG_1M.R1_fastqc.zip'))
