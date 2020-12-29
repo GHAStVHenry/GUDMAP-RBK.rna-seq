@@ -443,7 +443,7 @@ mouse_BioHPC:
   - mkdir -p mo
   - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
 
-human_dev.gudmap.org:
+human_dev:
   stage: reference
   only:
     - push
@@ -468,7 +468,7 @@ human_dev.gudmap.org:
   - test=$(echo ${test} | grep -o ${filename})
   - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
-mouse_dev.gudmap.org:
+mouse_dev:
   stage: reference
   only:
     - push
@@ -493,7 +493,7 @@ mouse_dev.gudmap.org:
   - test=$(echo ${test} | grep -o ${filename})
   - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
-human_staging.gudmap.org:
+human_staging:
   stage: reference
   only:
     - push
@@ -518,7 +518,7 @@ human_staging.gudmap.org:
   - test=$(echo ${test} | grep -o ${filename})
   - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
-mouse_staging.gudmap.org:
+mouse_staging:
   stage: reference
   only:
     - push
@@ -544,7 +544,7 @@ mouse_staging.gudmap.org:
   - test=$(echo ${test} | grep -o ${filename})
   - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
-human_www.gudmap.org:
+human_prod:
   stage: reference
   only:
     - push
@@ -569,7 +569,7 @@ human_www.gudmap.org:
   - test=$(echo ${test} | grep -o ${filename})
   - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
-mouse_www.gudmap.org:
+mouse_prod:
   stage: reference
   only:
     - push
