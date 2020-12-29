@@ -479,7 +479,7 @@ mouse_dev:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=dev.gudmap.org
   - refName=GRCm
-  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+  - references=$(echo ${referenceBase}/${refName}${refMuVersion})
   - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
   - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
@@ -530,7 +530,7 @@ mouse_staging:
   - referenceBase=staging.gudmap.org
   - refName=GRCm
   - refHuVersion=38.p6.vM22
-  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+  - references=$(echo ${referenceBase}/${refName}${refMuVersion})
   - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
   - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
@@ -581,7 +581,7 @@ mouse_prod:
   - referenceBase=www.gudmap.org
   - refName=GRCm
   - refHuVersion=38.p6.vM22
-  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+  - references=$(echo ${referenceBase}/${refName}${refMuVersion})
   - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
   - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
   - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
