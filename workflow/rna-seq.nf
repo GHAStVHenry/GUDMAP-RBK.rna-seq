@@ -58,7 +58,7 @@ fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
 email = params.email
 
-// Define fixed files
+// Define fixed files and
 replicateExportConfig = Channel.fromPath("${baseDir}/conf/Replicate_For_Input_Bag.json")
 executionRunExportConfig = Channel.fromPath("${baseDir}/conf/Execution_Run_For_Output_Bag.json")
 if (params.source == "dev") {
@@ -1476,7 +1476,7 @@ process uploadQC {
     echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
   fi
 
-  qc_rid=\$(python3 ${script_deleteEntry_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
+  qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
   echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
   echo \${qc_rid} > qcRID.csv
