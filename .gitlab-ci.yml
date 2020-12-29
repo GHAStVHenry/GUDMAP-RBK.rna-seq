@@ -50,7 +50,7 @@ getData:
   - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bdbag --version > version_bdbag.txt
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bag/Q-Y5F6_inputBag.zip
-  - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bash ./workflow/scripts/bdbagFetch.sh Q-Y5F6_inputBag Q-Y5F6 TEST
+  - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6 TEST
   - pytest -m getData
   artifacts:
     name: "$CI_JOB_NAME"
@@ -68,15 +68,15 @@ parseMetadata:
     - merge_requests
   script:
   - singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
-  - rep=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
-  - exp=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
-  - study=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
-  - endsMeta=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
-  - endsManual=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsManual)
-  - stranded=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
-  - spike=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
-  - species=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
-  - readLength=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parseMeta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p readLength)
+  - rep=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
+  - exp=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
+  - study=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
+  - endsMeta=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
+  - endsManual=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsManual)
+  - stranded=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
+  - spike=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
+  - species=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
+  - readLength=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p readLength)
   - echo -e "${endsMeta},${endsManual},${stranded},${spike},${species},${readLength},${exp},${study},${rep}" > design.csv
   - pytest -m parseMetadata
   artifacts:
@@ -100,7 +100,7 @@ inferMetadata:
     if [[ ${align} == "" ]]; then exit 1; fi
   - >
     singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
-    ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/inferMeta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
+    ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
     if [[ ${ended} == "" ]]; then exit 1; fi
   - pytest -m inferMetadata
   artifacts:
@@ -290,7 +290,7 @@ uploadInputBag:
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt --parents) &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadInputBag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test input bag' -o staging.gudmap.org -c ${cookie}) &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/upload_input_bag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test input bag' -o staging.gudmap.org -c ${cookie}) &&
       echo ${rid} test input bag created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
@@ -312,12 +312,12 @@ uploadExecutionRun:
     cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
     cookie=${cookie:11:-1} &&
     if [ "${exist}" == "[]" ]; then
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadExecutionRun.py -r 17-BTFJ -w 17-BTFM -g 17-BT50 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BTFM -g 17-BT50 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
       echo ${rid} test execution run created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
       rid=${rid:7:-6} &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadExecutionRun.py -r 17-BTFJ -w 17-BTFM -g 17-BT50 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BTFM -g 17-BT50 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
       echo ${rid} test execution run already exists
     fi
 
@@ -337,11 +337,11 @@ uploadQC:
     if [ "${exist}" != "[]" ]; then
       rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
       for rid in ${rids}; do
-        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/deleteEntry.py -r ${rid} -t mRNA_QC -o staging.gudmap.org -c ${cookie}
+        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t mRNA_QC -o staging.gudmap.org -c ${cookie}
       done
       echo all old mRNA QC RIDs deleted
     fi
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadQC.py -r 17-BTFJ -e 17-BTG4 -p "Single Read" -s forward -l 35 -w 5 -f 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/upload_qc.py -r 17-BTFJ -e 17-BTG4 -p "Single Read" -s forward -l 35 -w 5 -f 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
       echo ${rid} test mRNA QC created
 
 uploadProcessedFile:
@@ -363,7 +363,7 @@ uploadProcessedFile:
     if [ "${exist}" != "[]" ]; then
       rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
       for rid in ${rids}; do
-        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/deleteEntry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie}
+        singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie}
       done
       echo all old processed file RIDs deleted
     fi
@@ -392,7 +392,7 @@ uploadOutputBag:
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       loc=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/uploadOutputBag.py -e 17-BTG4 -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
+      rid=$(singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' python3 ./workflow/scripts/upload_output_bag.py -e 17-BTG4 -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
       echo ${rid} test output bag created
     else
       rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&

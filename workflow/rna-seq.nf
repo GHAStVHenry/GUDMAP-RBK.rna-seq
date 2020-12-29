@@ -82,20 +82,20 @@ softwareReferences = Channel.fromPath("${baseDir}/../docs/software_references_mq
 softwareVersions = Channel.fromPath("${baseDir}/../docs/software_versions_mqc.yaml")
 
 // Define script files
-script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
-script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
-script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
-script_refDataInfer = Channel.fromPath("${baseDir}/scripts/extractRefData.py")
-script_refData = Channel.fromPath("${baseDir}/scripts/extractRefData.py")
+script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbag_fetch.sh")
+script_parseMeta = Channel.fromPath("${baseDir}/scripts/parse_meta.py")
+script_inferMeta = Channel.fromPath("${baseDir}/scripts/infer_meta.sh")
+script_refDataInfer = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
+script_refData = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
 script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
-script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
-script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/uploadInputBag.py")
-script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/uploadExecutionRun.py")
-script_uploadQC = Channel.fromPath("${baseDir}/scripts/uploadQC.py")
-script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/uploadOutputBag.py")
-script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/deleteEntry.py")
-script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/deleteEntry.py")
+script_tinHist = Channel.fromPath("${baseDir}/scripts/tin_hist.py")
+script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py")
+script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
+script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
+script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
+script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
+script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
 
 /*
  * trackStart: track start of pipeline
@@ -490,9 +490,9 @@ process getRefInfer {
         query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version=${refName}${refERCCVersion}/Annotation_Version=${refName}${refERCCVersion}')
       fi
       curl --request GET \${query} > refQuery.json
-      refURL=\$(python extractRefData.py --returnParam URL)
+      refURL=\$(python ${script_refDataInfer} --returnParam URL)
       loc=\$(dirname \${refURL})
-      fName=\$(python extractRefData.py --returnParam fName)
+      fName=\$(python ${script_refDataInfer} --returnParam fName)
       fName=\${fName%.*}
       if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
@@ -682,18 +682,18 @@ process inferMetadata {
     infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt
     echo -e "LOG: infered" >> ${repRID}.inferMetadata.log
 
-    ended=`bash inferMeta.sh endness ${repRID}.infer_experiment.txt`
-    fail=`bash inferMeta.sh fail ${repRID}.infer_experiment.txt`
+    ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
+    fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
     if [ \${ended} == "PairEnd" ]
     then
       ends="pe"
-      percentF=`bash inferMeta.sh pef ${repRID}.infer_experiment.txt`
-      percentR=`bash inferMeta.sh per ${repRID}.infer_experiment.txt`
+      percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
+      percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
     elif [ \${ended} == "SingleEnd" ]
     then
       ends="se"
-      percentF=`bash inferMeta.sh sef ${repRID}.infer_experiment.txt`
-      percentR=`bash inferMeta.sh ser ${repRID}.infer_experiment.txt`
+      percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
+      percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
     fi
     echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
     echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
@@ -840,9 +840,9 @@ process getRef {
       GENCODE=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f3)
       query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
-      refURL=\$(python extractRefData.py --returnParam URL)
+      refURL=\$(python ${script_refData} --returnParam URL)
       loc=\$(dirname \${refURL})
-      fName=\$(python extractRefData.py --returnParam fName)
+      fName=\$(python ${script_refData} --returnParam fName)
       fName=\${fName%.*}
       if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
@@ -1061,11 +1061,11 @@ process countData {
 
     # calculate TPM from the resulting countData table
     echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
-    Rscript calculateTPM.R --count "${repRID}_countData"
+    Rscript ${script_calculateTPM} --count "${repRID}_countData"
 
     # convert gene symbols to Entrez id's
     echo -e "LOG: convert gene symbols to Entrez id's" >> ${repRID}.countData.log
-    Rscript convertGeneSymbols.R --repRID "${repRID}"
+    Rscript ${script_convertGeneSymbols} --repRID "${repRID}"
     """
 }
 
@@ -1323,7 +1323,7 @@ process uploadInputBag {
       cookie=\${cookie:11:-1}
 
       loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
-      inputBag_rid=\$(python3 uploadInputBag.py -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+      inputBag_rid=\$(python3 ${script_uploadInputBag} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
       echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
       rid=\${inputBag_rid}
   else
@@ -1397,13 +1397,13 @@ process uploadExecutionRun {
   echo \${exist} >> ${repRID}.uploadExecutionRun.log
   if [ "\${exist}" == "[]" ]
   then
-    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
+    executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
     echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
     echo \${rid} >> ${repRID}.uploadExecutionRun.log
-    executionRun_rid=\$(python3 uploadExecutionRun.py -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
+    executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
   fi
 
@@ -1470,13 +1470,13 @@ process uploadQC {
     rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
     for rid in \${rids}
     do
-      python3 deleteEntry.py -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
+      python3 ${script_deleteEntry_uploadQC} -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
       echo LOG: old mRNA QC RID deleted - \${rid} >> ${repRID}.uploadQC.log
     done
     echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
   fi
 
-  qc_rid=\$(python3 uploadQC.py -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
+  qc_rid=\$(python3 ${script_deleteEntry_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
   echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
   echo \${qc_rid} > qcRID.csv
@@ -1536,7 +1536,7 @@ process uploadProcessedFile {
     rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
     for rid in \${rids}
     do
-      python3 deleteEntry.py -r \${rid} -t Processed_File -o ${source} -c \${cookie}
+      python3 ${script_deleteEntry_uploadProcessedFile} -r \${rid} -t Processed_File -o ${source} -c \${cookie}
     done
     echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
   fi
@@ -1622,7 +1622,7 @@ process uploadOutputBag {
       cookie=\${cookie:11:-1}
 
       loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
-      outputBag_rid=\$(python3 uploadOutputBag.py -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
       echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
       rid=\${outputBag_rid}
   else
