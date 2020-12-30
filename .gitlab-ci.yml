@@ -17,8 +17,8 @@ stages:
 
 build_bages:
   stage: badges
-  only:
-    - develop
+  before_script:
+    - chmod +x get-updated-badge-info.sh
   script:
     - echo "Building badges"
   after_script:
