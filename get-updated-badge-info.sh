@@ -1,19 +1,19 @@
 #!/bin/bash
 
 echo "collecting stats for badges"
-latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
+latest_release_tag=$(singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' git tag --sort=-committerdate -l *.*.* | head -1)
 echo "latest_release_tag =" ${latest_release_tag}
-current_pipeline_version=$(git show ${latest_release_tag}:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
+current_pipeline_version=$(singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' git show ${latest_release_tag}:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
 echo "current_pipeline_version =" ${current_pipeline_version}
-current_nextflow_version=$(git show ${latest_release_tag}:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
+current_nextflow_version=$(singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' git show ${latest_release_tag}:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
 echo "current_nextflow_version =" ${current_nextflow_version}
-master_pipeline_version=$(git show master:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
+master_pipeline_version=$(singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' git show master:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
 echo "master_pipeline_version =" ${master_pipeline_version}
-master_nextflow_version=$(git show master:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
+master_nextflow_version=$(singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' git show master:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
 echo "master_nextflow_version =" ${master_nextflow_version}
-develop_pipeline_version=$(git show develop:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
+develop_pipeline_version=$(singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' git show develop:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
 echo "develop_pipeline_version =" ${develop_pipeline_version}
-develop_nextflow_version=$(git show develop:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
+develop_nextflow_version=$(singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' git show develop:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
 echo "develop_nextflow_version =" ${develop_nextflow_version}
 
 echo "collecting badges"
