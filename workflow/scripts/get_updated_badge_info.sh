@@ -17,7 +17,7 @@ rseqc_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -
 trimgalore_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o 'Trim Galore!'.* | grep -oP "(?<=d>).*(?=\<)")
 hisat2_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o HISAT2.* | grep -oP "(?<=d>).*(?=\<)")
 samtools_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o Samtools.* | grep -oP "(?<=d>).*(?=\<)")
-picard_version=$(git show origin/developdocs/software_versions_mqc.yaml | grep -o 'picard (MarkDuplicates)'.* | grep -oP "(?<=d>).*(?=\<)")
+picard_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o 'picard (MarkDuplicates)'.* | grep -oP "(?<=d>).*(?=\<)")
 featurecounts_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o featureCounts.* | grep -oP "(?<=d>).*(?=\<)")
 r_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o R.* | grep -oP "(?<=d>).*(?=\<)")
 deeptools_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o deepTools.* | grep -oP "(?<=d>).*(?=\<)")
