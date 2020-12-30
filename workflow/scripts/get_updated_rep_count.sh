@@ -19,6 +19,6 @@ prod_count=$(curl -s https://prod.gudmap.org/ermrest/catalog/2/entity/RNASeq:Exe
 
 echo "collecting badges"
 mkdir -p ./badges/counts
-curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${dev_count}-informational?style=flat > ./badges/counts/dev_counts.svg
-curl --request GET https://img.shields.io/badge/Staging%20Replicate%20Count-${staging_count}-informational?style=flat > ./badges/counts/staging_counts.svg
-curl --request GET https://img.shields.io/badge/Production%20Replicate%20Count-${prod_count}-informational?style=flat > ./badges/counts/prod_counts.svg
+curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${dev_count}-lightgrey?style=flat > ./badges/counts/dev_counts.svg
+curl --request GET https://img.shields.io/badge/Staging%20Replicate%20Count-${staging_count}-lightgrey?style=flat > ./badges/counts/staging_counts.svg
+curl --request GET https://img.shields.io/badge/Production%20Replicate%20Count-${prod_count}-lightgrey?style=flat > ./badges/counts/prod_counts.svg
