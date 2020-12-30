@@ -8,15 +8,16 @@ before_script:
   - mkdir -p ~/.bdbag
 
 stages:
-  - badges
+  - build_badges
+  - deploy_badges
   - unit
   - aggregation
   - reference
   - integration
   - consistency
 
-build_bages:
-  stage: badges
+build_badges:
+  stage: build_badges
   before_script:
     - chmod +x get-updated-badge-info.sh
   script:
@@ -32,7 +33,9 @@ build_bages:
     expire_in: 3 months
 
 pages:
-  stage: badges
+  stage: deploy_badges
+  dependencies:
+    - build_badges
   script:
     - mv badges/ public/
   artifacts:
