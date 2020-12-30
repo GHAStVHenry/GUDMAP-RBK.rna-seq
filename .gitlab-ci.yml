@@ -26,13 +26,7 @@ build_badges:
     - ./get-updated-badge-info.sh
   artifacts:
     paths:
-      - badges/release.svg
-      - badges/releasePipeline.svg
-      - badges/releaseNextflow.svg
-      - badges/masterPipeline.svg
-      - badges/masterNextflow.svg
-      - badges/developPipeline.svg
-      - badges/developNextflow.svg
+      - badges/
 
 pages:
   stage: deploy
