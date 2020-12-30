@@ -12,30 +12,14 @@ variables:
   refHuVersion: "38.p12.v31"
   refERCCVersion: "92"
 
-include:
-  - template: Code-Quality.gitlab-ci.yml
-
 stages:
   - test
   - unit
   - aggregation
   - reference
   - integration
-  - consistency
+  - consistency: [gl-code-quality-report.html]
 
-code_quality:
-  stage: test
-  artifacts:
-    paths: [gl-code-quality-report.json]
-    expire_in: 1 year
-
-code_quality_html:
-  stage: test
-  extends: code_quality
-  variables:
-    REPORT_FORMAT: html
-  artifacts:
-    paths: [gl-code-quality-report.html]
 
 getBag:
   stage: unit
