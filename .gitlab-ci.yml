@@ -13,7 +13,6 @@ variables:
   refERCCVersion: "92"
 
 stages:
-  - test
   - unit
   - aggregation
   - reference
