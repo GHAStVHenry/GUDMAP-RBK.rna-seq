@@ -32,7 +32,7 @@ build_badges:
     - chmod +x get-updated-badge-info.sh
   script:
     - echo "Building badges"
-    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get-updated-badge-info.sh
+    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_badge_info.sh
   artifacts:
     paths:
       - badges/
