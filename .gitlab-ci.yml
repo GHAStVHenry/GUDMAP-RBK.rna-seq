@@ -29,7 +29,7 @@ build_badges:
     - tags
   before_script:
     - module load singularity/3.5.3
-    - chmod +x get-updated-badge-info.sh
+    - chmod +x get_updated_badge_info.sh
   script:
     - echo "Building badges"
     - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_badge_info.sh
