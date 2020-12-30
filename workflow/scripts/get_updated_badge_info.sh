@@ -19,7 +19,7 @@ hisat2_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep 
 samtools_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o Samtools.* | grep -oP "(?<=d>).*(?=\<)")
 picard_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o 'picard (MarkDuplicates)'.* | grep -oP "(?<=d>).*(?=\<)")
 featurecounts_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o featureCounts.* | grep -oP "(?<=d>).*(?=\<)")
-r_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o R.* | grep -oP "(?<=d>).*(?=\<)")
+r_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o '>R<'.* | grep -oP "(?<=d>).*(?=\<)")
 deeptools_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o deepTools.* | grep -oP "(?<=d>).*(?=\<)")
 fastqc_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o FastQC.* | grep -oP "(?<=d>).*(?=\<)")
 multiqc_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o MultiQC.* | grep -oP "(?<=d>).*(?=\<)")
