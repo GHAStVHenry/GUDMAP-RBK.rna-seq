@@ -1,9 +1,11 @@
 #!/bin/bash
 
 echo "collecting stats for badges"
-
-commits=`git rev-list --all --count`
 latest_release_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
 current_pipeline_version=$(cat ./workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
 current_nextflow_version=$(cat ./workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
-echo "{\"commits\":\"$commits\", \"release_tag\":\"$latest_release_tag\", \"pipeline\":\"$current_pipeline_version\", \"nextflow\":\"$current_nextflow_version\"}" > badges.json
+
+echo "collecting badges"
+curl --request GET https://img.shields.io/badge/Latest%20Release-${latest_release_tag}-green?style=plastic > release.svg
+curl --request GET https://img.shields.io/badge/Pipeline%20Version-${current_pipeline_version}-green?style=plastic > pipeline.svg
+curl --request GET https://img.shields.io/badge/Nextflow%20Version-${current_nextflow_version}-green?style=plastic > nextflow.svg
