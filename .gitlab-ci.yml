@@ -38,7 +38,7 @@ pages:
   dependencies:
     - build_badges
   script:
-    - mkdir -p public/badges
+    - mkdir -p public
     - mv badges/ public/badges/
   artifacts:
     paths:
