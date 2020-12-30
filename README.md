@@ -37,9 +37,12 @@ To Run:
     * **dev** = [dev.gudmap.org](dev.gudmap.org) (default, does not contain all data)
     * **staging** = [staging.gudmap.org](staging.gudmap.org) (does not contain all data)
     * **production** = [www.gudmap.org](www.gudmap.org) (***does contain  all data***)
-  * `--refMoVersion` mouse reference version ***(optional)***
-  * `--refHuVersion` human reference version ***(optional)***
-  * `--refERCCVersion` human reference version ***(optional)***
+  * `--refMoVersion` mouse reference version ***(optional, default = 38.p6.vM22)***
+  * `--refHuVersion` human reference version ***(optional, default = 38.p12.v31)***
+  * `--refERCCVersion` human reference version ***(optional, default = 92)***
+  * `--upload` option to not upload output back to the data-hub ***(optional, default = true)***
+    * **true** = upload outputs to the data-hub
+    * **false** = do *NOT* upload outputs to the data-hub
   * `-profile` config profile to use ***(optional)***:
     * defaut = processes on BioHPC cluster
     * **biohpc** = process on BioHPC cluster
@@ -47,7 +50,7 @@ To Run:
     * **aws_ondemand** = AWS Batch on-demand instant requests
     * **aws_spot** = AWS Batch spot instance requests
   * `--email` email address(es) to send failure notification (comma separated) ***(optional)***:
-    * e.g: `--email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'`
+    * e.g: `--email 'Venkat.Malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'`
     
 * NOTES:
   * once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)

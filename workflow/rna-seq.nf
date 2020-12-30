@@ -18,6 +18,7 @@ params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
+params.upload = true
 params.email = ""
 
 
@@ -36,6 +37,11 @@ deriva.into {
   deriva_getBag
   deriva_getRefInfer
   deriva_getRef
+  deriva_uploadInputBag
+  deriva_uploadExecutionRun
+  deriva_uploadQC
+  deriva_uploadProcessedFile
+  deriva_uploadOutputBag
 }
 bdbag = Channel
   .fromPath(params.bdbag)
@@ -46,13 +52,15 @@ refHuVersion = params.refHuVersion
 refERCCVersion = params.refERCCVersion
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
+upload = params.upload
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
 email = params.email
 
-// Define fixed files
-derivaConfig = Channel.fromPath("${baseDir}/conf/replicate_export_config.json")
+// Define fixed files and
+replicateExportConfig = Channel.fromPath("${baseDir}/conf/Replicate_For_Input_Bag.json")
+executionRunExportConfig = Channel.fromPath("${baseDir}/conf/Execution_Run_For_Output_Bag.json")
 if (params.source == "dev") {
   source = "dev.gudmap.org"
 } else if (params.source == "staging") {
@@ -74,15 +82,20 @@ softwareReferences = Channel.fromPath("${baseDir}/../docs/software_references_mq
 softwareVersions = Channel.fromPath("${baseDir}/../docs/software_versions_mqc.yaml")
 
 // Define script files
-script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbagFetch.sh")
-script_parseMeta = Channel.fromPath("${baseDir}/scripts/parseMeta.py")
-script_inferMeta = Channel.fromPath("${baseDir}/scripts/inferMeta.sh")
-script_refDataInfer = Channel.fromPath("${baseDir}/scripts/extractRefData.py")
-script_refData = Channel.fromPath("${baseDir}/scripts/extractRefData.py")
+script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbag_fetch.sh")
+script_parseMeta = Channel.fromPath("${baseDir}/scripts/parse_meta.py")
+script_inferMeta = Channel.fromPath("${baseDir}/scripts/infer_meta.sh")
+script_refDataInfer = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
+script_refData = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
 script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
 script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
-script_tinHist = Channel.fromPath("${baseDir}/scripts/tinHist.py")
-
+script_tinHist = Channel.fromPath("${baseDir}/scripts/tin_hist.py")
+script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py")
+script_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
+script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
+script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
+script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
+script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
 
 /*
  * trackStart: track start of pipeline
@@ -143,10 +156,10 @@ process getBag {
 
   input:
     path credential, stageAs: "credential.json" from deriva_getBag
-    path derivaConfig
+    path replicateExportConfig
 
   output:
-    path ("Replicate_*.zip") into bag
+    path ("*.zip") into bag
 
   when:
     inputBagForce == ""
@@ -164,8 +177,15 @@ process getBag {
 
     # deriva-download replicate RID
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
-    deriva-download-cli staging.gudmap.org --catalog 2 ${derivaConfig} . rid=${repRID}
+    deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
+
+    name=\$(ls *.zip)
+    name=\$(basename \${name} | cut -d "." -f1)
+    yr=\$(date +'%Y')
+    mn=\$(date +'%m')
+    dy=\$(date +'%d')
+    mv \${name}.zip \${name}_\${yr}\${mn}\${dy}.zip
     """
 }
 
@@ -177,6 +197,10 @@ if (inputBagForce != "") {
 } else {
   inputBag = bag
 }
+inputBag.into {
+  inputBag_getData
+  inputBag_uploadInputBag
+}
 
 /*
  * getData: fetch study files from consortium with downloaded bdbag.zip
@@ -187,7 +211,7 @@ process getData {
   input:
     path script_bdbagFetch
     path cookies, stageAs: "deriva-cookies.txt" from bdbag
-    path inputBag
+    path inputBag from inputBag_getData
 
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
@@ -207,7 +231,7 @@ process getData {
     echo -e "LOG: linked" >> ${repRID}.getData.log
 
     # get bag basename
-    replicate=\$(basename "${inputBag}" | cut -d "." -f1)
+    replicate=\$(basename "${inputBag}")
     echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
 
     # unzip bag
@@ -217,7 +241,7 @@ process getData {
 
     # bag fetch fastq's only and rename by repRID
     echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
-    sh ${script_bdbagFetch} \${replicate} ${repRID}
+    sh ${script_bdbagFetch} \${replicate::-13} ${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getData.log
     """
 }
@@ -249,7 +273,7 @@ process parseMetadata {
     path experiment from experimentMeta
 
   output:
-    path "design.csv" into metadata
+    path "design.csv" into metadata_fl
 
   script:
     """
@@ -310,7 +334,7 @@ speciesMeta = Channel.create()
 readLengthMeta = Channel.create()
 expRID = Channel.create()
 studyRID = Channel.create()
-metadata.splitCsv(sep: ",", header: false).separate(
+metadata_fl.splitCsv(sep: ",", header: false).separate(
   endsMeta,
   endsManual,
   strandedMeta,
@@ -320,12 +344,23 @@ metadata.splitCsv(sep: ",", header: false).separate(
   expRID,
   studyRID
 )
+
 // Replicate metadata for multiple process inputs
 endsManual.into {
   endsManual_trimData
   endsManual_downsampleData
   endsManual_alignSampleData
   endsManual_aggrQC
+}
+studyRID.into {
+  studyRID_aggrQC
+  studyRID_uploadInputBag
+  studyRID_uploadProcessedFile
+  studyRID_uploadOutputBag
+}
+expRID.into {
+  expRID_aggrQC
+  expRID_uploadProcessedFile
 }
 
 
@@ -336,14 +371,14 @@ process trimData {
   tag "${repRID}"
 
   input:
-    val ends from endsManual_trimData
     path (fastq) from fastqs_trimData
+    val ends from endsManual_trimData
 
   output:
     path ("*.fq.gz") into fastqsTrim
     path ("*.fastq.gz", includeInputs:true) into fastqs_fastqc
     path ("*_trimming_report.txt") into trimQC
-    path ("readLength.csv") into inferMetadata_readLength
+    path ("readLength.csv") into readLengthInfer_fl
 
   script:
     """
@@ -371,11 +406,16 @@ process trimData {
 
 // Extract calculated read length metadata into channel
 readLengthInfer = Channel.create()
-inferMetadata_readLength.splitCsv(sep: ",", header: false).separate(
+readLengthInfer_fl.splitCsv(sep: ",", header: false).separate(
   readLengthInfer
 )
 
-// Replicate trimmed fastq's
+// Replicate infered read length for multiple process inputs
+readLengthInfer.into {
+  readLengthInfer_aggrQC
+  readLengthInfer_uploadQC
+}
+// Replicate trimmed fastq's for multiple process inputs
 fastqsTrim.into {
   fastqsTrim_alignData
   fastqsTrim_downsampleData
@@ -450,9 +490,9 @@ process getRefInfer {
         query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version=${refName}${refERCCVersion}/Annotation_Version=${refName}${refERCCVersion}')
       fi
       curl --request GET \${query} > refQuery.json
-      refURL=\$(python extractRefData.py --returnParam URL)
+      refURL=\$(python ${script_refDataInfer} --returnParam URL)
       loc=\$(dirname \${refURL})
-      fName=\$(python extractRefData.py --returnParam fName)
+      fName=\$(python ${script_refDataInfer} --returnParam fName)
       fName=\${fName%.*}
       if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
@@ -483,8 +523,8 @@ process downsampleData {
   tag "${repRID}"
 
   input:
-    val ends from endsManual_downsampleData
     path fastq from fastqsTrim_downsampleData
+    val ends from endsManual_downsampleData
 
   output:
     path ("sampled.1.fq") into fastqs1Sample
@@ -575,7 +615,7 @@ process inferMetadata {
     path alignSummary from alignSampleQC_inferMetadata.collect()
 
   output:
-    path "infer.csv" into inferMetadata
+    path "infer.csv" into inferMetadata_fl
     path "${repRID}.infer_experiment.txt" into inferExperiment
 
   script:
@@ -642,18 +682,18 @@ process inferMetadata {
     infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt
     echo -e "LOG: infered" >> ${repRID}.inferMetadata.log
 
-    ended=`bash inferMeta.sh endness ${repRID}.infer_experiment.txt`
-    fail=`bash inferMeta.sh fail ${repRID}.infer_experiment.txt`
+    ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
+    fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
     if [ \${ended} == "PairEnd" ]
     then
       ends="pe"
-      percentF=`bash inferMeta.sh pef ${repRID}.infer_experiment.txt`
-      percentR=`bash inferMeta.sh per ${repRID}.infer_experiment.txt`
+      percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
+      percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
     elif [ \${ended} == "SingleEnd" ]
     then
       ends="se"
-      percentF=`bash inferMeta.sh sef ${repRID}.infer_experiment.txt`
-      percentR=`bash inferMeta.sh ser ${repRID}.infer_experiment.txt`
+      percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
+      percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
     fi
     echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
     echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
@@ -684,7 +724,7 @@ align_moInfer = Channel.create()
 percentFInfer = Channel.create()
 percentRInfer = Channel.create()
 failInfer = Channel.create()
-inferMetadata.splitCsv(sep: ",", header: false).separate(
+inferMetadata_fl.splitCsv(sep: ",", header: false).separate(
   endsInfer,
   strandedInfer,
   spikeInfer,
@@ -703,20 +743,24 @@ endsInfer.into {
   endsInfer_countData
   endsInfer_dataQC
   endsInfer_aggrQC
+  endsInfer_uploadQC
 }
 strandedInfer.into {
   strandedInfer_alignData
   strandedInfer_countData
   strandedInfer_aggrQC
+  strandedInfer_uploadQC
 }
 spikeInfer.into{
   spikeInfer_getRef
   spikeInfer_aggrQC
+  spikeInfer_uploadExecutionRun
 }
 speciesInfer.into {
   speciesInfer_getRef
   speciesInfer_aggrQC
-  speciesInfer_outputBag
+  speciesInfer_uploadExecutionRun
+  speciesInfer_uploadProcessedFile
 }
 
 
@@ -727,8 +771,8 @@ process getRef {
   tag "${species}"
 
   input:
-    path credential, stageAs: "credential.json" from deriva_getRef
     path script_refData
+    path credential, stageAs: "credential.json" from deriva_getRef
     val spike from spikeInfer_getRef
     val species from speciesInfer_getRef
 
@@ -796,9 +840,9 @@ process getRef {
       GENCODE=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f3)
       query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
-      refURL=\$(python extractRefData.py --returnParam URL)
+      refURL=\$(python ${script_refData} --returnParam URL)
       loc=\$(dirname \${refURL})
-      fName=\$(python extractRefData.py --returnParam fName)
+      fName=\$(python ${script_refData} --returnParam fName)
       fName=\${fName%.*}
       if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
       filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
@@ -824,10 +868,10 @@ process alignData {
   tag "${repRID}"
 
   input:
-    val ends from endsInfer_alignData
-    val stranded from strandedInfer_alignData
     path fastq from fastqsTrim_alignData
     path reference_alignData
+    val ends from endsInfer_alignData
+    val stranded from strandedInfer_alignData
 
   output:
     tuple path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
@@ -897,8 +941,8 @@ process dedupData {
     tuple path (bam), path (bai) from rawBam_dedupData
 
   output:
-    tuple path ("${repRID}.sorted.deduped.bam"), path ("${repRID}.sorted.deduped.bam.bai") into dedupBam
-    tuple path ("${repRID}.sorted.deduped.*.bam"), path ("${repRID}.sorted.deduped.*.bam.bai") into dedupChrBam
+    tuple path ("${repRID}_sorted.deduped.bam"), path ("${repRID}_sorted.deduped.bam.bai") into dedupBam
+    tuple path ("${repRID}_sorted.deduped.*.bam"), path ("${repRID}_sorted.deduped.*.bam.bai") into dedupChrBam
     path ("*.deduped.Metrics.txt") into dedupQC
 
   script:
@@ -913,16 +957,16 @@ process dedupData {
 
     # sort the bam file using Samtools
     echo -e "LOG: sorting the bam file" >> ${repRID}.dedup.log
-    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.deduped.bam ${repRID}.deduped.bam
+    samtools sort -@ `nproc` -O BAM -o ${repRID}_sorted.deduped.bam ${repRID}.deduped.bam
 
     # index the sorted bam using Samtools
     echo -e "LOG: indexing sorted bam file" >> ${repRID}.dedup.log
-    samtools index -@ `nproc` -b ${repRID}.sorted.deduped.bam ${repRID}.sorted.deduped.bam.bai
+    samtools index -@ `nproc` -b ${repRID}_sorted.deduped.bam ${repRID}_sorted.deduped.bam.bai
 
     # split the deduped BAM file for multi-threaded tin calculation
-    for i in `samtools view ${repRID}.sorted.deduped.bam | cut -f3 | sort | uniq`;
+    for i in `samtools view ${repRID}_sorted.deduped.bam | cut -f3 | sort | uniq`;
       do
-      echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\"; samtools view -b ${repRID}.sorted.deduped.bam \${i} 1>> ${repRID}.sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}.sorted.deduped.\${i}.bam ${repRID}.sorted.deduped.\${i}.bam.bai"
+      echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\"; samtools view -b ${repRID}_sorted.deduped.bam \${i} 1>> ${repRID}_sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}_sorted.deduped.\${i}.bam ${repRID}_sorted.deduped.\${i}.bam.bai"
     done | parallel -j `nproc` -k
     """
 }
@@ -932,6 +976,7 @@ dedupBam.into {
   dedupBam_countData
   dedupBam_makeBigWig
   dedupBam_dataQC
+  dedupBam_uploadProcessedFile
 }
 
 /*
@@ -945,7 +990,7 @@ process makeBigWig {
     tuple path (bam), path (bai) from dedupBam_makeBigWig
 
   output:
-    path ("${repRID}.bw")
+    path ("${repRID}_sorted.deduped.bw") into bigwig
 
   script:
     """
@@ -954,7 +999,7 @@ process makeBigWig {
 
     # create bigwig
     echo -e "LOG: creating bibWig" >> ${repRID}.makeBigWig.log
-    bamCoverage -p `nproc` -b ${bam} -o ${repRID}.bw
+    bamCoverage -p `nproc` -b ${bam} -o ${repRID}_sorted.deduped.bw
     echo -e "LOG: created" >> ${repRID}.makeBigWig.log
     """
 }
@@ -964,7 +1009,7 @@ process makeBigWig {
 */
 process countData {
   tag "${repRID}"
-  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*.tpmTable.csv"
+  publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*_tpmTable.csv"
 
   input:
     path script_calculateTPM
@@ -975,9 +1020,9 @@ process countData {
     val stranded from strandedInfer_countData
 
   output:
-    path ("*.tpmTable.csv") into counts
-    path ("*.countData.summary") into countsQC
-    path ("assignedReads.csv") into inferMetadata_assignedReads
+    path ("*_tpmTable.csv") into counts
+    path ("*_countData.summary") into countsQC
+    path ("assignedReads.csv") into assignedReadsInfer_fl
 
   script:
     """
@@ -1004,31 +1049,37 @@ process countData {
     echo -e "LOG: counting ${ends} features" >> ${repRID}.countData.log
     if [ "${ends}" == "se" ]
     then
-      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}.countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}_countData -s \${stranding} -R SAM --primary --ignoreDup ${repRID}_sorted.deduped.bam
     elif [ "${ends}" == "pe" ]
     then
-      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}.countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}.sorted.deduped.bam
+      featureCounts -T `nproc` -a ./genome.gtf -G ./genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o ${repRID}_countData -s \${stranding} -p -B -R SAM --primary --ignoreDup ${repRID}_sorted.deduped.bam
     fi
     echo -e "LOG: counted" >> ${repRID}.countData.log
 
     # extract assigned reads
-    grep -m 1 'Assigned' *.countData.summary | grep -oe '\\([0-9.]*\\)' > assignedReads.csv
+    grep -m 1 'Assigned' *_countData.summary | grep -oe '\\([0-9.]*\\)' > assignedReads.csv
 
     # calculate TPM from the resulting countData table
     echo -e "LOG: calculating TPM with R" >> ${repRID}.countData.log
-    Rscript calculateTPM.R --count "${repRID}.countData"
+    Rscript ${script_calculateTPM} --count "${repRID}_countData"
 
     # convert gene symbols to Entrez id's
     echo -e "LOG: convert gene symbols to Entrez id's" >> ${repRID}.countData.log
-    Rscript convertGeneSymbols.R --repRID "${repRID}"
+    Rscript ${script_convertGeneSymbols} --repRID "${repRID}"
     """
 }
 
 // Extract number of assigned reads metadata into channel
 assignedReadsInfer = Channel.create()
-inferMetadata_assignedReads.splitCsv(sep: ",", header: false).separate(
+assignedReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   assignedReadsInfer
 )
+
+// Replicate infered assigned reads for multiple process inputs
+assignedReadsInfer.into {
+  assignedReadsInfer_aggrQC
+  assignedReadsInfer_uploadQC
+}
 
 /*
  *fastqc: run fastqc on untrimmed fastq's
@@ -1041,7 +1092,7 @@ process fastqc {
 
   output:
     path ("*_fastqc.zip") into fastqc
-    path ("rawReads.csv") into inferMetadata_rawReads
+    path ("rawReads.csv") into rawReadsInfer_fl
 
   script:
     """
@@ -1059,9 +1110,15 @@ process fastqc {
 
 // Extract number of raw reads metadata into channel
 rawReadsInfer = Channel.create()
-inferMetadata_rawReads.splitCsv(sep: ",", header: false).separate(
+rawReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   rawReadsInfer
 )
+
+// Replicate infered raw reads for multiple process inputs
+rawReadsInfer.into {
+  rawReadsInfer_aggrQC
+  rawReadsInfer_uploadQC
+}
 
 /*
  *dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
@@ -1077,9 +1134,9 @@ process dataQC {
     val ends from endsInfer_dataQC
 
   output:
-    path "${repRID}.tin.hist.tsv" into tinHist
-    path "${repRID}.tin.med.csv" into inferMetadata_tinMed
-    path "${repRID}.insertSize.inner_distance_freq.txt" into innerDistance
+    path "${repRID}_tin.hist.tsv" into tinHist
+    path "${repRID}_tin.med.csv" into  tinMedInfer_fl
+    path "${repRID}_insertSize.inner_distance_freq.txt" into innerDistance
 
   script:
     """
@@ -1087,10 +1144,10 @@ process dataQC {
     ulimit -a >> ${repRID}.dataQC.log
 
     # calcualte TIN values per feature on each chromosome
-    echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > ${repRID}.sorted.deduped.tin.xls
+    echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > ${repRID}_sorted.deduped.tin.xls
     for i in `cat ./bed/genome.bed | cut -f1 | sort | uniq`; do
-      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.dataQC.log; tin.py -i ${repRID}.sorted.deduped.\${i}.bam  -r ./bed/genome.bed; cat ${repRID}.sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
-    done | parallel -j `nproc` -k 1>> ${repRID}.sorted.deduped.tin.xls
+      echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.dataQC.log; tin.py -i ${repRID}_sorted.deduped.\${i}.bam  -r ./bed/genome.bed; cat ${repRID}_sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
+    done | parallel -j `nproc` -k 1>> ${repRID}_sorted.deduped.tin.xls
 
     # bin TIN values
     echo -e "LOG: binning TINs" >> ${repRID}.dataQC.log
@@ -1101,19 +1158,19 @@ process dataQC {
     if [ "${ends}" == "pe" ]
     then
       echo -e "LOG: calculating inner distances for ${ends}" >> ${repRID}.dataQC.log
-      inner_distance.py -i "${bam}" -o ${repRID}.insertSize -r ./bed/genome.bed
+      inner_distance.py -i "${bam}" -o ${repRID}_insertSize -r ./bed/genome.bed
       echo -e "LOG: calculated" >> ${repRID}.dataQC.log
     elif [ "${ends}" == "se" ]
     then
       echo -e "LOG: creating dummy inner distance file for ${ends}" >> ${repRID}.dataQC.log
-      touch ${repRID}.insertSize.inner_distance_freq.txt
+      touch ${repRID}_insertSize.inner_distance_freq.txt
     fi
     """
 }
 
 // Extract median TIN metadata into channel
 tinMedInfer = Channel.create()
-inferMetadata_tinMed.splitCsv(sep: ",", header: false).separate(
+tinMedInfer_fl.splitCsv(sep: ",", header: false).separate(
   tinMedInfer
 )
 
@@ -1149,12 +1206,12 @@ process aggrQC {
     val spikeI from spikeInfer_aggrQC
     val speciesI from speciesInfer_aggrQC
     val readLengthM from readLengthMeta
-    val readLengthI from readLengthInfer
-    val rawReadsI from rawReadsInfer
-    val assignedReadsI from assignedReadsInfer
+    val readLengthI from readLengthInfer_aggrQC
+    val rawReadsI from rawReadsInfer_aggrQC
+    val assignedReadsI from assignedReadsInfer_aggrQC
     val tinMedI from tinMedInfer
-    val expRID
-    val studyRID
+    val studyRID from studyRID_aggrQC
+    val expRID from expRID_aggrQC
 
   output:
     path "${repRID}.multiqc.html" into multiqc
@@ -1226,24 +1283,270 @@ process aggrQC {
     """
 }
 
+/* 
+ * uploadInputBag: uploads the input bag
+*/
+process uploadInputBag {
+  tag "${repRID}"
+
+  input:
+    path script_uploadInputBag
+    path credential, stageAs: "credential.json" from deriva_uploadInputBag
+    path inputBag from inputBag_uploadInputBag
+    val studyRID from studyRID_uploadInputBag
+
+  output:
+    path ("inputBagRID.csv") into inputBagRID_fl
+
+  when:
+    upload
+
+  script:
+  """
+  hostname > ${repRID}.uploadInputBag.log
+  ulimit -a >> ${repRID}.uploadInputBag.log
+
+  yr=\$(date +'%Y')
+  mn=\$(date +'%m')
+  dy=\$(date +'%d')
+
+  file=\$(basename -a ${inputBag})
+  md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
+  echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
+  size=\$(wc -c < ./\${file})
+  echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
+  
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
+  if [ "\${exist}" == "[]" ]
+  then
+      cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+      cookie=\${cookie:11:-1}
+
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
+      inputBag_rid=\$(python3 ${script_uploadInputBag} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+      echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
+      rid=\${inputBag_rid}
+  else
+      exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      exist=\${exist:7:-6}
+      echo LOG: input bag RID already exists - \${exist} >> ${repRID}.uploadInputBag.log
+      rid=\${exist}
+  fi
+
+  echo \${rid} > inputBagRID.csv
+  """
+}
+
+// Extract input bag RID into channel
+inputBagRID = Channel.create()
+inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
+  inputBagRID
+)
+
+/* 
+ * uploadExecutionRun: uploads the execution run
+*/
+process uploadExecutionRun {
+  tag "${repRID}"
+
+  input:
+    path script_uploadExecutionRun
+    path credential, stageAs: "credential.json" from deriva_uploadExecutionRun
+    val spike from spikeInfer_uploadExecutionRun
+    val species from speciesInfer_uploadExecutionRun
+    val inputBagRID
+    
+  output:
+    path ("executionRunRID.csv") into executionRunRID_fl
+
+  when:
+    upload
+
+  script:
+  """
+  hostname > ${repRID}.uploadExecutionRun.log
+  ulimit -a >> ${repRID}.uploadExecutionRun.log
+
+  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
+  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
+  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  workflow=\${workflow:7:-6}
+  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.uploadExecutionRun.log
+
+  if [ "${species}" == "Homo sapiens" ]
+  then
+    genomeName=\$(echo GRCh${refHuVersion})
+  elif [ "${species}" == "Mus musculus" ]
+  then
+    genomeName=\$(echo GRCm${refMoVersion})
+  fi
+  if [ "${spike}" == "yes" ]
+  then
+    genomeName=\$(echo \${genomeName}-S)
+  fi
+  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.uploadExecutionRun.log
+  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName}_indev)
+  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  genome=\${genome:7:-6}
+  echo LOG: genome RID extracted - \${genome} >> ${repRID}.uploadExecutionRun.log
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
+  echo \${exist} >> ${repRID}.uploadExecutionRun.log
+  if [ "\${exist}" == "[]" ]
+  then
+    executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
+    echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+  else
+    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    rid=\${rid:7:-6}
+    echo \${rid} >> ${repRID}.uploadExecutionRun.log
+    executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
+    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+  fi
+
+  echo \${executionRun_rid} > executionRunRID.csv
+  """
+}
+
+// Extract execution run RID into channel
+executionRunRID = Channel.create()
+executionRunRID_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID
+)
+
+//
+executionRunRID.into {
+  executionRunRID_uploadQC
+  executionRunRID_uploadProcessedFile
+  executionRunRID_uploadOutputBag
+}
+
+/* 
+ * uploadQC: uploads the mRNA QC
+*/
+process uploadQC {
+  tag "${repRID}"
+
+  input:
+    path script_deleteEntry_uploadQC
+    path script_uploadQC
+    path credential, stageAs: "credential.json" from deriva_uploadQC
+    val executionRunRID from executionRunRID_uploadQC
+    val ends from endsInfer_uploadQC
+    val stranded from strandedInfer_uploadQC
+    val length from readLengthInfer_uploadQC
+    val rawCount from rawReadsInfer_uploadQC
+    val finalCount from assignedReadsInfer_uploadQC
+    
+    
+  output:
+    path ("qcRID.csv") into qcRID_fl
+
+  when:
+    upload
+
+  script:
+  """
+  hostname > ${repRID}.uploadQC.log
+  ulimit -a >> ${repRID}.uploadQC.log
+
+  if [ "${ends}" == "pe" ]
+  then
+    end="Paired End"
+  elif [ "${ends}" == "se" ]
+  then
+    end="Single Read"
+  fi
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID})
+  if [ "\${exist}" != "[]" ]
+  then
+    rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+    for rid in \${rids}
+    do
+      python3 ${script_deleteEntry_uploadQC} -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
+      echo LOG: old mRNA QC RID deleted - \${rid} >> ${repRID}.uploadQC.log
+    done
+    echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
+  fi
+
+  qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
+  echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
+
+  echo \${qc_rid} > qcRID.csv
+  """
+}
+
+// Extract mRNA qc RID into channel
+qcRID = Channel.create()
+qcRID_fl.splitCsv(sep: ",", header: false).separate(
+  qcRID
+)
+
 /*
  *ouputBag: create ouputBag
 */
-process outputBag {
+process uploadProcessedFile {
   tag "${repRID}"
   publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
 
   input:
+    path script_deleteEntry_uploadProcessedFile
+    path credential, stageAs: "credential.json" from deriva_uploadProcessedFile
+    path executionRunExportConfig
     path multiqc
     path multiqcJSON
-    val species from speciesInfer_outputBag
+    tuple path (bam),path (bai) from dedupBam_uploadProcessedFile
+    path bigwig
+    path counts
+    val species from speciesInfer_uploadProcessedFile
+    val studyRID from studyRID_uploadProcessedFile
+    val expRID from expRID_uploadProcessedFile
+    val executionRunRID from executionRunRID_uploadProcessedFile
 
   output:
-    path ("Replicate_*.zip") into outputBag
+    path ("${repRID}_Output_Bag.zip") into outputBag
+
+  when:
+    upload
 
   script:
   """
-  mkdir Replicate_${repRID}.outputBag
+  hostname > ${repRID}.outputBag.log
+  ulimit -a >> ${repRID}.outputBag.log
+
+  mkdir -p ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bam} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bai} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${bigwig} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+  cp ${counts} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${repRID})
+  if [ "\${exist}" != "[]" ]
+  then
+    rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+    for rid in \${rids}
+    do
+      python3 ${script_deleteEntry_uploadProcessedFile} -r \${rid} -t Processed_File -o ${source} -c \${cookie}
+    done
+    echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
+  fi
+
+  deriva-upload-cli --catalog 2 --token \${cookie:9} ${source} ./deriva
+  echo LOG: processed files uploaded >> ${repRID}.outputBag.log
+
+  deriva-download-cli --catalog 2 --token \${cookie:9} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
+  echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
+
   echo -e "### Run Details" >> runDetails.md
   echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
   echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
@@ -1260,12 +1563,84 @@ process outputBag {
   echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
   echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
   echo -e "**Run ID:** ${repRID}" >> runDetails.md
-  cp runDetails.md Replicate_${repRID}.outputBag
-  cp ${multiqc} Replicate_${repRID}.outputBag
-  cp ${multiqcJSON} Replicate_${repRID}.outputBag
-  bdbag Replicate_${repRID}.outputBag --archiver zip
+  echo LOG: runDetails.md created >> ${repRID}.outputBag.log
+
+  unzip Execution_Run_${executionRunRID}.zip
+  yr=\$(date +'%Y')
+  mn=\$(date +'%m')
+  dy=\$(date +'%d')
+  mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag_\${yr}\${mn}\${dy}
+  loc=./${repRID}_Output_Bag/data/assets/Study/${studyRID}/Experiment/${expRID}/Replicate/${repRID}/Execution_Run/${executionRunRID}/Output_Files/
+  mkdir -p \${loc}
+  cp runDetails.md \${loc}
+  cp ${multiqc} \${loc}
+  cp ${multiqcJSON} \${loc}
+
+  bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
+  echo LOG: output bag created >> ${repRID}.outputBag.log
   """
 }
+
+/* 
+ * uploadOutputBag: uploads the output bag
+*/
+process uploadOutputBag {
+  tag "${repRID}"
+
+  input:
+    path script_uploadOutputBag
+    path credential, stageAs: "credential.json" from deriva_uploadOutputBag
+    path outputBag
+    val studyRID from studyRID_uploadOutputBag
+    val executionRunRID from executionRunRID_uploadOutputBag
+
+  output:
+    path ("outputBagRID.csv") into outputBagRID_fl
+
+  when:
+    upload
+
+  script:
+  """
+  hostname > ${repRID}.uploadOutputBag.log
+  ulimit -a >> ${repRID}.uploadOutputBag.log
+
+  yr=\$(date +'%Y')
+  mn=\$(date +'%m')
+  dy=\$(date +'%d')
+
+  file=\$(basename -a ${outputBag})
+  md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
+  echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
+  size=\$(wc -c < ./\${file})
+  echo LOG: ${repRID} output bag size - \${size} bytes >> ${repRID}.uploadOutputBag.log
+  
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=\${md5})
+  if [ "\${exist}" == "[]" ]
+  then
+      cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+      cookie=\${cookie:11:-1}
+
+      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
+      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+      echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
+      rid=\${outputBag_rid}
+  else
+      exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      exist=\${exist:8:-6}
+      echo LOG: output bag RID already exists - \${exist} >> ${repRID}.uploadOutputBag.log
+      rid=\${exist}
+  fi
+
+  echo \${rid} > outputBagRID.csv
+  """
+}
+
+// Extract output bag RID into channel
+outputBagRID = Channel.create()
+outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
+  outputBagRID
+)
 
 
 workflow.onError = {

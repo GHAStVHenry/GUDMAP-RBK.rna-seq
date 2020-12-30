@@ -1,6 +1,6 @@
 {
   "bag": {
-    "bag_name": "Replicate_{rid}",
+    "bag_name": "{rid}_inputBag",
     "bag_algorithms": [
       "md5"
     ],

@@ -18,6 +18,6 @@ def test_trimData_se():
 @pytest.mark.trimData
 def test_trimData_pe():
     assert os.path.exists(os.path.join(
-        test_output_path, 'Q-Y5F6_1M.pe_R1_val_1.fq.gz'))
+        test_output_path, 'Q-Y5F6_1M.pe_val_1.fq.gz'))
     assert os.path.exists(os.path.join(
-        test_output_path, 'Q-Y5F6_1M.pe_R2_val_2.fq.gz'))
+        test_output_path, 'Q-Y5F6_1M.pe_val_2.fq.gz'))

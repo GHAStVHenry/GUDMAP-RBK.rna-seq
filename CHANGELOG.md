@@ -1,8 +1,13 @@
-# v0.0.4 (in development)
+# v0.1.0 (in development)
 **User Facing**
 * Add option to pull references from datahub
 * Add option to send email on workflow error, with pipeline error message
 * Add versions and paper references of software used to report
+* Upload input bag
+* Upload execution run
+* Upload mRNA QC
+* Create and upload output bag
+* Add optional to not upload
 
 **Background**
 * Remove (comment out) option to pull references from S3
@@ -10,11 +15,11 @@
 * Start using new gudmaprbk dockerhub (images autobuilt)
 * Moved consistency checks to be fully python
 * Changed order of steps so that fastqc is done after the trim step
+* Change docker images to production
+* Add automated version badges
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
-* outputBag does not contain fetch for processed data
-* Does not include automatic data upload
 * Override params (inputBag, fastq, species) aren't checked for integrity
 
 <hr>
