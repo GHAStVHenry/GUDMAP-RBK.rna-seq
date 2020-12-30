@@ -16,6 +16,7 @@
 * Moved consistency checks to be fully python
 * Changed order of steps so that fastqc is done after the trim step
 * Change docker images to production
+* Add automated version badges
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
