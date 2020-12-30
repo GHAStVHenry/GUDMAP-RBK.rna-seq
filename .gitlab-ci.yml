@@ -39,6 +39,7 @@ pages:
     - build_badges
   script:
     - mv badges/ public/
+  artifacts:
     paths:
     - public
 
