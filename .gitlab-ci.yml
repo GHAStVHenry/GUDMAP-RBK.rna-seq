@@ -19,6 +19,7 @@ stages:
 build_badges:
   stage: badges
   before_script:
+    - module load singularity/3.5.3
     - chmod +x get-updated-badge-info.sh
   script:
     - echo "Building badges"
