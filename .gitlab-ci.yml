@@ -663,7 +663,7 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging -with-dag dag.png --ci true --email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging -with-dag dag.png --dev false --ci true --email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'
   - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -687,7 +687,7 @@ integration_pe:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging -with-dag dag.png --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging -with-dag dag.png --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -713,7 +713,7 @@ override_inputBag:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -735,7 +735,7 @@ override_fastq:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -757,7 +757,7 @@ override_species:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --speciesForce 'Homo sapiens' --upload false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --speciesForce 'Homo sapiens' --upload false --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
