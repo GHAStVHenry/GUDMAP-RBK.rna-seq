@@ -6,6 +6,7 @@ current_pipeline_version=$(cat ./workflow/nextflow.config | grep -o version.* | 
 current_nextflow_version=$(cat ./workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
 
 echo "collecting badges"
-curl --request GET https://img.shields.io/badge/Latest%20Release-${latest_release_tag}-green?style=plastic > release.svg
-curl --request GET https://img.shields.io/badge/Pipeline%20Version-${current_pipeline_version}-green?style=plastic > pipeline.svg
-curl --request GET https://img.shields.io/badge/Nextflow%20Version-${current_nextflow_version}-green?style=plastic > nextflow.svg
+mkdir public
+curl --request GET https://img.shields.io/badge/Latest%20Release-${latest_release_tag}-green?style=plastic > ./public/release.svg
+curl --request GET https://img.shields.io/badge/Pipeline%20Version-${current_pipeline_version}-green?style=plastic > ./public/pipeline.svg
+curl --request GET https://img.shields.io/badge/Nextflow%20Version-${current_nextflow_version}-green?style=plastic > ./public/nextflow.svg
