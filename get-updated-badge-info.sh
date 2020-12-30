@@ -12,9 +12,9 @@ develop_nextflow_version=$(git show develop:workflow/nextflow.config | grep -o n
 echo "collecting badges"
 mkdir badges
 curl --request GET https://img.shields.io/badge/Latest%20Release-${latest_release_tag}-green?style=plastic > ./badges/release.svg
-curl --request GET https://img.shields.io/badge/Pipeline%20Version branch-${current_pipeline_version}-green?style=plastic > ./badges/releasePipeline.svg
+curl --request GET https://img.shields.io/badge/Pipeline%20Version-${current_pipeline_version}-green?style=plastic > ./badges/releasePipeline.svg
 curl --request GET https://img.shields.io/badge/Nextflow%20Version-${current_nextflow_version}-green?style=plastic > ./badges/releaseNextflow.svg
-curl --request GET https://img.shields.io/badge/Pipeline%20Version branch-${current_pipeline_version}-green?style=plastic > ./badges/masterPipeline.svg
+curl --request GET https://img.shields.io/badge/Pipeline%20Version-${current_pipeline_version}-green?style=plastic > ./badges/masterPipeline.svg
 curl --request GET https://img.shields.io/badge/Nextflow%20Version-${current_nextflow_version}-green?style=plastic > ./badges/masterNextflow.svg
-curl --request GET https://img.shields.io/badge/Pipeline%20Version branch-${current_pipeline_version}-green?style=plastic > ./badges/developPipeline.svg
+curl --request GET https://img.shields.io/badge/Pipeline%20Version-${current_pipeline_version}-green?style=plastic > ./badges/developPipeline.svg
 curl --request GET https://img.shields.io/badge/Nextflow%20Version-${current_nextflow_version}-green?style=plastic > ./badges/developNextflow.svg
