@@ -25,14 +25,16 @@ build_bages:
     - ./get-updated-badge-info.sh
   artifacts:
     paths:
-      - ./public/release.svg
-      - ./public/pipeline.svg
-      - ./public/nextflow.svg
+      - badges/release.svg
+      - badges/pipeline.svg
+      - badges/nextflow.svg
     when: always
     expire_in: 3 months
 
 pages:
   stage: badges
+  script:
+    - mv badges/ public/
   artifacts:
     paths:
     - public
