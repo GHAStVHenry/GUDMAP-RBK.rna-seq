@@ -18,8 +18,8 @@ def test_consistencySE():
     with open(os.path.join(
         test_output_path, 'SE_multiqc_data.json')) as f:
         assigned_reads_json = json.load(f)
-    assigned_reads = assigned_reads_json['report_general_stats_data'][4]['16-1ZX4']['Assigned']
-    assert  assigned_reads == 7742416
+    assigned_reads = assigned_reads_json['report_general_stats_data'][4]['16-1ZX4_sorted']['Assigned']
+    assert  assigned_reads == 7746121
 
 
 @pytest.mark.consistencyPE
@@ -30,5 +30,5 @@ def test_consistencyPE():
     with open(os.path.join(
         test_output_path, 'PE_multiqc_data.json')) as f:
         assigned_reads_json = json.load(f)
-    assigned_reads = assigned_reads_json['report_general_stats_data'][4]['Q-Y5JA']['Assigned']
-    assert  assigned_reads == 2599149
+    assigned_reads = assigned_reads_json['report_general_stats_data'][4]['Q-Y5JA_sorted']['Assigned']
+    assert  assigned_reads == 2596053
