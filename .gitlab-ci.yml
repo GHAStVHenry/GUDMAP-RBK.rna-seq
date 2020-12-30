@@ -23,10 +23,6 @@ stages:
 
 build_badges:
   stage: badges
-  only:
-    - master
-    - develop
-    - tags
   before_script:
     - module load singularity/3.5.3
     - chmod +x ./workflow/scripts/get_updated_badge_info.sh
@@ -39,14 +35,11 @@ build_badges:
 
 pages:
   stage: deploy
-  only:
-    - master
-    - develop
-    - tags
   dependencies:
     - build_badges
   script:
-    - mv badges/ public/
+    - mkdir -p public/badges
+    - mv badges/ public/badges/
   artifacts:
     paths:
     - public
