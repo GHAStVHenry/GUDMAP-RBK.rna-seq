@@ -18,7 +18,7 @@ stages:
 build_bages:
   stage: badges
   only:
-    - master
+    - develop
   script:
     - echo "Building badges"
   after_script:
