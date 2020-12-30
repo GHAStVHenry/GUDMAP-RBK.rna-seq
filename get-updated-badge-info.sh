@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "collecting stats for badges"
-latest_release_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
 current_pipeline_version=$(cat ./workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
 current_nextflow_version=$(cat ./workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
 
