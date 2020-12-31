@@ -33,6 +33,7 @@ build_badges:
   script:
     - echo "Building badges"
     - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_badge_info.sh
+    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_rep_count.sh
   artifacts:
     paths:
       - badges/
@@ -46,7 +47,8 @@ pages:
   dependencies:
     - build_badges
   script:
-    - mv badges/ public/
+    - mkdir -p public
+    - mv badges/ public/badges/
   artifacts:
     paths:
     - public
@@ -58,6 +60,7 @@ getBag:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
   - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-download-cli --version > version_deriva.txt
@@ -77,6 +80,7 @@ getData:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bdbag --version > version_bdbag.txt
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
@@ -97,6 +101,7 @@ parseMetadata:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
   - rep=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
@@ -124,6 +129,7 @@ inferMetadata:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py --version > version_rseqc.txt
   - >
@@ -148,6 +154,7 @@ trimData:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --version > version_trimgalore.txt
   - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --length 35 --basename Q-Y5F6_1M.se ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
@@ -169,6 +176,7 @@ downsampleData:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz 1000 1> sampled.1.fq
   - pytest -m downsampleData
@@ -180,6 +188,7 @@ alignData:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 --version > version_hisat2.txt
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools --version > version_samtools.txt
@@ -207,6 +216,7 @@ dedupData:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools --version > version_samtools.txt
   - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates --version 2> version_markdups.txt&
@@ -233,6 +243,7 @@ countData:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/geneID.tsv
   - ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/Entrez.tsv
@@ -258,6 +269,7 @@ makeBigWig:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' deeptools --version > version_deeptools.txt
   - singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' bamCoverage -p 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam -o Q-Y5F6_1M.se.bw
@@ -276,6 +288,7 @@ fastqc:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc --version > version_fastqc.txt
   - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
@@ -310,6 +323,7 @@ uploadInputBag:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - echo THIS IS A TEST FILE > test.txt
@@ -336,6 +350,7 @@ uploadExecutionRun:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
@@ -359,6 +374,7 @@ uploadQC:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - >
@@ -382,6 +398,7 @@ uploadProcessedFile:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - echo THIS IS A TEST FILE > 17-BTFJ_test.csv
@@ -412,6 +429,7 @@ uploadOutputBag:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
   - echo THIS IS A TEST FILE > test.txt
@@ -439,6 +457,7 @@ generateVersions:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - singularity run 'docker://gudmaprbk/multiqc1.9:1.0.0' multiqc --version > version_multiqc.txt
   - python ./workflow/scripts/generate_versions.py -o software_versions
@@ -459,6 +478,7 @@ human_BioHPC:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - mkdir -p hu
   - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
@@ -470,6 +490,7 @@ mouse_BioHPC:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - mkdir -p mo
   - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
@@ -481,6 +502,7 @@ human_dev:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=dev.gudmap.org
@@ -506,6 +528,7 @@ mouse_dev:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=dev.gudmap.org
@@ -531,6 +554,7 @@ human_staging:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=staging.gudmap.org
@@ -556,6 +580,7 @@ mouse_staging:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=staging.gudmap.org
@@ -582,6 +607,7 @@ human_prod:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=www.gudmap.org
@@ -607,6 +633,7 @@ mouse_prod:
     - tags
   except:
     - merge_requests
+    - schedules
   script:
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - referenceBase=www.gudmap.org
@@ -636,7 +663,7 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 -with-dag dag.png --ci true --email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging -with-dag dag.png --dev false --ci true --email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'
   - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -660,7 +687,7 @@ integration_pe:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA -with-dag dag.png --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging -with-dag dag.png --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -686,7 +713,7 @@ override_inputBag:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -708,7 +735,7 @@ override_fastq:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -730,7 +757,7 @@ override_species:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --speciesForce 'Homo sapiens' --upload false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --speciesForce 'Homo sapiens' --upload false --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"

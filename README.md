@@ -1,8 +1,8 @@
 |master|develop|
 |:-:|:-:|
 |[![pipeline status](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/badges/master/pipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/commits/master)|[![pipeline status](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/badges/develop/pipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/commits/develop)|
-|[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/masterPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/developPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
-|[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/masterNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/developNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
+|[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/masterPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/developPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
+|[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/masterNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/developNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
 
 <!--
 [![DOI]()]()

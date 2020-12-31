@@ -18,7 +18,7 @@ params.refMoVersion = "38.p6.vM22"
 params.refHuVersion = "38.p12.v31"
 params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
-params.upload = true
+params.upload = false
 params.email = ""
 
 
@@ -27,6 +27,10 @@ params.refSource = "biohpc"
 params.inputBagForce = ""
 params.fastqsForce = ""
 params.speciesForce = ""
+
+// Define tracking input variables
+params.ci = false
+params.dev = true
 
 
 // Parse input variables
@@ -100,8 +104,6 @@ script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/de
 /*
  * trackStart: track start of pipeline
  */
-params.ci = false
-params.dev = false
 process trackStart {
   container 'docker://bicf/bicfbase:2.1.0'
   script:
