@@ -663,7 +663,7 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging -with-dag dag.png --dev false --ci true --email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --upload true -with-dag dag.png --dev false --ci true --email 'venkat.malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'
   - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
@@ -687,7 +687,7 @@ integration_pe:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging -with-dag dag.png --dev false --ci true
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging --upload true -with-dag dag.png --dev false --ci true
   - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
   artifacts:
     name: "$CI_JOB_NAME"
