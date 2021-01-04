@@ -40,7 +40,7 @@ To Run:
   * `--refMoVersion` mouse reference version ***(optional, default = 38.p6.vM22)***
   * `--refHuVersion` human reference version ***(optional, default = 38.p12.v31)***
   * `--refERCCVersion` human reference version ***(optional, default = 92)***
-  * `--upload` option to not upload output back to the data-hub ***(optional, default = true)***
+  * `--upload` option to not upload output back to the data-hub ***(optional, default = false)***
     * **true** = upload outputs to the data-hub
     * **false** = do *NOT* upload outputs to the data-hub
   * `-profile` config profile to use ***(optional)***:
@@ -69,7 +69,7 @@ To Run:
     * eg: `--speciesForce 'Mus musculus'`
 * Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
   * `--ci` boolean (default = false)
-  * `--dev` boolean (default = false)
+  * `--dev` boolean (default = true)
 
 FULL EXAMPLE:
 -------------
