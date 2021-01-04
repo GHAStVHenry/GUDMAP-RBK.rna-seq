@@ -8,6 +8,11 @@
 * Upload mRNA QC
 * Create and upload output bag
 * Add optional to not upload
+* Update references to use bags
+* Update to newer references (GRCh38.p13.v36 and GRCm38.p6.vM25)
+* Use production server for data-hub reference call
+* Stop pipeline if submitted does not match infered
+* Update execution run with "Success" or "Error"
 
 **Background**
 * Remove (comment out) option to pull references from S3
@@ -17,10 +22,12 @@
 * Changed order of steps so that fastqc is done after the trim step
 * Change docker images to production
 * Add automated version badges
+* Only calculate/report tin values on regular chromosomes (from gtf)
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
 * Override params (inputBag, fastq, species) aren't checked for integrity
+* 
 
 <hr>
 

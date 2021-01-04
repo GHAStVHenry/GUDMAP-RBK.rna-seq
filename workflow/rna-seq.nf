@@ -1248,7 +1248,7 @@ process dedupData {
     samtools index -@ `nproc` -b ${repRID}_sorted.deduped.bam ${repRID}_sorted.deduped.bam.bai
 
     # split the deduped BAM file for multi-threaded tin calculation
-    for i in `samtools view ${repRID}_sorted.deduped.bam | cut -f3 | sort | uniq`;
+    for i in `samtools view ${repRID}_sorted.deduped.bam | grep -o chr.* | cut -f3 | sort | uniq`;
       do
       echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\"; samtools view -b ${repRID}_sorted.deduped.bam \${i} 1>> ${repRID}_sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}_sorted.deduped.\${i}.bam ${repRID}_sorted.deduped.\${i}.bam.bai"
     done | parallel -j `nproc` -k
