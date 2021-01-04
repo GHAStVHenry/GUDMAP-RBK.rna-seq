@@ -136,7 +136,7 @@ inferMetadata:
     align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5F6_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
     if [[ ${align} == "" ]]; then exit 1; fi
   - >
-    singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
+    singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
     ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
     if [[ ${ended} == "" ]]; then exit 1; fi
   - pytest -m inferMetadata
@@ -312,7 +312,7 @@ dataQC:
   - echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > Q-Y5F6_1M.se.sorted.deduped.tin.xls
   - >
     for i in {"chr8","chr4","chrY"}; do
-      echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/bed/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
+      echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p13.v36/annotation/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
     done | singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
   - pytest -m dataQC
 
