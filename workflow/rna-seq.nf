@@ -1248,7 +1248,7 @@ process dedupData {
     samtools index -@ `nproc` -b ${repRID}_sorted.deduped.bam ${repRID}_sorted.deduped.bam.bai
 
     # split the deduped BAM file for multi-threaded tin calculation
-    for i in `samtools view ${repRID}_sorted.deduped.bam | grep -o chr.* | cut -f3 | sort | uniq`;
+    for i in `samtools view ${repRID}_sorted.deduped.bam | cut -f3 | grep -o chr.[0-9]* | sort | uniq`;
       do
       echo "echo \"LOG: splitting each chromosome into its own BAM and BAI files with Samtools\"; samtools view -b ${repRID}_sorted.deduped.bam \${i} 1>> ${repRID}_sorted.deduped.\${i}.bam; samtools index -@ `nproc` -b ${repRID}_sorted.deduped.\${i}.bam ${repRID}_sorted.deduped.\${i}.bam.bai"
     done | parallel -j `nproc` -k
@@ -1445,7 +1445,7 @@ process dataQC {
 
     # calcualte TIN values per feature on each chromosome
     echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > ${repRID}_sorted.deduped.tin.xls
-    for i in `cat ./genome.bed | cut -f1 | grep -o chr.* | sort | uniq`; do
+    for i in `cat ./genome.bed | cut -f1 | grep -o chr.[0-9]* | sort | uniq`; do
       echo "echo \"LOG: running tin.py on \${i}\" >> ${repRID}.dataQC.log; tin.py -i ${repRID}_sorted.deduped.\${i}.bam  -r ./genome.bed; cat ${repRID}_sorted.deduped.\${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \\\"\\\\t\${i}\\\\t\\\";";
     done | parallel -j `nproc` -k 1>> ${repRID}_sorted.deduped.tin.xls
 
@@ -1823,7 +1823,7 @@ process finalizeExecutionRun {
     path credential, stageAs: "credential.json" from deriva_finalizeExecutionRun
     val executionRunRID from executionRunRID_finalizeExecutionRun
     val inputBagRID from inputBagRID_finalizeExecutionRun
-    path outputBagRID
+    val outputBagRID
     val endsMeta from endsMeta_finalizeExecutionRun
     val strandedMeta from strandedMeta_finalizeExecutionRun
     val spikeMeta from spikeMeta_finalizeExecutionRun
