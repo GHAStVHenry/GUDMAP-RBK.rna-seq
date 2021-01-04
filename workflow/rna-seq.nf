@@ -47,6 +47,7 @@ deriva.into {
   deriva_uploadProcessedFile
   deriva_uploadOutputBag
   deriva_finalizeExecutionRun
+  deriva_failExecutionRun
 }
 bdbag = Channel
   .fromPath(params.bdbag)
@@ -96,6 +97,7 @@ script_tinHist = Channel.fromPath("${baseDir}/scripts/tin_hist.py")
 script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py")
 script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
 script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
 script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
@@ -384,7 +386,7 @@ metadata_fl.splitCsv(sep: ",", header: false).separate(
 endsMeta.into {
   endsMeta_checkMetadata
   endsMeta_aggrQC
-  endsMeta_finalizeExecutionRun
+  endsMeta_failExecutionRun
 }
 endsManual.into {
   endsManual_trimData
@@ -395,17 +397,17 @@ endsManual.into {
 strandedMeta.into {
   strandedMeta_checkMetadata
   strandedMeta_aggrQC
-  strandedMeta_finalizeExecutionRun
+  strandedMeta_failExecutionRun
 }
 spikeMeta.into {
   spikeMeta_checkMetadata
   spikeMeta_aggrQC
-  spikeMeta_finalizeExecutionRun
+  spikeMeta_failExecutionRun
 }
 speciesMeta.into {
   speciesMeta_checkMetadata
   speciesMeta_aggrQC
-  speciesMeta_finalizeExecutionRun
+  speciesMeta_failExecutionRun
 }
 studyRID.into {
   studyRID_aggrQC
@@ -439,7 +441,7 @@ fastqCountError.into {
   fastqCountError_uploadQC
   fastqCountError_uploadProcessedFile
   fastqCountError_uploadOutputBag
-  fastqCountError_finalizeExecutionRun
+  fastqCountError_failExecutionRun
 }
 
 /*
@@ -809,7 +811,7 @@ endsInfer.into {
   endsInfer_dataQC
   endsInfer_aggrQC
   endsInfer_uploadQC
-  endsInfer_finalizeExecutionRun
+  endsInfer_failExecutionRun
 }
 strandedInfer.into {
   strandedInfer_checkMetadata
@@ -817,14 +819,14 @@ strandedInfer.into {
   strandedInfer_countData
   strandedInfer_aggrQC
   strandedInfer_uploadQC
-  strandedInfer_finalizeExecutionRun
+  strandedInfer_failExecutionRun
 }
 spikeInfer.into{
   spikeInfer_checkMetadata
   spikeInfer_getRef
   spikeInfer_aggrQC
   spikeInfer_uploadExecutionRun
-  spikeInfer_finalizeExecutionRun
+  spikeInfer_failExecutionRun
 }
 speciesInfer.into {
   speciesInfer_checkMetadata
@@ -832,7 +834,7 @@ speciesInfer.into {
   speciesInfer_aggrQC
   speciesInfer_uploadExecutionRun
   speciesInfer_uploadProcessedFile
-  speciesInfer_finalizeExecutionRun
+  speciesInfer_failExecutionRun
 }
 
 /* 
@@ -948,7 +950,7 @@ pipelineError.into {
   pipelineError_uploadQC
   pipelineError_uploadProcessedFile
   pipelineError_uploadOutputBag
-  pipelineError_finalizeExecutionRun
+  pipelineError_failExecutionRun
 }
 
 /* 
@@ -1015,6 +1017,7 @@ inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
 inputBagRID.into {
   inputBagRID_uploadExecutionRun
   inputBagRID_finalizeExecutionRun
+  inputBagRID_failExecutionRun
 }
 
 /* 
@@ -1097,6 +1100,7 @@ executionRunRID.into {
   executionRunRID_uploadProcessedFile
   executionRunRID_uploadOutputBag
   executionRunRID_finalizeExecutionRun
+  executionRunRID_failExecutionRun
 }
 
 /*
@@ -1883,13 +1887,11 @@ process uploadOutputBag {
 }
 
 // Extract output bag RID into channel
-outputBagRID_dummy = Channel.create()
-outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
-  outputBagRID_dummy
-)
-outputBagRID_dummy.ifEmpty(false)
 outputBagRID = Channel.create()
-outputBagRID.bind(outputBagRID_dummy)
+outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
+  outputBagRID
+)
+
 /* 
  * finalizeExecutionRun: finalizes the execution run
 */
@@ -1902,21 +1904,6 @@ process finalizeExecutionRun {
     val executionRunRID from executionRunRID_finalizeExecutionRun
     val inputBagRID from inputBagRID_finalizeExecutionRun
     val outputBagRID
-    val endsMeta from endsMeta_finalizeExecutionRun
-    val strandedMeta from strandedMeta_finalizeExecutionRun
-    val spikeMeta from spikeMeta_finalizeExecutionRun
-    val speciesMeta from speciesMeta_finalizeExecutionRun
-    val endsInfer from endsInfer_finalizeExecutionRun
-    val strandedInfer from strandedInfer_finalizeExecutionRun
-    val spikeInfer from spikeInfer_finalizeExecutionRun
-    val speciesInfer from speciesInfer_finalizeExecutionRun
-    val fastqCountError from fastqCountError_finalizeExecutionRun
-    val fastqCountError_details
-    val pipelineError from pipelineError_finalizeExecutionRun
-    val pipelineError_ends
-    val pipelineError_stranded
-    val pipelineError_spike
-    val pipelineError_species
 
   when:
     upload
@@ -1933,35 +1920,99 @@ process finalizeExecutionRun {
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:11:-1}
 
+  rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
+  echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
+  """
+}
+
+/* 
+ * failExecutionRun: fail the execution run
+*/
+process failExecutionRun {
+  tag "${repRID}"
+
+  input:
+    path script_uploadExecutionRun_failExecutionRun
+    path credential, stageAs: "credential.json" from deriva_failExecutionRun
+    val executionRunRID from executionRunRID_failExecutionRun
+    val inputBagRID from inputBagRID_failExecutionRun
+    val endsMeta from endsMeta_failExecutionRun
+    val strandedMeta from strandedMeta_failExecutionRun
+    val spikeMeta from spikeMeta_failExecutionRun
+    val speciesMeta from speciesMeta_failExecutionRun
+    val endsInfer from endsInfer_failExecutionRun
+    val strandedInfer from strandedInfer_failExecutionRun
+    val spikeInfer from spikeInfer_failExecutionRun
+    val speciesInfer from speciesInfer_failExecutionRun
+    val fastqCountError from fastqCountError_failExecutionRun
+    val fastqCountError_details
+    val pipelineError from pipelineError_failExecutionRun
+    val pipelineError_ends
+    val pipelineError_stranded
+    val pipelineError_spike
+    val pipelineError_species
+
+  when:
+    upload
+    fastqCountError_uploadOutputBag == 'true' || pipelineError_uploadOutputBag == 'true'
+
+  script:
+  """
+  hostname > ${repRID}.finalizeExecutionRun.log
+  ulimit -a >> ${repRID}.finalizeExecutionRun.log
+
+  executionRun=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/RID=${executionRunRID})
+  workflow=\$(echo \${executionRun} | grep -o '\\"Workflow\\":.*\\"Reference' | grep -oP '(?<=\\"Workflow\\":\\").*(?=\\",\\"Reference)')
+  genome=\$(echo \${executionRun} | grep -o '\\"Reference_Genome\\":.*\\"Input_Bag' | grep -oP '(?<=\\"Reference_Genome\\":\\").*(?=\\",\\"Input_Bag)')
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
   if [ ${fastqCountError} == false ] && [ ${pipelineError} == false ]
   then
-    rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
+    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
   elif [ ${fastqCountError} == true ]
   then
-    rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "${fastqCountError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
+    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "${fastqCountError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.finalizeExecutionRun.log
   elif [ ${pipelineError} == true ]
   then
-    pipelineError_details=\$(echo "**Submitted metadata does not match infered:**  ")
+    pipelineError_details=\$(echo "**Submitted metadata does not match infered:** ")
     if ${pipelineError_ends}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted ends = *${endsMeta}* **|** Infered ends = *${endsInfer}* ]  ")
+      if [ "${endsMeta}" == "se" ]
+      then
+        endMeta="Single End"
+      elif [ "${endsMeta}" == "pe" ]
+        endMeta="Paired End"
+      else
+        endMeta="unknown"
+      fi
+      if [ "${endsInfer}" == "se" ]
+      then
+        endInfer="Single End"
+      elif [ "${endsInfer}" == "pe" ]
+        endInfer="Paired End"
+      else
+        endInfer="unknown"
+      fi
+      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted ends = *"\${endMeta}"* **|** Infered ends = *"\${endsInfer}"* ], ")
     fi
     if ${pipelineError_stranded}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted strandedness = *${strandedMeta}* **|** Infered strandedness = *${strandedInfer}* ]  ")
+      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted strandedness = *${strandedMeta}* **|** Infered strandedness = *${strandedInfer}* ], ")
     fi
     if ${pipelineError_spike}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted spike-in = *${spikeMeta}* **|** Infered spike-in = *${spikeInfer}* ]  ")
+      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted spike-in = *${spikeMeta}* **|** Infered spike-in = *${spikeInfer}* ], ")
     fi
     if ${pipelineError_species}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted species = *${speciesMeta}* **|** Infered species = *${speciesInfer}* ]  ")
+      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted species = *${speciesMeta}* **|** Infered species = *${speciesInfer}* ], ")
     fi
-    printf "\${pipelineError_details}"
-    rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
+    pipelineError_details=\$(echo "\${pipelineError_details::-2}"
+    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.finalizeExecutionRun.log
   fi
   """
