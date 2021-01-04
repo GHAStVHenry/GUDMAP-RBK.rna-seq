@@ -338,15 +338,15 @@ process parseMetadata {
     # check not incorrect number of fastqs
     fastqCountError=false
     fastqCountError_details=""
-    if [ ${fastqCount} > 2 ]
+    if [ "${fastqCount}" -gt "2" ]
     then
       fastqCountError=true
       fastqCountError_details="Too many fastqs detected (>2)"
-    elif [ "\${endsMeta}"" == "Single Read" ] && [ ${fastqCount} != 1 ]
+    elif [ "\${endsMeta}"" == "Single Read" ] && [ "${fastqCount}" -ne "1" ]
     then
       fastqCountError=true
       fastqCountError_details="Number of fastqs detected does not match submitted endness"
-    elif [ "\${endsMeta}"" == "Paired End" ] && [ ${fastqCount} != 2 ]
+    elif [ "\${endsMeta}"" == "Paired End" ] && [ "${fastqCount}" -ne "2" ]
     then
       fastqCountError=true
       fastqCountError_details="Number of fastqs detected does not match submitted endness"
