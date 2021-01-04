@@ -136,7 +136,7 @@ inferMetadata:
     align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5F6_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
     if [[ ${align} == "" ]]; then exit 1; fi
   - >
-    singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
+    singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
     ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
     if [[ ${ended} == "" ]]; then exit 1; fi
   - pytest -m inferMetadata
@@ -192,11 +192,11 @@ alignData:
   script:
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 --version > version_hisat2.txt
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools --version > version_samtools.txt
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.se.unal.gz -S Q-Y5F6_1M.se.sam -x /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2/genome --rna-strandness F -U ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz --summary-file Q-Y5F6_1M.se.alignSummary.txt --new-summary
+  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.se.unal.gz -S Q-Y5F6_1M.se.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness F -U ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz --summary-file Q-Y5F6_1M.se.alignSummary.txt --new-summary
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.se.bam Q-Y5F6_1M.se.sam
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.bam
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.sorted.bam.bai
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.pe.unal.gz -S Q-Y5F6_1M.pe.sam -x /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2/genome --rna-strandness FR --no-mixed --no-discordant -1 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_1.fq.gz -2 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_2.fq.gz --summary-file Q-Y5F6_1M.pe.alignSummary.txt --new-summary
+  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.pe.unal.gz -S Q-Y5F6_1M.pe.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness FR --no-mixed --no-discordant -1 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_1.fq.gz -2 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_2.fq.gz --summary-file Q-Y5F6_1M.pe.alignSummary.txt --new-summary
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.pe.bam Q-Y5F6_1M.pe.sam
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.bam
   - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.sorted.bam.bai
@@ -245,9 +245,9 @@ countData:
     - merge_requests
     - schedules
   script:
-  - ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/geneID.tsv
-  - ln -s /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/Entrez.tsv
-  - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/annotation/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/sequence/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se_countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
+  - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/geneID.tsv
+  - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/Entrez.tsv
+  - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/sequence/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se_countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
   - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/calculateTPM.R --count ./test_data/counts/small/Q-Y5F6_1M.se_countData
   - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
   - assignedReads=$(grep -m 1 'Assigned' *.summary | grep -oe '\([0-9.]*\)')
@@ -312,7 +312,7 @@ dataQC:
   - echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > Q-Y5F6_1M.se.sorted.deduped.tin.xls
   - >
     for i in {"chr8","chr4","chrY"}; do
-      echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p13.v36/annotation/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
+      echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
     done | singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
   - pytest -m dataQC
 
@@ -481,7 +481,7 @@ human_BioHPC:
     - schedules
   script:
   - mkdir -p hu
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./hu/
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2 ./hu/
 
 mouse_BioHPC:
   stage: reference
@@ -493,7 +493,7 @@ mouse_BioHPC:
     - schedules
   script:
   - mkdir -p mo
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/GRCh38.p12.v31/hisat2 ./mo/
+  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2 ./mo/
 
 human_dev:
   stage: reference
