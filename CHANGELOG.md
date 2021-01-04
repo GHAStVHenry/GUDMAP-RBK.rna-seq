@@ -23,6 +23,7 @@
 * Change docker images to production
 * Add automated version badges
 * Only calculate/report tin values on regular chromosomes (from gtf)
+* **NEED TO UPDATE getRef for CI unit**
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
