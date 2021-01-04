@@ -8,8 +8,8 @@ before_script:
   - mkdir -p ~/.bdbag
 
 variables:
-  refMoVersion: "38.p6.vM22"
-  refHuVersion: "38.p12.v31"
+  refMoVersion: "38.p6.vM25"
+  refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
 
 stages:
