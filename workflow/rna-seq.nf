@@ -1883,10 +1883,11 @@ process uploadOutputBag {
 }
 
 // Extract output bag RID into channel
-outputBagRID = Channel.of(false)
+outputBagRID = Channel.create()
 outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
   outputBagRID
 )
+outputBagRID.ifEmpty(false)
 
 /* 
  * finalizeExecutionRun: finalizes the execution run
