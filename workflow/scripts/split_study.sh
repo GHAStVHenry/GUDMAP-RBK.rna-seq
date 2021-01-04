@@ -9,7 +9,7 @@ echo "curl --location --request GET 'https://www.gudmap.org/ermrest/catalog/2/en
 
 # extract replicate RIDs
 module load python/3.6.4-anaconda
-python3 ./workflow/scripts/splitStudy.py -s $1
+python3 ./workflow/scripts/split_study.py -s $1
 
 # run pipeline on replicate RIDs in parallel
 module load nextflow/20.01.0
