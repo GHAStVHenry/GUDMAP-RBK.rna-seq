@@ -360,15 +360,15 @@ process parseMetadata {
     if [ "${fastqCount}" -gt "2" ]
     then
       fastqCountError=true
-      fastqCountError_details="Too many fastqs detected (>2)"
+      fastqCountError_details="**Too many fastqs detected (>2)**"
     elif [ "\${endsMeta}" == "se" ] && [ "${fastqCount}" -ne "1" ]
     then
       fastqCountError=true
-      fastqCountError_details="Number of fastqs detected does not match submitted endness"
+      fastqCountError_details="**Number of fastqs detected does not match submitted endness**"
     elif [ "\${endsMeta}" == "pe" ] && [ "${fastqCount}" -ne "2" ]
     then
       fastqCountError=true
-      fastqCountError_details="Number of fastqs detected does not match submitted endness"
+      fastqCountError_details="**Number of fastqs detected does not match submitted endness**"
     fi
 
     # check read counts match for fastqs
@@ -381,7 +381,7 @@ process parseMetadata {
       if [ "\${r1Count}" -ne "\${r2Count}" ]
       then
         fastqReadError=true
-        fastqReadError_details="Number of reads do not match for R1 or R2, there may be a trunkation or mismatch of fastq files"
+        fastqReadError_details="**Number of reads do not match for R1 and R2:** there may be a trunkation or mismatch of fastq files"
       fi
     fi
 
