@@ -1287,7 +1287,7 @@ process alignData {
 }
 
 // Replicate rawBam for multiple process inputs
-rawBam.into {
+rawBam.set {
   rawBam_dedupData
 }
 
