@@ -1979,12 +1979,16 @@ process failExecutionRun {
   elif [ ${pipelineError} == true ]
   then
     pipelineError_details=\$(echo "**Submitted metadata does not match infered:** ")
+    #pipelineError_details=\$(echo "**Submitted metadata does not match infered:**\n ")
+    #pipelineError_details=\$(echo "|Metadata|Submitted value|Inferred value|\n ")
+    #pipelineError_details=\$(echo "|:-:|-:|-:|\n")
     if ${pipelineError_ends}
     then
       if [ "${endsMeta}" == "se" ]
       then
         endMeta="Single End"
       elif [ "${endsMeta}" == "pe" ]
+      then
         endMeta="Paired End"
       else
         endMeta="unknown"
@@ -1998,18 +2002,22 @@ process failExecutionRun {
         endInfer="unknown"
       fi
       pipelineError_details=\$(echo \${pipelineError_details}"Paired_End: submitted value = \""\${endMeta}"\" while inferred value = \""\${endsInfer}"\". ")
+      #pipelineError_details=\$(echo \${pipelineError_details}"|*Paired_End*|"\${endMeta}"|"\${endsInfer}"|\n ")
     fi
     if ${pipelineError_stranded}
     then
       pipelineError_details=\$(echo \${pipelineError_details}"Strandedness: submitted value = \"${strandedMeta}\" while inferred value = \"${strandedInfer}\". ")
+      #pipelineError_details=\$(echo \${pipelineError_details}"|*Strandedness*|${strandedMeta}|"${strandedInfer}|\n ")
     fi
     if ${pipelineError_spike}
     then
       pipelineError_details=\$(echo \${pipelineError_details}"Used_Spike_Ins: submitted value = \"${spikeMeta}\" while inferred value = \"${spikeInfer}\". ")
+      #pipelineError_details=\$(echo \${pipelineError_details}"|*Used_Spike_Ins*|${spikeMeta}|${spikeInfer}|\n ")
     fi
     if ${pipelineError_species}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Species: submitted value = \"${speciesMeta}\" while inferred value = \"${speciesInfer}\". ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Species: submitted value = \"${speciesMeta}\" while inferred value = \"${speciesInfer}\". ")
+      #pipelineError_details=\$(echo \${pipelineError_details}"|*Species*|${speciesMeta}|"${speciesInfer}|\n ")
     fi
     pipelineError_details=\$(echo "\${pipelineError_details::-1}"
     rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
