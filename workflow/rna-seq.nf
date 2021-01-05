@@ -1980,8 +1980,8 @@ process failExecutionRun {
   then
     #pipelineError_details=\$(echo "**Submitted metadata does not match infered:** ")
     pipelineError_details=\$(echo "**Submitted metadata does not match infered:**\\n ")
-    pipelineError_details=\$(echo "|Metadata|Submitted value|Inferred value|\\n ")
-    pipelineError_details=\$(echo "|:-:|-:|-:|\\n")
+    pipelineError_details=\$(echo \${pipelineError_details}"|Metadata|Submitted value|Inferred value|\\n ")
+    pipelineError_details=\$(echo \${pipelineError_details}"|:-:|-:|-:|\\n")
     if ${pipelineError_ends}
     then
       if [ "${endsMeta}" == "se" ]
