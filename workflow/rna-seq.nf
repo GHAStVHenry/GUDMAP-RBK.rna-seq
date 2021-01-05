@@ -1997,21 +1997,21 @@ process failExecutionRun {
       else
         endInfer="unknown"
       fi
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted ends = *"\${endMeta}"* **|** Infered ends = *"\${endsInfer}"* ], ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Paired_End: submitted value = \""\${endMeta}"\" while inferred value = \""\${endsInfer}"\". ")
     fi
     if ${pipelineError_stranded}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted strandedness = *${strandedMeta}* **|** Infered strandedness = *${strandedInfer}* ], ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Strandedness: submitted value = \"${strandedMeta}\" while inferred value = \"${strandedInfer}\". ")
     fi
     if ${pipelineError_spike}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted spike-in = *${spikeMeta}* **|** Infered spike-in = *${spikeInfer}* ], ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Used_Spike_Ins: submitted value = \"${spikeMeta}\" while inferred value = \"${spikeInfer}\". ")
     fi
     if ${pipelineError_species}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"[ Submitted species = *${speciesMeta}* **|** Infered species = *${speciesInfer}* ], ")
+      pipelineError_details=\$(echo \${pipelineError_details}"[ Species: submitted value = \"${speciesMeta}\" while inferred value = \"${speciesInfer}\". ")
     fi
-    pipelineError_details=\$(echo "\${pipelineError_details::-2}"
+    pipelineError_details=\$(echo "\${pipelineError_details::-1}"
     rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.finalizeExecutionRun.log
   fi
