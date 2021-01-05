@@ -875,19 +875,21 @@ process checkMetadata {
     fi
     if [ "${strandedMeta}" != "${strandedInfer}" ]
     then
-      if [ "${strandedMeta}" == "unstranded" ]
+      pipelineError=true
+      pipelineError_stranded=true
+      echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+      if [ "${strandedMeta}" == "stranded" ]
       then
-        pipelineError=true
-        pipelineError_stranded=true
-        echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
-      elif [ "${strandedInfer}" != "forward"] || [ "${strandedInfer}" != "reverse" ]
-      then
-        pipelineError=true
-        pipelineError_stranded=true
-        echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        if [ "${strandedInfer}" == "forward"] || [ "${strandedInfer}" == "reverse" ]
+        then
+          pipelineError=false
+          pipelineError_stranded=false
+          echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        else
+          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        fi
       else
-        pipelineError_stranded=false
-        echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
       fi
     else
       pipelineError_stranded=false
