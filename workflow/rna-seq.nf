@@ -505,7 +505,7 @@ readLengthInfer_fl.splitCsv(sep: ",", header: false).separate(
   readLengthInfer
 )
 
-// Replicate infered read length for multiple process inputs
+// Replicate inferred read length for multiple process inputs
 readLengthInfer.into {
   readLengthInfer_aggrQC
   readLengthInfer_uploadQC
@@ -761,7 +761,7 @@ process inferMetadata {
     # infer experimental setting from dedup bam
     echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
     infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt
-    echo -e "LOG: infered" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: inferred" >> ${repRID}.inferMetadata.log
 
     ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
     fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
@@ -789,7 +789,7 @@ process inferMetadata {
     fi
     echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
 
-    # write infered metadata to file
+    # write inferred metadata to file
     echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" 1>> infer.csv
     """
 }
@@ -853,7 +853,7 @@ speciesInfer.into {
 }
 
 /* 
- * checkMetadata: checks the submitted metada against infered
+ * checkMetadata: checks the submitted metada against inferred
 */
 process checkMetadata {
   tag "${repRID}"
@@ -878,15 +878,15 @@ process checkMetadata {
     ulimit -a >> ${repRID}.checkMetadata.log
 
     pipelineError=false
-    # check if submitted metadata matches infered
+    # check if submitted metadata matches inferred
     if [ "${endsMeta}" != "${endsInfer}" ]
     then
       pipelineError=true
       pipelineError_ends=true
-      echo -e "LOG: ends do not match: Submitted=${endsMeta}; Infered=${endsInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: ends do not match: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
     else
       pipelineError_ends=false
-      echo -e "LOG: ends matches: Submitted=${endsMeta}; Infered=${endsInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: ends matches: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
     fi
     if [ "${strandedMeta}" != "${strandedInfer}" ]
     then
@@ -894,39 +894,39 @@ process checkMetadata {
       pipelineError_stranded=true
       if [ "${strandedMeta}" == "stranded" ]
       then
-        if [ "${strandedInfer}" == "forward"] | [ "${strandedInfer}" == "reverse" ]
+        if [[ "${strandedInfer}" == "forward" ]] || [[ "${strandedInfer}" == "reverse" ]]
         then
           pipelineError=false
           pipelineError_stranded=false
-          echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
         else
-          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
         fi
       else
-        echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
       fi
     else
       pipelineError=false
       pipelineError_stranded=false
-      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
     fi
     if [ "${spikeMeta}" != "${spikeInfer}" ]
     then
       pipelineError=true
       pipelineError_spike=true
-      echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Infered=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
     else
       pipelineError_spike=false
-      echo -e "LOG: stranded matches: Submitted=${spikeMeta}; Infered=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: stranded matches: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
     fi
     if [ "${speciesMeta}" != "${speciesInfer}" ]
     then
       pipelineError=true
       pipelineError_species=true
-      echo -e "LOG: species does not match: Submitted=${speciesMeta}; Infered=${speciesInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: species does not match: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
     else
       pipelineError_species=false
-      echo -e "LOG: species matches: Submitted=${speciesMeta}; Infered=${speciesInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: species matches: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
     fi
 
     # create dummy output bag rid if failure
@@ -1454,7 +1454,7 @@ assignedReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   assignedReadsInfer
 )
 
-// Replicate infered assigned reads for multiple process inputs
+// Replicate inferred assigned reads for multiple process inputs
 assignedReadsInfer.into {
   assignedReadsInfer_aggrQC
   assignedReadsInfer_uploadQC
@@ -1499,7 +1499,7 @@ rawReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   rawReadsInfer
 )
 
-// Replicate infered raw reads for multiple process inputs
+// Replicate inferred raw reads for multiple process inputs
 rawReadsInfer.into {
   rawReadsInfer_aggrQC
   rawReadsInfer_uploadQC
@@ -1654,9 +1654,9 @@ process aggrQC {
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
     if [ "${params.speciesForce}" == "" ]
     then
-      echo -e "Infered\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+      echo -e "Inferred\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
     else
-      echo -e "Infered\t${speciesI} (FORCED)\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+      echo -e "Inferred\t${speciesI} (FORCED)\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
     fi
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
 
