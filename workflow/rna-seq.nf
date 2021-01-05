@@ -2003,12 +2003,12 @@ process failExecutionRun {
         endInfer="unknown"
       fi
       #pipelineError_details=\$(echo \${pipelineError_details}"Paired_End: submitted value = \\""\${endMeta}"\\" while inferred value = \\""\${endInfer}"\\". ")
-      pipelineError_details=\$(echo \${pipelineError_details}"|*Paired_End*|"\${endMeta}"|"\${endsInfer}"|\\n ")
+      pipelineError_details=\$(echo \${pipelineError_details}"|*Paired_End*|"\${endMeta}"|"\${endInfer}"|\\n ")
     fi
     if ${pipelineError_stranded}
     then
       #pipelineError_details=\$(echo \${pipelineError_details}"Strandedness: submitted value = \\"${strandedMeta}\\" while inferred value = \\"${strandedInfer}\\". ")
-      pipelineError_details=\$(echo \${pipelineError_details}"|*Strandedness*|${strandedMeta}|"${strandedInfer}|\\n ")
+      pipelineError_details=\$(echo \${pipelineError_details}"|*Strandedness*|${strandedMeta}|${strandedInfer}|\\n ")
     fi
     if ${pipelineError_spike}
     then
