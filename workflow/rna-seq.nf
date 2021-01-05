@@ -892,10 +892,9 @@ process checkMetadata {
     then
       pipelineError=true
       pipelineError_stranded=true
-      echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
       if [ "${strandedMeta}" == "stranded" ]
       then
-        if [ "${strandedInfer}" == "forward"] || [ "${strandedInfer}" == "reverse" ]
+        if [ "${strandedInfer}" == "forward"] | [ "${strandedInfer}" == "reverse" ]
         then
           pipelineError=false
           pipelineError_stranded=false
@@ -907,6 +906,7 @@ process checkMetadata {
         echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
       fi
     else
+      pipelineError=false
       pipelineError_stranded=false
       echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Infered=${strandedInfer}" >> ${repRID}.checkMetadata.log
     fi
