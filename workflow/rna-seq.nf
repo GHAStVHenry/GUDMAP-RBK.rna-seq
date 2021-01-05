@@ -310,8 +310,21 @@ process parseMetadata {
     echo -e "LOG: study RID metadata parsed: \${study}" >> ${repRID}.parseMetadata.log
 
     # get endedness metadata
-    endsMeta=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p endsMeta)
-    echo -e "LOG: endedness metadata parsed: \${endsMeta}" >> ${repRID}.parseMetadata.log
+    endsRaw=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p endsMeta)
+    echo -e "LOG: endedness metadata parsed: \${endsRaw}" >> ${repRID}.parseMetadata.log
+    if [ "\${endsRaw}" == "Single Read" ]
+    then
+      endsMeta="se"
+    elif [ "\${endsRaw}" == "Paired End" ]
+    then
+      endsMeta="pe"
+    else
+      endsMeta="unknown"
+    fi
+    if [ "\${endsRaw}" == "" ]
+    then
+      endsRaw="_No value_"
+    fi
 
     # ganually get endness
     endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p endsManual)
@@ -344,18 +357,18 @@ process parseMetadata {
     then
       fastqCountError=true
       fastqCountError_details="Too many fastqs detected (>2)"
-    elif [ "\${endsMeta}"" == "Single Read" ] && [ "${fastqCount}" -ne "1" ]
+    elif [ "\${endsMeta}"" == "se" ] && [ "${fastqCount}" -ne "1" ]
     then
       fastqCountError=true
       fastqCountError_details="Number of fastqs detected does not match submitted endness"
-    elif [ "\${endsMeta}"" == "Paired End" ] && [ "${fastqCount}" -ne "2" ]
+    elif [ "\${endsMeta}"" == "pe" ] && [ "${fastqCount}" -ne "2" ]
     then
       fastqCountError=true
       fastqCountError_details="Number of fastqs detected does not match submitted endness"
     fi
 
     # save design file
-    echo -e "\${endsMeta},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
+    echo -e "\${endsMeta},\${endsRaw},\${endsManual},\${stranded},\${strandedRaw},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
 
     # save fastq count error file
     echo -e "\${fastqCountError},\${fastqCountError_details}" > fastqCountError.csv
@@ -364,6 +377,7 @@ process parseMetadata {
 
 // Split metadata into separate channels
 endsMeta = Channel.create()
+endsRaw = Channel.create()
 endsManual = Channel.create()
 strandedMeta = Channel.create()
 spikeMeta = Channel.create()
@@ -373,6 +387,7 @@ expRID = Channel.create()
 studyRID = Channel.create()
 metadata_fl.splitCsv(sep: ",", header: false).separate(
   endsMeta,
+  endsRaw,
   endsManual,
   strandedMeta,
   spikeMeta,
@@ -1939,6 +1954,7 @@ process failExecutionRun {
     val executionRunRID from executionRunRID_failExecutionRun
     val inputBagRID from inputBagRID_failExecutionRun
     val endsMeta from endsMeta_failExecutionRun
+    val endsRaw
     val strandedMeta from strandedMeta_failExecutionRun
     val spikeMeta from spikeMeta_failExecutionRun
     val speciesMeta from speciesMeta_failExecutionRun
@@ -1985,15 +2001,6 @@ process failExecutionRun {
     pipelineError_details=\$(echo \${pipelineError_details}"|:-:|-:|-:|\\n")
     if ${pipelineError_ends}
     then
-      if [ "${endsMeta}" == "se" ]
-      then
-        endMeta="Single End"
-      elif [ "${endsMeta}" == "pe" ]
-      then
-        endMeta="Paired End"
-      else
-        endMeta="unknown"
-      fi
       if [ "${endsInfer}" == "se" ]
       then
         endInfer="Single End"
@@ -2003,7 +2010,7 @@ process failExecutionRun {
       else
         endInfer="unknown"
       fi
-      pipelineError_details=\$(echo \${pipelineError_details}"|Paired End|"\${endMeta}"|"\${endInfer}"|\\n")
+      pipelineError_details=\$(echo \${pipelineError_details}"|Paired End|${endsRaw}|"\${endInfer}"|\\n")
     fi
     if ${pipelineError_stranded}
     then
