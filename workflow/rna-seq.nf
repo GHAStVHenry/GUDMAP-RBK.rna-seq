@@ -2000,7 +2000,8 @@ process failExecutionRun {
         endInfer="Paired End"
       else
         endInfer="unknown"
-      fipipelineError_details=\$(echo \${pipelineError_details}"|Paired End|"\${endMeta}"|"\${endInfer}"|\\n")
+      fi
+      pipelineError_details=\$(echo \${pipelineError_details}"|Paired End|"\${endMeta}"|"\${endInfer}"|\\n")
     fi
     if ${pipelineError_stranded}
     then
@@ -2014,7 +2015,7 @@ process failExecutionRun {
     then
       pipelineError_details=\$(echo \${pipelineError_details}"|Species|${speciesMeta}|${speciesInfer}|\\n")
     fi
-    #pipelineError_details=\${pipelineError_details::-2}
+    pipelineError_details=\${pipelineError_details::-2}
     rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.finalizeExecutionRun.log
   fi
