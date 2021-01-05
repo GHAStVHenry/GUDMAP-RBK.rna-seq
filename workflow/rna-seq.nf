@@ -1997,6 +1997,7 @@ process failExecutionRun {
       then
         endInfer="Single End"
       elif [ "${endsInfer}" == "pe" ]
+      then
         endInfer="Paired End"
       else
         endInfer="unknown"
