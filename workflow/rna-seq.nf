@@ -368,7 +368,7 @@ process parseMetadata {
     fi
 
     # save design file
-    echo -e "\${endsMeta},\${endsRaw},\${endsManual},\${stranded},\${strandedRaw},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
+    echo -e "\${endsMeta},\${endsRaw},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
 
     # save fastq count error file
     echo -e "\${fastqCountError},\${fastqCountError_details}" > fastqCountError.csv
