@@ -374,7 +374,7 @@ process parseMetadata {
     # check read counts match for fastqs
     fastqReadError=false
     fastqReadError_details=""
-    if [ "\${endsMeta}" == "pe" ]
+    if [ "\${endsManual}" == "pe" ]
     then
       r1Count=\$(zcat ${fastq[0]} | wc -l)
       r2Count=\$(zcat ${fastq[1]} | wc -l)
@@ -2081,13 +2081,6 @@ process failPreExecutionRun {
   """
   hostname > ${repRID}.failPreExecutionRun.log
   ulimit -a >> ${repRID}.failPreExecutionRun.log
-
-  executionRun=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/RID=${executionRunRID})
-  workflow=\$(echo \${executionRun} | grep -o '\\"Workflow\\":.*\\"Reference' | grep -oP '(?<=\\"Workflow\\":\\").*(?=\\",\\"Reference)')
-  genome=\$(echo \${executionRun} | grep -o '\\"Reference_Genome\\":.*\\"Input_Bag' | grep -oP '(?<=\\"Reference_Genome\\":\\").*(?=\\",\\"Input_Bag)')
-
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
 
   errorDetails=""
   if [ ${fastqCountError} == true ]
