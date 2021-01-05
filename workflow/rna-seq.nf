@@ -2210,7 +2210,7 @@ process failExecutionRun {
       pipelineError_details=\$(echo \${pipelineError_details}"|Species|${speciesMeta}|${speciesInfer}|\\n")
     fi
     pipelineError_details=\${pipelineError_details::-2}
-    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
+    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d \"\${pipelineError_details}\" -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
   fi
   """
