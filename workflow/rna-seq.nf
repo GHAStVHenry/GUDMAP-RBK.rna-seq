@@ -2002,22 +2002,22 @@ process failExecutionRun {
       else
         endInfer="unknown"
       fi
-      pipelineError_details=\$(echo \${pipelineError_details}"Paired_End: submitted value = \""\${endMeta}"\" while inferred value = \""\${endsInfer}"\". ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Paired_End: submitted value = \\""\${endMeta}"\\" while inferred value = \\""\${endsInfer}"\\". ")
       #pipelineError_details=\$(echo \${pipelineError_details}"|*Paired_End*|"\${endMeta}"|"\${endsInfer}"|\\n ")
     fi
     if ${pipelineError_stranded}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"Strandedness: submitted value = \"${strandedMeta}\" while inferred value = \"${strandedInfer}\". ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Strandedness: submitted value = \\"${strandedMeta}\\" while inferred value = \\"${strandedInfer}\\". ")
       #pipelineError_details=\$(echo \${pipelineError_details}"|*Strandedness*|${strandedMeta}|"${strandedInfer}|\\n ")
     fi
     if ${pipelineError_spike}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"Used_Spike_Ins: submitted value = \"${spikeMeta}\" while inferred value = \"${spikeInfer}\". ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Used_Spike_Ins: submitted value = \\"${spikeMeta}\\" while inferred value = \\"${spikeInfer}\\". ")
       #pipelineError_details=\$(echo \${pipelineError_details}"|*Used_Spike_Ins*|${spikeMeta}|${spikeInfer}|\\n ")
     fi
     if ${pipelineError_species}
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"Species: submitted value = \"${speciesMeta}\" while inferred value = \"${speciesInfer}\". ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Species: submitted value = \\"${speciesMeta}\\" while inferred value = \\"${speciesInfer}\\". ")
       #pipelineError_details=\$(echo \${pipelineError_details}"|*Species*|${speciesMeta}|"${speciesInfer}|\\n ")
     fi
     pipelineError_details=\$(echo "\${pipelineError_details::-1}")
