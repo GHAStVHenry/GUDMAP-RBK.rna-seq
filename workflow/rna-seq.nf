@@ -1119,6 +1119,7 @@ inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
 inputBagRID.into {
   inputBagRID_uploadExecutionRun
   inputBagRID_finalizeExecutionRun
+  inputBagRID_failPreExecutionRun
   inputBagRID_failExecutionRun
 }
 
@@ -2064,8 +2065,8 @@ process failPreExecutionRun {
     path credential, stageAs: "credential.json" from deriva_failPreExecutionRun
     val spike from spikeMeta_failPreExecutionRun
     val species from speciesMeta_failPreExecutionRun
-    val inputBagRID from inputBagRID_failExecutionRun
-    val fastqCountError from fastqCountError_failExecutionRun
+    val inputBagRID from inputBagRID_failPreExecutionRun
+    val fastqCountError from fastqCountError_failPreExecutionRun
     val fastqCountError_details
     val fastqReadError from fastqReadError_failPreExecutionRun
     val fastqReadError_details
