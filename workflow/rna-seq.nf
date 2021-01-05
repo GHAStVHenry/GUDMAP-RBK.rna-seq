@@ -2002,7 +2002,7 @@ process failExecutionRun {
       else
         endInfer="unknown"
       fi
-      pipelineError_details=\$(echo \${pipelineError_details}"Paired_End: submitted value = \\""\${endMeta}"\\" while inferred value = \\""\${endsInfer}"\\". ")
+      pipelineError_details=\$(echo \${pipelineError_details}"Paired_End: submitted value = \\""\${endMeta}"\\" while inferred value = \\""\${endInfer}"\\". ")
       #pipelineError_details=\$(echo \${pipelineError_details}"|*Paired_End*|"\${endMeta}"|"\${endsInfer}"|\\n ")
     fi
     if ${pipelineError_stranded}
