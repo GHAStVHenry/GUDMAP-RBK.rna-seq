@@ -272,7 +272,7 @@ if (fastqsForce != "") {
       fastqs_trimData
     }
 } else {
-  fastqs.set {
+  fastqs.into {
     fastqs_parseMetadata
     fastqs_trimData
   }
