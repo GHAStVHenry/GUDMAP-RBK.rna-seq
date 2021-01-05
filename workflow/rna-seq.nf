@@ -2121,13 +2121,13 @@ process failPreExecutionRun {
   echo \${exist} >> ${repRID}.failPreExecutionRun.log
   if [ "\${exist}" == "[]" ]
   then
-    rid=\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d \${errorDetails} -o ${source} -c \${cookie} -u F)
+    rid=\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
     echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
     echo \${rid} >> ${repRID}.failPreExecutionRun.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d \${errorDetails} -o ${source} -c \${cookie} -u \${rid})
+    executionRun_rid==\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
   fi
   """
@@ -2210,7 +2210,7 @@ process failExecutionRun {
       pipelineError_details=\$(echo \${pipelineError_details}"|Species|${speciesMeta}|${speciesInfer}|\\n")
     fi
     pipelineError_details=\${pipelineError_details::-2}
-    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d \"\${pipelineError_details}\" -o ${source} -c \${cookie} -u ${executionRunRID})
+    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
   fi
   """
