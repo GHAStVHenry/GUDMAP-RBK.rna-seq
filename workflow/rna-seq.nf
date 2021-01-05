@@ -290,6 +290,7 @@ process parseMetadata {
     path experimentSettings, stageAs: "ExperimentSettings.csv" from experimentSettingsMeta
     path experiment from experimentMeta
     path (fastq) from fastqs_parseMetadata
+    val fastqCount
 
   output:
     path "design.csv" into metadata_fl
@@ -375,13 +376,15 @@ process parseMetadata {
     fastqReadError_details=""
     if [ "\${endsMeta}" == "pe" ]
     then
-      r1Count=\$(echo \$(zcat ${fastq[0]} | wc -l)/4 | bc)
-      r2Count=\$(echo \$(zcat ${fastq[1]} | wc -l)/4 | bc)
-      if [ \${r1Count} -ne \${r2Count} ]
+      r1Count=\$(zcat ${fastq[0]} | wc -l)
+      r2Count=\$(zcat ${fastq[1]} | wc -l)
+      if [ "\${r1Count}" -ne "\${r2Count}" ]
       then
         fastqReadError=true
         fastqReadError_details="Number of reads do not match for R1 or R2, there may be a trunkation or mismatch of fastq files"
       fi
+    fi
+
     # save design file
     echo -e "\${endsMeta},\${endsRaw},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
 
