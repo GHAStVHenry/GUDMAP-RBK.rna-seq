@@ -575,7 +575,7 @@ fastqsTrim.into {
 }
 
 // Combine inputs of getRefInfer
-getRefInferInput = referenceInfer.combine(deriva_getRefInfer.combine(script_refDataInfer))
+getRefInferInput = referenceInfer.combine(deriva_getRefInfer.combine(script_refDataInfer.combine(fastqCountError_getRefInfer.combine(fastqReadError_getRefInfer))))
 
 /*
   * getRefInfer: dowloads appropriate reference for metadata inference
@@ -584,17 +584,15 @@ process getRefInfer {
   tag "${refName}"
 
   input:
-    tuple val (refName), path (credential, stageAs: "credential.json"), path (script_refDataInfer) from getRefInferInput
-    val fastqCountError_getRefInfer
-    val fastqReadError_getRefInfer
+    tuple val (refName), path (credential, stageAs: "credential.json"), path (script_refDataInfer), val (fastqCountError), val (fastqReadError) from getRefInferInput
 
   output:
     tuple val (refName), path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
     path ("${refName}", type: 'dir') into bedInfer
 
   when:
-    fastqCountError_getRefInfer == "false"
-    fastqReadError_getRefInfer == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
 
   script:
     """
@@ -602,10 +600,10 @@ process getRefInfer {
     ulimit -a >> ${repRID}.${refName}.getRefInfer.log
 
     # link credential file for authentication
-    echo -e "LOG: linking deriva credentials" >> ${repRID}.getRefInfer.log
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.${refName}.getRefInfer.log
     mkdir -p ~/.deriva
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json
-    echo -e "LOG: linked" >> ${repRID}.getRefInfer.log
+    echo -e "LOG: linked" >> ${repRID}.${refName}.getRefInfer.log
 
     # set the reference name
     if [ "${refName}" == "ERCC" ]
