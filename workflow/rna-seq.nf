@@ -2122,7 +2122,7 @@ process failPreExecutionRun {
   if [ "\${exist}" == "[]" ]
   then
     rid=\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
-    echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
+    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun.log
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
