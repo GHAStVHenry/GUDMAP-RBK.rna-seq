@@ -62,7 +62,7 @@ def main():
 
     # Get endedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "endsMeta"):
-        endsMeta = metaFile.Paired_End.unique()
+        endsMeta = metaFile.Paired_End.unique()[0]
         print(endsMeta)
 
     # Manually get endness count from 'File.csv'
