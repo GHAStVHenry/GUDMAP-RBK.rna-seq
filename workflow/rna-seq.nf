@@ -344,7 +344,7 @@ process parseMetadata {
 
     # get read length metadata
     readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p readLength)
-    if [ "\${readLength}" = "nan"]
+    if [ "\${readLength}" = "nan" ]
     then
       readLength="NA"
     fi
@@ -357,11 +357,11 @@ process parseMetadata {
     then
       fastqCountError=true
       fastqCountError_details="Too many fastqs detected (>2)"
-    elif [ "\${endsMeta}"" == "se" ] && [ "${fastqCount}" -ne "1" ]
+    elif [ "\${endsMeta}" == "se" ] && [ "${fastqCount}" -ne "1" ]
     then
       fastqCountError=true
       fastqCountError_details="Number of fastqs detected does not match submitted endness"
-    elif [ "\${endsMeta}"" == "pe" ] && [ "${fastqCount}" -ne "2" ]
+    elif [ "\${endsMeta}" == "pe" ] && [ "${fastqCount}" -ne "2" ]
     then
       fastqCountError=true
       fastqCountError_details="Number of fastqs detected does not match submitted endness"
