@@ -2088,7 +2088,7 @@ process failPreExecutionRun {
     errorDetails=\$(echo ${fastqCountError_details}"\\n")
   elif [ ${fastqReadError} == true ]
   then
-    errorDetails=\$(echo \$(errorDetails)${pipelineError}"\\n")
+    errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
   fi
 
   echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun.log
