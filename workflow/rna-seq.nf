@@ -1954,7 +1954,7 @@ process failExecutionRun {
 
   when:
     upload
-    fastqCountError_uploadOutputBag == 'true' || pipelineError_uploadOutputBag == 'true'
+    fastqCountError_failExecutionRun == 'true' || pipelineError_failExecutionRun == 'true'
 
   script:
   """
