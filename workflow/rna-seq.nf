@@ -159,7 +159,7 @@ Development            : ${params.dev}
  */
 process getBag {
   tag "${repRID}"
-  publishDir "${outDir}/inputBag", mode: 'copy', pattern: "Replicate_*.zip"
+  publishDir "${outDir}/inputBag", mode: 'copy', pattern: "*_inputBag_*.zip"
 
   input:
     path credential, stageAs: "credential.json" from deriva_getBag
