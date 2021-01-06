@@ -701,7 +701,7 @@ process downsampleData {
 }
 
 // Replicate the dowsampled fastq's and attatched to the references
-inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect())))
+inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect().combine(fastqCountError_alignSampleData.combine(val fastqReadError_alignSampleData)))))
 
 /*
  * alignSampleData: aligns the downsampled reads to a reference database
@@ -710,9 +710,7 @@ process alignSampleData {
   tag "${ref}"
 
   input:
-    tuple val (ends), val (ref), path (hisat2), path (fna), path (gtf), path (fastq1), path (fastq2) from inferInput
-    val fastqCountError_alignSampleData
-    val fastqReadError_alignSampleData
+    tuple val (ends), val (ref), path (hisat2), path (fna), path (gtf), path (fastq1), path (fastq2), val (fastqCountError), val (fastqReadError) from inferInput
 
   output:
     path ("${ref}.sampled.sorted.bam") into sampleBam
@@ -720,8 +718,8 @@ process alignSampleData {
     path ("${ref}.alignSampleSummary.txt") into alignSampleQC
 
   when:
-    fastqCountError_alignSampleData == "false"
-    fastqReadError_alignSampleData == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
 
   script:
     """
