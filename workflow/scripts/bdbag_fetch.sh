@@ -10,5 +10,5 @@ then
     done
 elif [ "${3}" == "TEST" ]
 then
-    bdbag --resolve-fetch all --fetch-filter filename\$*.txt ${1}
+    bdbag --resolve-fetch all --fetch-filter filename\$*.txt ${1} --debug
 fi
