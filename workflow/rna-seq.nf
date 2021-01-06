@@ -701,7 +701,7 @@ process downsampleData {
 }
 
 // Replicate the dowsampled fastq's and attatched to the references
-inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect().combine(fastqCountError_alignSampleData.combine(val fastqReadError_alignSampleData)))))
+inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect().combine(fastqCountError_alignSampleData.combine(fastqReadError_alignSampleData)))))
 
 /*
  * alignSampleData: aligns the downsampled reads to a reference database
