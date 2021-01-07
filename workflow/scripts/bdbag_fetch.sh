@@ -1,19 +1,19 @@
 #!/bin/bash
 
 bdbag --materialize ${1} --debug
-validateError=true
-bdbag --validate full ${1} && validateError=false
-if [ ${validateError} == true ]
+validateError="true"
+bdbag --validate full ${1} && validateError="false"
+if [ "${validateError}" == "true" ]
 then
     n=0
     until [ "${n}" -ge "3" ]
     do
-        bdbag --resolve-fetch missing --validate full ${1} --debug && validateError=false && break
+        bdbag --resolve-fetch missing --validate full ${1} --debug && validateError="false" && break
         n=$((n+1)) 
         sleep 15
     done
 fi
-if [ ${validateError} == true ]
+if [ "${validateError}" == "true" ]
 then
     exit 1
 fi
