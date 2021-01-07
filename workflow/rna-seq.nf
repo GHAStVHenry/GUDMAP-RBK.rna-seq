@@ -840,36 +840,44 @@ process inferMetadata {
       fi
     fi
 
-    # infer experimental setting from dedup bam
-    echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
-    infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt
-    echo -e "LOG: inferred" >> ${repRID}.inferMetadata.log
+    if [ !\${speciesError} ] && [ "${speciesForce}" = "" ]
+    then
+      # infer experimental setting from dedup bam
+      echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
+      infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt
+      echo -e "LOG: inferred" >> ${repRID}.inferMetadata.log
 
-    ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
-    fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
-    if [ \${ended} == "PairEnd" ]
-    then
-      ends="pe"
-      percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
-      percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
-    elif [ \${ended} == "SingleEnd" ]
-    then
-      ends="se"
-      percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
-      percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
-    fi
-    echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
-    echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
-    if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
-    then
-      stranded="forward"
-    elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
-    then
-      stranded="reverse"
+      ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
+      fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
+      if [ \${ended} == "PairEnd" ]
+      then
+        ends="pe"
+        percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
+        percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
+      elif [ \${ended} == "SingleEnd" ]
+      then
+        ends="se"
+        percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
+        percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
+      fi
+      echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
+      echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
+      if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
+      then
+        stranded="forward"
+      elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
+      then
+        stranded="reverse"
+      else
+        stranded="unstranded"
+      fi
+      echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
     else
-      stranded="unstranded"
+      ends=""
+      stranded=""
+      spike=""
+      species=""
     fi
-    echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
 
     # write inferred metadata to file
     echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" 1>> infer.csv
