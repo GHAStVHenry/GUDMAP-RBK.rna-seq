@@ -253,7 +253,7 @@ process getData {
     echo -e "LOG: fetched" >> ${repRID}.getData.log
     
     fastqCount=\$(ls *.fastq.gz | wc -l)
-    echo "\${fastqCount}"" > fastqCount.csv
+    echo "\${fastqCount}" > fastqCount.csv
     """
 }
 
