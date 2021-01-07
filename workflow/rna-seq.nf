@@ -828,6 +828,7 @@ process inferMetadata {
     fi
     if [ "${speciesForce}" != "" ]
     then
+      speciesError=false
       echo -e "LOG: species overridden to: ${speciesForce}"
       species="${speciesForce}"
       if [ "${speciesForce}" == "Homo sapiens" ]
@@ -841,7 +842,7 @@ process inferMetadata {
       fi
     fi
 
-    if [ !\${speciesError} ] && [ "${speciesForce}" == "" ]
+    if [ !\${speciesError} ]
     then
       # infer experimental setting from dedup bam
       echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
