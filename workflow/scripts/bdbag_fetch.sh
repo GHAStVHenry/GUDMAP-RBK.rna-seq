@@ -10,5 +10,20 @@ then
     done
 elif [ "${3}" == "TEST" ]
 then
-    bdbag --resolve-fetch all --fetch-filter filename\$*.txt ${1} --debug
+    bdbag --materialize ${1} --debug
+    validateError=true
+    bdbag --validate full ${1} && validateError=false
+    if validateError
+    then
+        n=0
+        until [ "${n}" -ge "3" ]
+        do
+            bdbag --resolve-fetch missing --validate full ${1} --debug && validateError=false && break
+            n=$((n+1)) 
+            sleep 15
+        done
+    fi
+    if validateError
+    then
+        exit 1
 fi

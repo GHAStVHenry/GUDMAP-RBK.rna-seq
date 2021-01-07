@@ -945,21 +945,21 @@ speciesError_fl.splitCsv(sep: ",", header: false).separate(
 )
 
 //  Replicate errors for multiple process inputs
-fastqCountError.into {
-  fastqCountError_checkMetadata
-  fastqCountError_uploadExecutionRun
-  fastqCountError_getRef
-  fastqCountError_alignData
-  fastqCountError_dedupData
-  fastqCountError_makeBigWig
-  fastqCountError_countData
-  fastqCountError_fastqc
-  fastqCountError_dataQC
-  fastqCountError_aggrQC
-  fastqCountError_uploadQC
-  fastqCountError_uploadProcessedFile
-  fastqCountError_uploadOutputBag
-  fastqCountError_failPreExecutionRun
+speciesError.into {
+  speciesError_checkMetadata
+  speciesError_uploadExecutionRun
+  speciesError_getRef
+  speciesError_alignData
+  speciesError_dedupData
+  speciesError_makeBigWig
+  speciesError_countData
+  speciesError_fastqc
+  speciesError_dataQC
+  speciesError_aggrQC
+  speciesError_uploadQC
+  speciesError_uploadProcessedFile
+  speciesError_uploadOutputBag
+  speciesError_failPreExecutionRun
 }
 
 /* 
