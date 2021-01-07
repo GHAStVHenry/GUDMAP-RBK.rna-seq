@@ -3,7 +3,7 @@
 bdbag --materialize ${1} --debug
 validateError=true
 bdbag --validate full ${1} && validateError=false
-if [ validateError ]
+if [ ${validateError} ]
 then
     n=0
     until [ "${n}" -ge "3" ]
@@ -13,7 +13,7 @@ then
         sleep 15
     done
 fi
-if [ validateError ]
+if [ ${validateError} ]
 then
     exit 1
 fi
