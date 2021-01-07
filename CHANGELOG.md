@@ -11,8 +11,12 @@
 * Update references to use bags
 * Update to newer references (GRCh38.p13.v36 and GRCm38.p6.vM25)
 * Use production server for data-hub reference call
-* Stop pipeline if submitted does not match infered
+* Error pipeline if submitted does not match infered
 * Update execution run with "Success" or "Error"
+* Error if fastq error (>2, if pe != 2, if se !=1)
+* Error if pe and line count of R1 != R2
+* Error if ambiguous species inference
+* Remove non fastq from inputBag from the export bag config level
 
 **Background**
 * Remove (comment out) option to pull references from S3
@@ -23,12 +27,12 @@
 * Change docker images to production
 * Add automated version badges
 * Only calculate/report tin values on regular chromosomes (from gtf)
-* **NEED TO UPDATE getRef for CI unit**
+* Change inputBag fetch to manifest then validate (if fail fetch missing and revalidate up to 3 times)
+* Retry getData and trimData processes up to once
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
 * Override params (inputBag, fastq, species) aren't checked for integrity
-* 
 
 <hr>
 
