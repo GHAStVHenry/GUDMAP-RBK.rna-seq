@@ -1179,7 +1179,7 @@ process uploadExecutionRun {
     upload
     fastqCountError_uploadExecutionRun == "false"
     fastqReadError_uploadExecutionRun == "false"
-    speciesReadError_uploadExecutionRun == "false"
+    speciesError_uploadExecutionRun == "false"
 
   script:
   """
