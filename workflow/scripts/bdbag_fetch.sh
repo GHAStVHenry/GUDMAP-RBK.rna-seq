@@ -26,4 +26,5 @@ then
     if validateError
     then
         exit 1
+    fi
 fi
