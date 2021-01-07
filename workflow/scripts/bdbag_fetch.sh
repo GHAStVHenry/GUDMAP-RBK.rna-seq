@@ -1,19 +1,20 @@
 #!/bin/bash
 
 bdbag --materialize ${1} --debug
-validateError="true"
-bdbag --validate full ${1} && validateError="false"
-if [ "${validateError}" == "true" ]
+validate=""
+bdbag --validate full ${1} 2> validate.txt
+validate=$(tail -n validate.txt | grep -o 'is valid')
+if [ "${validate}" != "is valid" ]
 then
     n=0
     until [ "${n}" -ge "3" ]
     do
-        bdbag --resolve-fetch missing --validate full ${1} --debug && validateError="false" && break
+        bdbag --resolve-fetch missing --validate full ${1} --debug && validate=$(tail -n validate.txt | grep -o 'is valid') && break
         n=$((n+1)) 
         sleep 15
     done
 fi
-if [ "${validateError}" == "true" ]
+if [ "${validate}" != "is valid" ]
 then
     exit 1
 fi
