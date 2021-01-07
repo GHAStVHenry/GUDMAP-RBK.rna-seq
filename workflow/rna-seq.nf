@@ -937,11 +937,11 @@ speciesInfer.into {
 }
 
 // Split species count error into separate channel
-speciesCountError = Channel.create()
-speciesCountError_details = Channel.create()
+speciesError = Channel.create()
+speciesError_details = Channel.create()
 speciesError_fl.splitCsv(sep: ",", header: false).separate(
-  speciesCountError,
-  speciesCountError_details
+  speciesError,
+  speciesError_details
 )
 
 //  Replicate errors for multiple process inputs
