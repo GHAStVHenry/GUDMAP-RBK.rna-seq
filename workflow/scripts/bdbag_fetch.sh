@@ -3,7 +3,7 @@
 bdbag --materialize ${1} --debug
 validate=""
 bdbag --validate full ${1} 2> validate.txt
-validate=$(tail -n validate.txt | grep -o 'is valid')
+validate=$(tail -n1 validate.txt | grep -o 'is valid')
 if [ "${validate}" != "is valid" ]
 then
     n=0
