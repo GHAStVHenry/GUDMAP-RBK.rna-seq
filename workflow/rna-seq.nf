@@ -804,6 +804,7 @@ process inferMetadata {
     echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
 
     speciesError=false
+    speciesError_details=""
     # determine species
     if [ 1 -eq \$(echo \$(expr \${align_hu} ">=" 40)) ] && [ 1 -eq \$(echo \$(expr \${align_mo} "<" 40)) ]
     then
@@ -840,7 +841,7 @@ process inferMetadata {
       fi
     fi
 
-    if [ "\${speciesError" == false ] && [ "${speciesForce}" = "" ]
+    if [ \${speciesError} ] && [ "${speciesForce}" = "" ]
     then
       # infer experimental setting from dedup bam
       echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
