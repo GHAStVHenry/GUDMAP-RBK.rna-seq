@@ -840,7 +840,7 @@ process inferMetadata {
       fi
     fi
 
-    if !\${speciesError} && [ "${speciesForce}" = "" ]
+    if [ "\${speciesError" == false } && [ "${speciesForce}" = "" ]
     then
       # infer experimental setting from dedup bam
       echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
@@ -877,6 +877,9 @@ process inferMetadata {
       stranded=""
       spike=""
       species=""
+      percentF=""
+      percentR=""
+      fail=""
     fi
 
     # write inferred metadata to file
