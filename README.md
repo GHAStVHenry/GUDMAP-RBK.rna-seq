@@ -14,8 +14,6 @@ Introduction
 ------------
 This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub. It is designed to run on the HPC cluster ([BioHPC](https://portal.biohpc.swmed.edu)) at UT Southwestern Medical Center (in conjunction with the standard nextflow profile: config `biohpc.config`)
 
-![flowchart](docs/RNA-Seq%20Pipeline%20Design%20Flowchart.jpg "Flowchart")
-
 Cloud Compatibility:
 --------------------
 This pipeline is also capable of being run on AWS. To do so:
@@ -81,10 +79,20 @@ To run a set of replicates from study RID:
 ------------------------------------------
 Run in repo root dir:
 * `sh workflow/scripts/splitStudy.sh [studyRID]`
-It will run in parallel in batches of 25 replicatesRID with 30 second delays between launches.\
+It will run in parallel in batches of 5 replicatesRID with 30 second delays between launches.\
 NOTE: Nextflow "local" processes for all replicates will run on the node/machine the bash script is launched from... consider running the study script on the BioHPC's SLURM cluster (use `sbatch`).
 
-
+Errors:
+-------
+The checks for (and reports back to the data-hub):
+|Error|Descripton|
+|:-|:-:|
+|**Too many fastqs detected (>2)**|Data-hub standards and that of this pipeline is for one read-1 fastq and if paired-end, one read-2 fastq. As a result, the maximum number of fastq's per replicate cannot be more than 2.|
+|**Number of fastqs detected does not match submitted endness**|Single-end sequenced replicates can only have one fastq, while paried-end can only have two (see above).|
+|**Number of reads do not match for R1 and R2:** there may be a trunkation or mismatch of fastq files|For paired-end sequenced studies the number of reads in read-1 fastq must match that of read-2. This error is usually indicative of uploading of currupted, trunkated, or wrong fastq files|
+|Inference of species returns an ambiguous result**|Species of the replicate is done by aligning a random subset of 1 million reads from the data to both the human and mouse reference genomes. If there isn't a clear difference between the alignment rates (>=40% of one species, but <40% of the other), then this error is detected.|
+|**Submitted metadata does not match inferred**|All required metadata for analysis of the data is internally inferred by the pipeline, if any of those do not match the submitted metadata, this error is detected to notify of a potential error.|
+**NOTE:** these errors aren't thrown on the command line, but rather are submitted (if `--upload true`) to the data-hub for that replicate in the execution run submission.
 
 <hr>
 [**CHANGELOG**](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/blob/develop/CHANGELOG.md)
