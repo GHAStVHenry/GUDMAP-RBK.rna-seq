@@ -882,6 +882,7 @@ process inferMetadata {
       percentF=""
       percentR=""
       fail=""
+      touch ${repRID}.infer_experiment.txt
     fi
 
     # write inferred metadata to file
