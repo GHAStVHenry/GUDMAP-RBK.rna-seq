@@ -2,15 +2,7 @@
 
 if [ -z "${3}" ]
 then
-    bdbag --resolve-fetch all --fetch-filter filename\$*fastq.gz ${1}
-    for i in $(find */ -name "*R*.fastq.gz")
-    do
-        path=${2}.$(echo ${i##*/} | grep -o "R[1,2].fastq.gz")
-        cp ${i} ./${path}
-    done
-elif [ "${3}" == "TEST" ]
-then
-    bdbag --materialize ${1} --debug
+        bdbag --materialize ${1} --debug
     validateError=true
     bdbag --validate full ${1} && validateError=false
     if validateError
@@ -27,4 +19,12 @@ then
     then
         exit 1
     fi
+    for i in $(find */ -name "*R*.fastq.gz")
+    do
+        path=${2}.$(echo ${i##*/} | grep -o "R[1,2].fastq.gz")
+        cp ${i} ./${path}
+    done
+elif [ "${3}" == "TEST" ]
+then
+    bdbag --validate structure --validate-profile ${1} --debug
 fi
