@@ -810,11 +810,13 @@ process inferMetadata {
       species="Homo sapiens"
       bam="GRCh.sampled.sorted.bam"
       bed="./GRCh/genome.bed"
+      echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
     elif [ 1 -eq \$(echo \$(expr \${align_mo} ">=" 40)) ] && [ 1 -eq \$(echo \$(expr \${align_hu} "<" 40)) ]
     then
       species="Mus musculus"
       bam="GRCm.sampled.sorted.bam"
       bed="./GRCm/genome.bed"
+      echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
     else
       echo -e "LOG: ERROR - inference of species returns an ambiguous result: hu=\${align_hu} mo=\${align_mo}" >> ${repRID}.inferMetadata.log
       if [ "${speciesForce}" == "" ]
@@ -836,8 +838,6 @@ process inferMetadata {
         bam="GRCm.sampled.sorted.bam"
         bed="./GRCm/genome.bed"
       fi
-    else
-      echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
     fi
 
     # infer experimental setting from dedup bam
