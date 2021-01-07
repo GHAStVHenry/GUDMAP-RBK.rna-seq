@@ -84,7 +84,7 @@ NOTE: Nextflow "local" processes for all replicates will run on the node/machine
 
 Errors:
 -------
-The checks for (and reports back to the data-hub):
+The checks for (and reports back to the data-hub):\
 |Error|Descripton|
 |:-|:-:|
 |**Too many fastqs detected (>2)**|Data-hub standards and that of this pipeline is for one read-1 fastq and if paired-end, one read-2 fastq. As a result, the maximum number of fastq's per replicate cannot be more than 2.|
