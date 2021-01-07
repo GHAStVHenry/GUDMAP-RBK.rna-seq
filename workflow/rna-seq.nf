@@ -886,7 +886,7 @@ process inferMetadata {
     echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" 1>> infer.csv
 
     # save species error file
-    echo -e "\${speciesError},\${speciesError}" > speciesError.csv
+    echo -e "\${speciesError},\${speciesError_details}" > speciesError.csv
     """
 }
 
