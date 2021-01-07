@@ -823,7 +823,7 @@ process inferMetadata {
       if [ "${speciesForce}" == "" ]
       then
         speciesError=true
-        speciesError_details="**Inference of species returns an ambiguous result:**\\nPercent aligned to human = \${align_hu}\\npercent aligned to mouse = \${align_mo}"
+        speciesError_details="**Inference of species returns an ambiguous result:** Percent aligned to human = \${align_hu}; percent aligned to mouse = \${align_mo}"
       fi
     fi
     if [ "${speciesForce}" != "" ]
