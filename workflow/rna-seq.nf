@@ -836,8 +836,9 @@ process inferMetadata {
         bam="GRCm.sampled.sorted.bam"
         bed="./GRCm/genome.bed"
       fi
+    else
+      echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
     fi
-    echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
 
     # infer experimental setting from dedup bam
     echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
