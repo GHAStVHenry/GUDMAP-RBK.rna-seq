@@ -12,11 +12,12 @@ mkdir -p NEW_test_data
 ln -sfn ./test_data/auth/credential.json ~/.deriva/credential.json
 
 mkdir -p ./NEW_test_data/bag
-singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-download-cli staging.gudmap.org --catalog 2 ../workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
+singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-download-cli staging.gudmap.org --catalog 2 '../workflow/conf/Replicate_For_Input_Bag(test).json' . rid=Q-Y5F6
 cp Q-Y5F6_inputBag.zip ./NEW_test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip
+singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' deriva-download-cli staging.gudmap.org --catalog 2 ../workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
 
 mkdir -p ./NEW_test_data/fastq
-unzip ./NEW_test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip
+unzip ./Q-Y5F6_inputBag.zip
 singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bash ../workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
 cp Q-Y5F6.R1.fastq.gz ./NEW_test_data/fastq/Q-Y5F6.R1.fastq.gz
 cp Q-Y5F6.R2.fastq.gz ./NEW_test_data/fastq/Q-Y5F6.R2.fastq.gz

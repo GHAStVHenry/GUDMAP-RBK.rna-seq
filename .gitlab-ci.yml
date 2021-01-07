@@ -85,7 +85,7 @@ getData:
   - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bdbag --version > version_bdbag.txt
   - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
   - unzip ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip
-  - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6 TEST
+  - singularity run 'docker://gudmaprbk/deriva1.3:1.0.0' bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
   - pytest -m getData
   artifacts:
     name: "$CI_JOB_NAME"
