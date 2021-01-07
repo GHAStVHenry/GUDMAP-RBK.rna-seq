@@ -253,7 +253,7 @@ process getData {
     echo -e "LOG: fetched" >> ${repRID}.getData.log
     
     fastqCount=\$(ls *.fastq.gz | wc -l)
-    echo -e \${fastqCount} > fastqCount.csv
+    echo "\${fastqCount}"" > fastqCount.csv
     """
 }
 
@@ -386,10 +386,10 @@ process parseMetadata {
     fi
 
     # save design file
-    echo -e "\${endsMeta},\${endsRaw},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
+    echo "\${endsMeta},\${endsRaw},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
 
     # save fastq error file
-    echo -e "\${fastqCountError},\${fastqCountError_details},\${fastqReadError},\${fastqReadError_details}" > fastqError.csv
+    echo "\${fastqCountError},\${fastqCountError_details},\${fastqReadError},\${fastqReadError_details}" > fastqError.csv
     """
 }
 
@@ -553,7 +553,7 @@ process trimData {
     echo -e "LOG: average trimmed read length: \${readLength}" >> ${repRID}.trimData.log
 
     # save read length file
-    echo -e "\${readLength}" > readLength.csv
+    echo "\${readLength}" > readLength.csv
     """
 }
 
@@ -883,10 +883,10 @@ process inferMetadata {
     fi
 
     # write inferred metadata to file
-    echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" 1>> infer.csv
+    echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" > infer.csv
 
     # save species error file
-    echo -e "\${speciesError},\${speciesError_details}" > speciesError.csv
+    echo "\${speciesError},\${speciesError_details}" > speciesError.csv
     """
 }
 
@@ -1062,11 +1062,11 @@ process checkMetadata {
     # create dummy output bag rid if failure
     if [ \${pipelineError} == true ]
     then
-      echo "fail" 1>> outputBagRID.csv
+      echo "fail" > outputBagRID.csv
     fi
 
     # write checks to file
-    echo "\${pipelineError},\${pipelineError_ends},\${pipelineError_stranded},\${pipelineError_spike},\${pipelineError_species}" 1>> check.csv
+    echo "\${pipelineError},\${pipelineError_ends},\${pipelineError_stranded},\${pipelineError_spike},\${pipelineError_species}" > check.csv
     """
 }
 
@@ -1150,7 +1150,7 @@ process uploadInputBag {
       rid=\${exist}
   fi
 
-  echo \${rid} > inputBagRID.csv
+  echo "\${rid}" > inputBagRID.csv
   """
 }
 
@@ -1238,7 +1238,7 @@ process uploadExecutionRun {
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
   fi
 
-  echo \${executionRun_rid} > executionRunRID.csv
+  echo "\${executionRun_rid}" > executionRunRID.csv
   """
 }
 
@@ -1911,7 +1911,7 @@ process uploadQC {
   qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
   echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
-  echo \${qc_rid} > qcRID.csv
+  echo "\${qc_rid}" > qcRID.csv
   """
 }
 
@@ -2080,7 +2080,7 @@ process uploadOutputBag {
       rid=\${exist}
   fi
 
-  echo \${rid} > outputBagRID.csv
+  echo "\${rid}" > outputBagRID.csv
   """
 }
 
