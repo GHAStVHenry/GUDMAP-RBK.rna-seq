@@ -26,5 +26,5 @@ then
     done
 elif [ "${3}" == "TEST" ]
 then
-    bdbag --validate structure --validate-profile ${1} --debug
+    bdbag --validate-profile ${1} --debug
 fi
