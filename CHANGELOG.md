@@ -29,6 +29,7 @@
 * Only calculate/report tin values on regular chromosomes (from gtf)
 * Change inputBag fetch to manifest then validate (if fail fetch missing and revalidate up to 3 times)
 * Retry getData and trimData processes up to once
+* Make inputBag export config to create inputBag with only small txt file for CI unit test of getData (and update test)
 
 *Known Bugs*
 * Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
