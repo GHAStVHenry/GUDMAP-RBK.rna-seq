@@ -35,8 +35,8 @@ To Run:
     * **dev** = [dev.gudmap.org](dev.gudmap.org) (default, does not contain all data)
     * **staging** = [staging.gudmap.org](staging.gudmap.org) (does not contain all data)
     * **production** = [www.gudmap.org](www.gudmap.org) (***does contain  all data***)
-  * `--refMoVersion` mouse reference version ***(optional, default = 38.p6.vM22)***
-  * `--refHuVersion` human reference version ***(optional, default = 38.p12.v31)***
+  * `--refMoVersion` mouse reference version ***(optional, default = 38.p6.vM25)***
+  * `--refHuVersion` human reference version ***(optional, default = 38.p13.v36)***
   * `--refERCCVersion` human reference version ***(optional, default = 92)***
   * `--upload` option to not upload output back to the data-hub ***(optional, default = false)***
     * **true** = upload outputs to the data-hub
@@ -53,14 +53,14 @@ To Run:
 * NOTES:
   * once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)
   * reference version consists of Genome Reference Consortium version, patch release and GENCODE annotation release # (leaving the params blank will use the default version tied to the pipeline version)
-    * *current mouse* **38.p6.vM22** = GRCm38.p6 with GENCODE annotation release M22
-    * *current human* **38.p6.v31** = GRCh38.p12 with GENCODE annotation release 31
+    * *current mouse* **38.p6.vM25** = GRCm38.p6 with GENCODE annotation release M25
+    * *current human* **38.p13.v36** = GRCh38.p13 with GENCODE annotation release 36
 * ***Optional*** input overrides
   * `--refSource` source for pulling references
     * **biohpc** = source references from BICF_Core gudmap reference local location (workflow must be run on BioHPC system)
     * **datahub** = source references from GUDMAP/RBK reference_table location (currently uses dev.gudmap.org)
   * `--inputBagForce` utilizes a local replicate inputBag instead of downloading from the data-hub (still requires accurate repRID input)
-    * eg: `--inputBagForce test_data/bag/Replicate_Q-Y5F6.zip` (must be the expected bag structure)
+    * eg: `--inputBagForce test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip` (must be the expected bag structure, this example will not work because it is a test bag)
   * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)
     * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order)
   * `--speciesForce` forces the species to be "Mus musculus" or "Homo sapiens", it bypasses ambiguous species error
@@ -72,7 +72,7 @@ To Run:
 FULL EXAMPLE:
 -------------
 ```
-nextflow run workflow/rna-seq.nf --deriva ./data/credential.json --bdbag ./data/cookies.txt --repRID Q-Y5JA
+nextflow run workflow/rna-seq.nf --repRID Q-Y5JA --source production --deriva ./data/credential.json --bdbag ./data/cookies.txt --dev false --upload true -profile biohpc
 ```
 
 To run a set of replicates from study RID:
