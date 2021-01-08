@@ -15,7 +15,7 @@ prod_workflow_RID=${prod_workflow_RID:7:-6}
 echo "collecting unique replicates with successful execution runs"
 dev_count=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Execution_Status=Success/Workflow=${dev_workflow_RID} | grep -o \"Replicate\".*,\"Workflow | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Workflow)" | sort | uniq | wc -l)
 staging_count=$(curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Execution_Status=Success/Workflow=${staging_workflow_RID} | grep -o \"Replicate\".*,\"Workflow | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Workflow)" | sort | uniq | wc -l)
-prod_count=$(curl -s https://prod.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Execution_Status=Success/Workflow=${prod_workflow_RID} | grep -o \"Replicate\".*,\"Workflow | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Workflow)" | sort | uniq | wc -l)
+prod_count=$(curl -s https://www.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Execution_Status=Success/Workflow=${prod_workflow_RID} | grep -o \"Replicate\".*,\"Workflow | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Workflow)" | sort | uniq | wc -l)
 
 echo "collecting badges"
 mkdir -p ./badges/counts
