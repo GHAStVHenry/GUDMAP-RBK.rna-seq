@@ -49,7 +49,7 @@ To Run:
     * **aws_spot** = AWS Batch spot instance requests
   * `--email` email address(es) to send failure notification (comma separated) ***(optional)***:
     * e.g: `--email 'Venkat.Malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'`
-    
+
 * NOTES:
   * once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)
   * reference version consists of Genome Reference Consortium version, patch release and GENCODE annotation release # (leaving the params blank will use the default version tied to the pipeline version)
@@ -129,7 +129,7 @@ UT Southwestern Medical Center\
 [johnathan.gesell@utsouthwestern.edu](mailto:jonathn.gesell@utsouthwestern.edu)
 
 Jeremy A. Mathews\
-*Computational Intern*\
+*Computational Biologist*\
 Bioinformatics Core Facility\
 UT Southwestern Medical Center\
 <a href="https://orcid.org/0000-0002-2931-1430" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0002-2931-1430</a>\
