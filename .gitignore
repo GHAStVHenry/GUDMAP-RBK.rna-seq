@@ -281,6 +281,7 @@ $RECYCLE.BIN/
 # nextflow analysis folders/files
 /test_data/*
 !/test_data/createTestData.sh
+!/test_data/Replicate_For_Input_Bag(test).json
 /workflow/.nextflow/*
 /workflow/work/*
 /workflow/output/*

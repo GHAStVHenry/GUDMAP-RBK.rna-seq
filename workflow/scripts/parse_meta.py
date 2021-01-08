@@ -62,12 +62,7 @@ def main():
 
     # Get endedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "endsMeta"):
-        if (metaFile.Paired_End.unique() == "Single End"):
-            endsMeta = "se"
-        elif (metaFile.Paired_End.unique() == "Paired End"):
-            endsMeta = "pe"
-        else:
-            endsMeta = "uk"
+        endsMeta = metaFile.Paired_End.unique()[0]
         print(endsMeta)
 
     # Manually get endness count from 'File.csv'

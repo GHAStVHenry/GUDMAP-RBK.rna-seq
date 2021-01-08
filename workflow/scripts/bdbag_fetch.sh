@@ -1,14 +1,25 @@
 #!/bin/bash
 
-if [ -z "${3}" ]
+bdbag --materialize ${1} --debug
+validate=""
+bdbag --validate full ${1} 2> validate.txt
+validate=$(tail -n1 validate.txt | grep -o 'is valid')
+if [ "${validate}" != "is valid" ]
 then
-    bdbag --resolve-fetch all --fetch-filter filename\$*fastq.gz ${1}
-    for i in $(find */ -name "*R*.fastq.gz")
+    n=0
+    until [ "${n}" -ge "3" ]
     do
-        path=${2}.$(echo ${i##*/} | grep -o "R[1,2].fastq.gz")
-        cp ${i} ./${path}
+        bdbag --resolve-fetch missing --validate full ${1} --debug && validate=$(tail -n validate.txt | grep -o 'is valid') && break
+        n=$((n+1)) 
+        sleep 15
     done
-elif [ "${3}" == "TEST" ]
-then
-    bdbag --resolve-fetch all --fetch-filter filename\$*.txt ${1}
 fi
+if [ "${validate}" != "is valid" ]
+then
+    exit 1
+fi
+for i in $(find */ -name "*R*.fastq.gz")
+do
+    path=${2}.$(echo ${i##*/} | grep -o "R[1,2].fastq.gz")
+    cp ${i} ./${path}
+done

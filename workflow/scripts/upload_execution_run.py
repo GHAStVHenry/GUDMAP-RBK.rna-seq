@@ -31,7 +31,7 @@ def main(hostname, catalog_number, credential):
             "Input_Bag": args.inputBagRID,
             "Notes": args.notes,
             "Execution_Status": args.status,
-            "Execution_Status_Detail": args.statusDetail
+            "Execution_Status_Detail": args.statusDetail.replace('\\n','\n')
         }
         entities = run_table.insert([run_data])
         rid = entities[0]["RID"]
@@ -44,7 +44,7 @@ def main(hostname, catalog_number, credential):
             "Input_Bag": args.inputBagRID,
             "Notes": args.notes,
             "Execution_Status": args.status,
-            "Execution_Status_Detail": args.statusDetail
+            "Execution_Status_Detail": args.statusDetail.replace('\\n','\n')
         }
         entities = run_table.update([run_data])
         rid = args.update

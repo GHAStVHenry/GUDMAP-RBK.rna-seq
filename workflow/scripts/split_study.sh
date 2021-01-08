@@ -9,13 +9,13 @@ echo "curl --location --request GET 'https://www.gudmap.org/ermrest/catalog/2/en
 
 # extract replicate RIDs
 module load python/3.6.4-anaconda
-python3 ./workflow/scripts/splitStudy.py -s $1
+python3 ./workflow/scripts/split_study.py -s $1
 
 # run pipeline on replicate RIDs in parallel
 module load nextflow/20.01.0
 module load singularity/3.5.3
-while read repRID; do echo ${repRID}; sleep 15; done < "$1_studyRID.csv" | xargs -P 5 -I {} nextflow -q run workflow/rna-seq.nf --repRID {}
+while read repRID; do echo ${repRID}; sleep 30; done < "$1_studyRID.csv" | xargs -P 5 -I {} nextflow -q run workflow/rna-seq.nf --repRID {} --source production --deriva /project/BICF/BICF_Core/shared/gudmap/test_data/auth/credential.json --bdbag /project/BICF/BICF_Core/shared/gudmap/test_data/auth/cookies.txt --dev false --upload true --email gervaise.henry@utsouthwestern.edu -with-report ./output/{}_report.html -with-timeline ./output/{}_timeline.html
 
 # cleanup study RID files
 rm $1_studyRID.json
-rm $1_studyRID.csv
+#rm $1_studyRID.csv
