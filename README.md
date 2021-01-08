@@ -80,12 +80,6 @@ To generate you own references or new references:
 Download the [reference creation script](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/snippets/31).
 This script will auto create human and mouse references from GENCODE. It can also create ERCC92 spike-in references as well as concatenate them to GENCODE references automatically. In addition, it can create references from manually downloaded FASTA and GTF files.
 
-To run a set of replicates from study RID:
-------------------------------------------
-Run in repo root dir:
-* `sh workflow/scripts/splitStudy.sh [studyRID]`
-It will run in parallel in batches of 5 replicatesRID with 30 second delays between launches.\
-NOTE: Nextflow "local" processes for all replicates will run on the node/machine the bash script is launched from... consider running the study script on the BioHPC's SLURM cluster (use `sbatch`).
 
 Errors:
 -------
