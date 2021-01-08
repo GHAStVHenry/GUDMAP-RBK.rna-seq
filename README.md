@@ -75,6 +75,11 @@ FULL EXAMPLE:
 nextflow run workflow/rna-seq.nf --repRID Q-Y5JA --source production --deriva ./data/credential.json --bdbag ./data/cookies.txt --dev false --upload true -profile biohpc
 ```
 
+To generate you own references or new references:
+------------------------------------------
+Download the [reference creation script](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/snippets/31).
+This script will auto create human and mouse references from GENCODE. It can also create ERCC92 spike-in references as well as concatenate them to GENCODE references automatically. In addition, it can create references from manually downloaded FASTA and GTF files.
+
 To run a set of replicates from study RID:
 ------------------------------------------
 Run in repo root dir:

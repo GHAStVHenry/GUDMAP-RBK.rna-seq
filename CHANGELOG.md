@@ -1,4 +1,4 @@
-# v0.1.0 (in development)
+# v1.0.0 (in development)
 **User Facing**
 * Add option to pull references from datahub
 * Add option to send email on workflow error, with pipeline error message
@@ -17,6 +17,7 @@
 * Error if pe and line count of R1 != R2
 * Error if ambiguous species inference
 * Remove non fastq from inputBag from the export bag config level
+* Add link to reference builder script
 
 **Background**
 * Remove (comment out) option to pull references from S3
