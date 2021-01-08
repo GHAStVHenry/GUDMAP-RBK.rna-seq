@@ -94,7 +94,7 @@ Error reported back to the data-hub are (they aren't thrown on the command line 
 |**Submitted metadata does not match inferred**|All required metadata for analysis of the data is internally inferred by the pipeline, if any of those do not match the submitted metadata, this error is detected to notify of a potential error.|
 
 <hr>
-[**CHANGELOG**](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/blob/develop/CHANGELOG.md)
+[**CHANGELOG**](CHANGELOG.md)
 <hr>
 
 Credits
