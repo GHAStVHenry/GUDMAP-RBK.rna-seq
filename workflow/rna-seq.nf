@@ -268,7 +268,8 @@ if (fastqsForce != "") {
   Channel
     .fromPath(fastqsForce)
     .ifEmpty { exit 1, "override inputBag file not found: ${fastqsForce}" }
-    .collect().set {
+    .collect().into {
+      fastqs_parseMetadata
       fastqs_trimData
     }
 } else {
