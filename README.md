@@ -4,9 +4,10 @@
 |[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/masterPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/developPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
 |[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/masterNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/developNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
 
-<!--
-[![DOI]()]()
--->
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4429316.svg)](https://doi.org/10.5281/zenodo.4429316)
+
+
 RNA-Seq Analytic Pipeline for GUDMAP/RBK
 ========================================
 
