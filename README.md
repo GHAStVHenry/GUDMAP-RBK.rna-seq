@@ -79,7 +79,7 @@ To run a set of replicates from study RID:
 ------------------------------------------
 Run in repo root dir:
 * `sh workflow/scripts/splitStudy.sh [studyRID]`
-It will run in parallel in batches of 5 replicatesRID with 30 second delays between launches.\
+It will run in parallel in batches of 5 replicatesRID with 15 second delays between launches.\
 NOTE: Nextflow "local" processes for all replicates will run on the node/machine the bash script is launched from... consider running the study script on the BioHPC's SLURM cluster (use `sbatch`).
 
 Errors:
