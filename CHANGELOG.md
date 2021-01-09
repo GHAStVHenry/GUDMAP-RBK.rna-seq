@@ -1,5 +1,16 @@
 # v1.0.0 (in development)
 **User Facing**
+* Add link to reference builder script
+
+**Background**
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+
+<hr>
+
+# v0.1.0
+**User Facing**
 * Add option to pull references from datahub
 * Add option to send email on workflow error, with pipeline error message
 * Add versions and paper references of software used to report
@@ -17,7 +28,6 @@
 * Error if pe and line count of R1 != R2
 * Error if ambiguous species inference
 * Remove non fastq from inputBag from the export bag config level
-* Add link to reference builder script
 
 **Background**
 * Remove (comment out) option to pull references from S3
@@ -33,7 +43,6 @@
 * Make inputBag export config to create inputBag with only small txt file for CI unit test of getData (and update test)
 
 *Known Bugs*
-* Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
 * Override params (inputBag, fastq, species) aren't checked for integrity
 
 <hr>
