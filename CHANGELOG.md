@@ -3,6 +3,7 @@
 * Add link to reference builder script
 
 **Background**
+* Change consistency test to check if +/- 1% of standard
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
