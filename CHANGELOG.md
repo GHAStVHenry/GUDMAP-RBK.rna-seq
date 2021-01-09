@@ -5,6 +5,7 @@
 
 **Background**
 * Change consistency test to check if +/- 1% of standard
+* Change tool version checker for badges to use latest tag
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
