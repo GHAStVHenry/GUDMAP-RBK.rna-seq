@@ -1,6 +1,7 @@
 # v1.0.0 (in development)
 **User Facing**
 * Add link to reference builder script
+* Output median TIN to mRNA_QC table
 
 **Background**
 * Change consistency test to check if +/- 1% of standard

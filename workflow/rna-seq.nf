@@ -1734,6 +1734,12 @@ tinMedInfer_fl.splitCsv(sep: ",", header: false).separate(
   tinMedInfer
 )
 
+// Replicate inferred median TIN for multiple process inputs
+tinMedInfer.into {
+  tinMedInfer_aggrQC
+  tinMedInfer_uploadQC
+}
+
 /*
  *aggrQC: aggregate QC from processes as well as metadata and run MultiQC
 */
@@ -1769,7 +1775,7 @@ process aggrQC {
     val readLengthI from readLengthInfer_aggrQC
     val rawReadsI from rawReadsInfer_aggrQC
     val assignedReadsI from assignedReadsInfer_aggrQC
-    val tinMedI from tinMedInfer
+    val tinMedI from tinMedInfer_aggrQC
     val studyRID from studyRID_aggrQC
     val expRID from expRID_aggrQC
     val fastqCountError_aggrQC
@@ -1869,6 +1875,7 @@ process uploadQC {
     val length from readLengthInfer_uploadQC
     val rawCount from rawReadsInfer_uploadQC
     val finalCount from assignedReadsInfer_uploadQC
+    val tinMed from tinMedInfer_uploadQC
     val fastqCountError_uploadQC
     val fastqReadError_uploadQC
     val speciesError_uploadQC
@@ -1912,7 +1919,7 @@ process uploadQC {
     echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
   fi
 
-  qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
+  qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -t ${tinMed} -o ${source} -c \${cookie} -u F)
   echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
   echo "\${qc_rid}" > qcRID.csv
