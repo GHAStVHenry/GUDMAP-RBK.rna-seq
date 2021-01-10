@@ -22,9 +22,7 @@ def test_consistencySE():
     baseline = 7746121
     baseline_hi = baseline+(baseline*0.01)
     baseline_lo = baseline-(baseline*0.01)
-    assert  assigned_reads <= baseline_hi
-    assert  assigned_reads >= baseline_lo
-
+    self.assertTrue ( baseline_lo <= assigned_reads <=  baseline_hi )
 
 
 @pytest.mark.consistencyPE
@@ -39,5 +37,4 @@ def test_consistencyPE():
     baseline = 2596053
     baseline_hi = baseline+(baseline*0.01)
     baseline_lo = baseline-(baseline*0.01)
-    assert  assigned_reads <= baseline_hi
-    assert  assigned_reads >= baseline_lo
+    self.assertTrue ( baseline_lo <= assigned_reads <=  baseline_hi )
