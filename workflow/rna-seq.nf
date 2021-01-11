@@ -129,6 +129,18 @@ process trackStart {
       "dev": ${params.dev} \
     }' \
     "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
+
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}",
+      "repRID": "${repRID}",
+      "PipelineVersion": "${workflow.manifest.version}", \
+      "Server": "${params.source}", \
+      "Queued": "NA", \
+      "CheckedOut": "NA", \
+      "Started": "${workflow.start}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
