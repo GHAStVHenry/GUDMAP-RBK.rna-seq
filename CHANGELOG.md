@@ -6,6 +6,7 @@
 **Background**
 * Change consistency test to check if +/- 5% of standard
 * Change tool version checker for badges to use latest tag
+* Utilize pipeline tracking and qc AWS tables
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
