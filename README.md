@@ -15,16 +15,9 @@ Introduction
 ------------
 This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub. It is designed to run on the HPC cluster ([BioHPC](https://portal.biohpc.swmed.edu)) at UT Southwestern Medical Center (in conjunction with the standard nextflow profile: config `biohpc.config`)
 
-Cloud Compatibility:
---------------------
-This pipeline is also capable of being run on AWS. To do so:
-* Build a AWS batch queue and environment either manually or with [aws-cloudformantion](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Nextflow&templateURL=https://s3.amazonaws.com/aws-genomics-workflows/templates/nextflow/nextflow-aio.template.yaml)
-* Edit one of the aws configs in workflow/config/
-  * Replace workDir with the S3 bucket generated
-  * Change region if different
-  * Change queue to the aws batch queue generated
-* The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow will be run
-* Add `-profile` with the name aws config which was customized
+Authentication:
+----------------
+The consortium server used must be authentificated with the [deriva authentication client](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/), and remain authentificated till the end of the pipeline run. Prematurely closing the client will result in invalidation of the tokens, and may result in the pipeline failure. The use of long-lived "globus" tokens is on the roadmap for use in the future.
 
 To Run:
 -------
@@ -75,6 +68,17 @@ FULL EXAMPLE:
 ```
 nextflow run workflow/rna-seq.nf --repRID Q-Y5JA --source production --deriva ./data/credential.json --bdbag ./data/cookies.txt --dev false --upload true -profile biohpc
 ```
+
+Cloud Compatibility:
+--------------------
+This pipeline is also capable of being run on AWS. To do so:
+* Build a AWS batch queue and environment either manually or with [aws-cloudformantion](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Nextflow&templateURL=https://s3.amazonaws.com/aws-genomics-workflows/templates/nextflow/nextflow-aio.template.yaml)
+* Edit one of the aws configs in workflow/config/
+  * Replace workDir with the S3 bucket generated
+  * Change region if different
+  * Change queue to the aws batch queue generated
+* The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow will be run
+* Add `-profile` with the name aws config which was customized
 
 To generate you own references or new references:
 ------------------------------------------
