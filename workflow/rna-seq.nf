@@ -132,8 +132,8 @@ process trackStart {
 
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}",
-      "repRID": "${repRID}",
+      "ID": "${workflow.sessionId}", \
+      "repRID": "${repRID}", \
       "PipelineVersion": "${workflow.manifest.version}", \
       "Server": "${params.source}", \
       "Queued": "NA", \
