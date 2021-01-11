@@ -1255,6 +1255,13 @@ process uploadExecutionRun {
   fi
 
   echo "\${executionRun_rid}" > executionRunRID.csv
+
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}" \
+      "ExecutionRunRID": "\${executionRun_rid}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
@@ -1868,7 +1875,12 @@ process aggrQC {
     echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
-    """
+
+  rpt=`cat ${repRID}.multiqc_data.json`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    \${rpt} \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
+  """
 }
 
 /* 
@@ -1935,11 +1947,6 @@ process uploadQC {
   echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
   echo "\${qc_rid}" > qcRID.csv
-
-  rpt=`cat ${repRID}.multiqc_data.json`
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    \${rpt}
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
   """
 }
 
@@ -2152,11 +2159,10 @@ process finalizeExecutionRun {
   dt=`date --utc +%FT%TZ`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}"
+      "ID": "${workflow.sessionId}" \
       "Complete": "\${dt}" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-  """
   """
 }
 
@@ -2243,7 +2249,7 @@ process failPreExecutionRun {
   dt=`date --utc +%FT%TZ`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}"
+      "ID": "${workflow.sessionId}" \
       "Failure": "\${dt}" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
@@ -2334,7 +2340,7 @@ process failExecutionRun {
   dt=`date --utc +%FT%TZ`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}"
+      "ID": "${workflow.sessionId}" \
       "Failure": "\${dt}" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
