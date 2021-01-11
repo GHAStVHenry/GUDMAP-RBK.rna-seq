@@ -1935,6 +1935,11 @@ process uploadQC {
   echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
   echo "\${qc_rid}" > qcRID.csv
+
+  rpt=`cat ${repRID}.multiqc_data.json`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    \${rpt}
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
   """
 }
 
