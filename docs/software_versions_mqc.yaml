@@ -6,9 +6,9 @@
         description: 'are collected for pipeline version.'
         data: |
             <dl class="dl-horizontal">
-
+        
             <dt>Python</dt><dd>v3.8.3</dd>
-            <dt>DERIVA</dt><dd>v1.3.0</dd>
+            <dt>DERIVA</dt><dd>v1.4.3</dd>
             <dt>BDBag</dt><dd>v1.5.6</dd>
             <dt>RSeQC</dt><dd>v4.0.0</dd>
             <dt>Trim Galore!</dt><dd>v0.6.4_dev</dd>
