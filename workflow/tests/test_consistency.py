@@ -20,9 +20,10 @@ def test_consistencySE():
         assigned_reads_json = json.load(f)
     assigned_reads = assigned_reads_json['report_general_stats_data'][4]['16-1ZX4_sorted']['Assigned']
     baseline = 7746121
-    baseline_hi = baseline+(baseline*0.01)
-    baseline_lo = baseline-(baseline*0.01)
-    self.assertTrue ( baseline_lo <= assigned_reads <=  baseline_hi )
+    baseline_hi = baseline+(baseline*0.05)
+    baseline_lo = baseline-(baseline*0.05)
+    assert (assigned_reads >= baseline_lo)
+    assert (assigned_reads <=  baseline_hi)
 
 
 @pytest.mark.consistencyPE
@@ -35,6 +36,7 @@ def test_consistencyPE():
         assigned_reads_json = json.load(f)
     assigned_reads = assigned_reads_json['report_general_stats_data'][4]['Q-Y5JA_sorted']['Assigned']
     baseline = 2596053
-    baseline_hi = baseline+(baseline*0.01)
-    baseline_lo = baseline-(baseline*0.01)
-    self.assertTrue ( baseline_lo <= assigned_reads <=  baseline_hi )
+    baseline_hi = baseline+(baseline*0.05)
+    baseline_lo = baseline-(baseline*0.05)
+    assert (assigned_reads >= baseline_lo)
+    assert (assigned_reads <=  baseline_hi)

@@ -4,7 +4,7 @@
 * Output median TIN to mRNA_QC table
 
 **Background**
-* Change consistency test to check if +/- 1% of standard
+* Change consistency test to check if +/- 5% of standard
 * Change tool version checker for badges to use latest tag
 
 *Known Bugs*
