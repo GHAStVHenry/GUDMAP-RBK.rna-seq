@@ -1876,9 +1876,8 @@ process aggrQC {
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
 
-  rpt=`cat ${repRID}.multiqc_data.json`
   curl -H 'Content-Type: application/json' -X PUT -d \
-    \${rpt} \
+    @./${repRID}.multiqc_data.json \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
   """
 }
