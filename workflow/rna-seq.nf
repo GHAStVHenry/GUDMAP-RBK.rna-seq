@@ -2143,6 +2143,15 @@ process finalizeExecutionRun {
 
   rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
   echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
+
+  dt=`date --utc +%FT%TZ`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}"
+      "Complete": "\${dt}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+  """
   """
 }
 
@@ -2225,6 +2234,14 @@ process failPreExecutionRun {
     executionRun_rid==\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
   fi
+
+  dt=`date --utc +%FT%TZ`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}"
+      "Failure": "\${dt}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
@@ -2271,43 +2288,45 @@ process failExecutionRun {
   cookie=\${cookie:11:-1}
 
   errorDetails=""
-  if [ ${pipelineError} == false ]
+  pipelineError_details=\$(echo "**Submitted metadata does not match inferred:**\\n")
+  pipelineError_details=\$(echo \${pipelineError_details}"|Metadata|Submitted value|Inferred value|\\n")
+  pipelineError_details=\$(echo \${pipelineError_details}"|:-:|-:|-:|\\n")
+  if ${pipelineError_ends}
   then
-    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
-    echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.failExecutionRun.log
-  else
-    pipelineError_details=\$(echo "**Submitted metadata does not match inferred:**\\n")
-    pipelineError_details=\$(echo \${pipelineError_details}"|Metadata|Submitted value|Inferred value|\\n")
-    pipelineError_details=\$(echo \${pipelineError_details}"|:-:|-:|-:|\\n")
-    if ${pipelineError_ends}
+    if [ "${endsInfer}" == "se" ]
     then
-      if [ "${endsInfer}" == "se" ]
-      then
-        endInfer="Single End"
-      elif [ "${endsInfer}" == "pe" ]
-      then
-        endInfer="Paired End"
-      else
-        endInfer="unknown"
-      fi
-      pipelineError_details=\$(echo \${pipelineError_details}"|Paired End|${endsRaw}|"\${endInfer}"|\\n")
-    fi
-    if ${pipelineError_stranded}
+      endInfer="Single End"
+    elif [ "${endsInfer}" == "pe" ]
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"|Strandedness|${strandedMeta}|${strandedInfer}|\\n")
+      endInfer="Paired End"
+    else
+      endInfer="unknown"
     fi
-    if ${pipelineError_spike}
-    then
-      pipelineError_details=\$(echo \${pipelineError_details}"|Used Spike Ins|${spikeMeta}|${spikeInfer}|\\n")
-    fi
-    if ${pipelineError_species}
-    then
-      pipelineError_details=\$(echo \${pipelineError_details}"|Species|${speciesMeta}|${speciesInfer}|\\n")
-    fi
-    pipelineError_details=\${pipelineError_details::-2}
-    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
-    echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
+    pipelineError_details=\$(echo \${pipelineError_details}"|Paired End|${endsRaw}|"\${endInfer}"|\\n")
   fi
+  if ${pipelineError_stranded}
+  then
+    pipelineError_details=\$(echo \${pipelineError_details}"|Strandedness|${strandedMeta}|${strandedInfer}|\\n")
+  fi
+  if ${pipelineError_spike}
+  then
+    pipelineError_details=\$(echo \${pipelineError_details}"|Used Spike Ins|${spikeMeta}|${spikeInfer}|\\n")
+  fi
+  if ${pipelineError_species}
+  then
+    pipelineError_details=\$(echo \${pipelineError_details}"|Species|${speciesMeta}|${speciesInfer}|\\n")
+  fi
+  pipelineError_details=\${pipelineError_details::-2}
+  rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
+  echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
+  
+  dt=`date --utc +%FT%TZ`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}"
+      "Failure": "\${dt}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
