@@ -56,6 +56,10 @@ report_section_order:
       order: 2000
     ref:
       order: 1000
+    software_versions:
+      order: -1000
+    software_references:
+      order: -2000
 
 skip_generalstats: true
 
@@ -70,10 +74,14 @@ custom_data:
             scale: false
             format: '{}'
         headers:
-            Session
-            Session ID
-            Pipeline Version
-            Input
+            Session:
+                description: ''
+            Session ID:
+                description: 'Nextflow session ID'
+            Pipeline Version:
+                description: 'BICF pipeline version'
+            Input:
+                description: 'Input overrides'
     rid:
         file_format: 'tsv'
         section_name: 'RID'
@@ -84,10 +92,14 @@ custom_data:
             scale: false
             format: '{}'
         headers:
-            Replicate
-            Replicate RID
-            Experiment RID
-            Study RID
+            Replicate:
+                description: ''
+            Replicate RID:
+                description: 'Replicate RID'
+            Experiment RID:
+                description: 'Experiment RID'
+            Study RID:
+                description: 'Study RID'
     meta:
         file_format: 'tsv'
         section_name: 'Metadata'
@@ -98,30 +110,43 @@ custom_data:
             scale: false
             format: '{:,.0f}'
         headers:
-            Source
-            Species
-            Ends
-            Stranded
-            Spike-in
-            Raw Reads
-            Assigned Reads
-            Median Read Length
-            Median TIN
-            Pipeline Version
+            Source:
+                description: 'Metadata source'
+            Species:
+                description: 'Species'
+            Ends:
+                description: 'Single or paired end sequencing'
+            Stranded:
+                description: 'Stranded (forward/reverse) or unstranded library prep'
+            Spike-in:
+                description: 'ERCC spike in'
+            Raw Reads:
+                description: 'Number of reads of the sequencer'
+            Assigned Reads:
+                description: 'Final reads after fintering'
+            Median Read Length:
+                description: 'Average read length'
+            Median TIN:
+                description: 'Average transcript integrity number'
+
     ref:
         file_format: 'tsv'
         section_name: 'Reference'
-        description: 'This is the referenec version information'
+        description: 'This is the reference version information'
         plot_type: 'table'
         pconfig:
             id: 'ref'
             scale: false
             format: '{}'
         headers:
-            Species
-            Genome Reference Consortium Build
-            Genome Reference Consortium Patch
-            GENCODE Annotation Release"
+            Species:
+                description: 'Reference species'
+            Genome Reference Consortium Build:
+                description: 'Reference source build'
+            Genome Reference Consortium Patch:
+                description: 'Reference source patch version'
+            GENCODE Annotation Release:
+                description: 'Annotation release version'
     tin:
         file_format: 'tsv'
         section_name: 'TIN'
@@ -131,16 +156,16 @@ custom_data:
             id: 'tin'
         headers:
             chrom
-            0 - 9
-            10 - 19
-            20 - 29
-            30 - 39
-            40 - 49
-            50 - 59
-            60 - 69
-            70 - 79
-            80 - 89
-            90 - 99
+            1 - 10
+            11 - 20
+            21 - 30
+            31 - 40
+            41 - 50
+            51 - 60
+            61 - 70
+            71 - 80
+            81 - 90
+            91 - 100
 
 sp:
     run:
@@ -152,4 +177,4 @@ sp:
     ref:
         fn: 'reference.tsv'
     tin:
-        fn: '*.tin.hist.tsv'
+        fn: '*_tin.hist.tsv'

@@ -6,7 +6,8 @@ from io import StringIO
 import os
 
 test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
-                '/../../'
+    '/../../'
+
 
 @pytest.mark.downsampleData
 def test_downsampleData():

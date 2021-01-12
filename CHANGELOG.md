@@ -1,3 +1,57 @@
+# v1.0.0
+**User Facing**
+* Add link to reference builder script
+* Output median TIN to mRNA_QC table
+
+**Background**
+* Change consistency test to check if +/- 5% of standard
+* Change tool version checker for badges to use latest tag
+* Utilize pipeline tracking and qc AWS tables
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+* Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+
+<hr>
+
+# v0.1.0
+**User Facing**
+* Add option to pull references from datahub
+* Add option to send email on workflow error, with pipeline error message
+* Add versions and paper references of software used to report
+* Upload input bag
+* Upload execution run
+* Upload mRNA QC
+* Create and upload output bag
+* Add optional to not upload
+* Update references to use bags
+* Update to newer references (GRCh38.p13.v36 and GRCm38.p6.vM25)
+* Use production server for data-hub reference call
+* Error pipeline if submitted does not match infered
+* Update execution run with "Success" or "Error"
+* Error if fastq error (>2, if pe != 2, if se !=1)
+* Error if pe and line count of R1 != R2
+* Error if ambiguous species inference
+* Remove non fastq from inputBag from the export bag config level
+
+**Background**
+* Remove (comment out) option to pull references from S3
+* Make pull references from BioHPC default (including in biohpc.config)
+* Start using new gudmaprbk dockerhub (images autobuilt)
+* Moved consistency checks to be fully python
+* Changed order of steps so that fastqc is done after the trim step
+* Change docker images to production
+* Add automated version badges
+* Only calculate/report tin values on regular chromosomes (from gtf)
+* Change inputBag fetch to manifest then validate (if fail fetch missing and revalidate up to 3 times)
+* Retry getData and trimData processes up to once
+* Make inputBag export config to create inputBag with only small txt file for CI unit test of getData (and update test)
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+
+<hr>
+
 # v0.0.3
 **User Facing**
 * TPM table:

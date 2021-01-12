@@ -6,8 +6,10 @@ from io import StringIO
 import os
 
 test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
-                '/../../'
+    '/../../'
+
 
 @pytest.mark.getBag
 def test_getBag():
-    assert os.path.exists(os.path.join(test_output_path, 'Replicate_Q-Y5F6.zip'))
+    assert os.path.exists(os.path.join(
+        test_output_path, 'Q-Y5F6_inputBag.zip'))
