@@ -4,9 +4,10 @@
 |[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/masterPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![pipeline](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/developPipeline.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
 |[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/masterNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/master)|[![nextflow](https://gudmap_rbk.pages.biohpc.swmed.edu/rna-seq/badges/developNextflow.svg)](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tree/develop)|
 
-<!--
-[![DOI]()]()
--->
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4429316.svg)](https://doi.org/10.5281/zenodo.4429316)
+
+
 RNA-Seq Analytic Pipeline for GUDMAP/RBK
 ========================================
 
@@ -14,16 +15,9 @@ Introduction
 ------------
 This pipeline was created to be a standard mRNA-sequencing analysis pipeline which integrates with the GUDMAP and RBK consortium data-hub. It is designed to run on the HPC cluster ([BioHPC](https://portal.biohpc.swmed.edu)) at UT Southwestern Medical Center (in conjunction with the standard nextflow profile: config `biohpc.config`)
 
-Cloud Compatibility:
---------------------
-This pipeline is also capable of being run on AWS. To do so:
-* Build a AWS batch queue and environment either manually or with [aws-cloudformantion](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Nextflow&templateURL=https://s3.amazonaws.com/aws-genomics-workflows/templates/nextflow/nextflow-aio.template.yaml)
-* Edit one of the aws configs in workflow/config/
-  * Replace workDir with the S3 bucket generated
-  * Change region if different
-  * Change queue to the aws batch queue generated
-* The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow will be run
-* Add `-profile` with the name aws config which was customized
+Authentication:
+----------------
+The consortium server used must be authentificated with the [deriva authentication client](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/), and remain authentificated till the end of the pipeline run. Prematurely closing the client will result in invalidation of the tokens, and may result in the pipeline failure. The use of long-lived "globus" tokens is on the roadmap for use in the future.
 
 To Run:
 -------
@@ -49,7 +43,7 @@ To Run:
     * **aws_spot** = AWS Batch spot instance requests
   * `--email` email address(es) to send failure notification (comma separated) ***(optional)***:
     * e.g: `--email 'Venkat.Malladi@utsouthwestern.edu,Gervaise.Henry@UTSouthwestern.edu'`
-    
+
 * NOTES:
   * once deriva-auth is run and authenticated, the two files above are saved in ```~/.deriva/``` (see official documents from [deriva](https://github.com/informatics-isi-edu/deriva-client#installer-packages-for-windows-and-macosx) on the lifetime of the credentials)
   * reference version consists of Genome Reference Consortium version, patch release and GENCODE annotation release # (leaving the params blank will use the default version tied to the pipeline version)
@@ -75,12 +69,22 @@ FULL EXAMPLE:
 nextflow run workflow/rna-seq.nf --repRID Q-Y5JA --source production --deriva ./data/credential.json --bdbag ./data/cookies.txt --dev false --upload true -profile biohpc
 ```
 
-To run a set of replicates from study RID:
+Cloud Compatibility:
+--------------------
+This pipeline is also capable of being run on AWS. To do so:
+* Build a AWS batch queue and environment either manually or with [aws-cloudformantion](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Nextflow&templateURL=https://s3.amazonaws.com/aws-genomics-workflows/templates/nextflow/nextflow-aio.template.yaml)
+* Edit one of the aws configs in workflow/config/
+  * Replace workDir with the S3 bucket generated
+  * Change region if different
+  * Change queue to the aws batch queue generated
+* The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow will be run
+* Add `-profile` with the name aws config which was customized
+
+To generate you own references or new references:
 ------------------------------------------
-Run in repo root dir:
-* `sh workflow/scripts/splitStudy.sh [studyRID]`
-It will run in parallel in batches of 5 replicatesRID with 30 second delays between launches.\
-NOTE: Nextflow "local" processes for all replicates will run on the node/machine the bash script is launched from... consider running the study script on the BioHPC's SLURM cluster (use `sbatch`).
+Download the [reference creation script](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/snippets/31).
+This script will auto create human and mouse references from GENCODE. It can also create ERCC92 spike-in references as well as concatenate them to GENCODE references automatically. In addition, it can create references from manually downloaded FASTA and GTF files.
+
 
 Errors:
 -------
@@ -95,7 +99,7 @@ Error reported back to the data-hub are (they aren't thrown on the command line 
 |**Submitted metadata does not match inferred**|All required metadata for analysis of the data is internally inferred by the pipeline, if any of those do not match the submitted metadata, this error is detected to notify of a potential error.|
 
 <hr>
-[**CHANGELOG**](https://git.biohpc.swmed.edu/BICF/gudmap_rbk/rna-seq/blob/develop/CHANGELOG.md)
+[**CHANGELOG**](CHANGELOG.md)
 <hr>
 
 Credits
@@ -129,7 +133,7 @@ UT Southwestern Medical Center\
 [johnathan.gesell@utsouthwestern.edu](mailto:jonathn.gesell@utsouthwestern.edu)
 
 Jeremy A. Mathews\
-*Computational Intern*\
+*Computational Biologist*\
 Bioinformatics Core Facility\
 UT Southwestern Medical Center\
 <a href="https://orcid.org/0000-0002-2931-1430" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0002-2931-1430</a>\

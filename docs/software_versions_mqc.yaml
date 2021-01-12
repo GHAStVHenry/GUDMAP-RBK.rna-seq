@@ -8,7 +8,7 @@
             <dl class="dl-horizontal">
         
             <dt>Python</dt><dd>v3.8.3</dd>
-            <dt>DERIVA</dt><dd>v1.3.0</dd>
+            <dt>DERIVA</dt><dd>v1.4.3</dd>
             <dt>BDBag</dt><dd>v1.5.6</dd>
             <dt>RSeQC</dt><dd>v4.0.0</dd>
             <dt>Trim Galore!</dt><dd>v0.6.4_dev</dd>
@@ -20,5 +20,5 @@
             <dt>deepTools</dt><dd>v3.5.0</dd>
             <dt>FastQC</dt><dd>v0.11.9</dd>
             <dt>MultiQC</dt><dd>v1.9</dd>
-            <dt>Pipeline Version</dt><dd>v0.1.0</dd>
+            <dt>Pipeline Version</dt><dd>v1.0.0</dd>
             </dl>

@@ -1,4 +1,20 @@
-# v0.1.0 (in development)
+# v1.0.0 (in development)
+**User Facing**
+* Add link to reference builder script
+* Output median TIN to mRNA_QC table
+
+**Background**
+* Change consistency test to check if +/- 5% of standard
+* Change tool version checker for badges to use latest tag
+* Utilize pipeline tracking and qc AWS tables
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+* Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+
+<hr>
+
+# v0.1.0
 **User Facing**
 * Add option to pull references from datahub
 * Add option to send email on workflow error, with pipeline error message
@@ -32,7 +48,6 @@
 * Make inputBag export config to create inputBag with only small txt file for CI unit test of getData (and update test)
 
 *Known Bugs*
-* Datahub reference pull uses dev.gudmap.org as source until referencencs are placed on production
 * Override params (inputBag, fastq, species) aren't checked for integrity
 
 <hr>

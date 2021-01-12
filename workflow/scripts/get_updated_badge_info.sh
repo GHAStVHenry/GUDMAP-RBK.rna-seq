@@ -10,19 +10,19 @@ develop_pipeline_version=$(git show origin/develop:workflow/nextflow.config | gr
 develop_nextflow_version=$(git show origin/develop:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
 
 echo "collecting tool version for badges"
-python_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o Python.* | grep -oP "(?<=d>).*(?=\<)")
-deriva_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o DERIVA.* | grep -oP "(?<=d>).*(?=\<)")
-bdbag_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o BDBag.* | grep -oP "(?<=d>).*(?=\<)")
-rseqc_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o RSeQC.* | grep -oP "(?<=d>).*(?=\<)")
-trimgalore_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o 'Trim Galore!'.* | grep -oP "(?<=d>).*(?=\<)")
-hisat2_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o HISAT2.* | grep -oP "(?<=d>).*(?=\<)")
-samtools_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o Samtools.* | grep -oP "(?<=d>).*(?=\<)")
-picard_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o 'picard (MarkDuplicates)'.* | grep -oP "(?<=d>).*(?=\<)")
-featurecounts_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o featureCounts.* | grep -oP "(?<=d>).*(?=\<)")
-r_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o '>R<'.* | grep -oP "(?<=d>).*(?=\<)")
-deeptools_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o deepTools.* | grep -oP "(?<=d>).*(?=\<)")
-fastqc_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o FastQC.* | grep -oP "(?<=d>).*(?=\<)")
-multiqc_version=$(git show origin/develop:docs/software_versions_mqc.yaml | grep -o MultiQC.* | grep -oP "(?<=d>).*(?=\<)")
+python_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o Python.* | grep -oP "(?<=d>).*(?=\<)")
+deriva_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o DERIVA.* | grep -oP "(?<=d>).*(?=\<)")
+bdbag_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o BDBag.* | grep -oP "(?<=d>).*(?=\<)")
+rseqc_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o RSeQC.* | grep -oP "(?<=d>).*(?=\<)")
+trimgalore_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o 'Trim Galore!'.* | grep -oP "(?<=d>).*(?=\<)")
+hisat2_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o HISAT2.* | grep -oP "(?<=d>).*(?=\<)")
+samtools_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o Samtools.* | grep -oP "(?<=d>).*(?=\<)")
+picard_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o 'picard (MarkDuplicates)'.* | grep -oP "(?<=d>).*(?=\<)")
+featurecounts_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o featureCounts.* | grep -oP "(?<=d>).*(?=\<)")
+r_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o '>R<'.* | grep -oP "(?<=d>).*(?=\<)")
+deeptools_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o deepTools.* | grep -oP "(?<=d>).*(?=\<)")
+fastqc_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o FastQC.* | grep -oP "(?<=d>).*(?=\<)")
+multiqc_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o MultiQC.* | grep -oP "(?<=d>).*(?=\<)")
 
 echo "collecting badges"
 mkdir -p ./badges/tools

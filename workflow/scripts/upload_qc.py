@@ -12,6 +12,7 @@ def get_args():
     parser.add_argument('-l', '--length', help="median read length", required=True)
     parser.add_argument('-w', '--rawCount', help="raw count", required=True)
     parser.add_argument('-f', '--assignedCount', help="final assigned count", required=True)
+    parser.add_argument('-t', '--tin', help="median TIN", required=True)
     parser.add_argument('-n', '--notes', help="notes", default="", required=False)
     parser.add_argument('-o', '--host', help="datahub host", required=True)
     parser.add_argument('-c', '--cookie', help="cookie token", required=True)
@@ -33,6 +34,7 @@ def main(hostname, catalog_number, credential):
             "Median_Read_Length": args.length,
             "Raw_Count": args.rawCount,
             "Final_Count": args.assignedCount,
+            "Median_TIN": args.tin,
             "Notes": args.notes
         }
         entities = run_table.insert([run_data])
@@ -47,6 +49,7 @@ def main(hostname, catalog_number, credential):
             "Median_Read_Length": args.length,
             "Raw_Count": args.rawCount,
             "Final_Count": args.assignedCount,
+            "Median_TIN": args.tin,
             "Notes": args.notes
         }
         entities = run_table.update([run_data])

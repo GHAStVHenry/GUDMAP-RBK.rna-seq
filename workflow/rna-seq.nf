@@ -129,6 +129,18 @@ process trackStart {
       "dev": ${params.dev} \
     }' \
     "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
+
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}", \
+      "repRID": "${repRID}", \
+      "PipelineVersion": "${workflow.manifest.version}", \
+      "Server": "${params.source}", \
+      "Queued": "NA", \
+      "CheckedOut": "NA", \
+      "Started": "${workflow.start}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
@@ -1243,6 +1255,13 @@ process uploadExecutionRun {
   fi
 
   echo "\${executionRun_rid}" > executionRunRID.csv
+
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${executionRun_rid}'" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
@@ -1734,6 +1753,12 @@ tinMedInfer_fl.splitCsv(sep: ",", header: false).separate(
   tinMedInfer
 )
 
+// Replicate inferred median TIN for multiple process inputs
+tinMedInfer.into {
+  tinMedInfer_aggrQC
+  tinMedInfer_uploadQC
+}
+
 /*
  *aggrQC: aggregate QC from processes as well as metadata and run MultiQC
 */
@@ -1769,7 +1794,7 @@ process aggrQC {
     val readLengthI from readLengthInfer_aggrQC
     val rawReadsI from rawReadsInfer_aggrQC
     val assignedReadsI from assignedReadsInfer_aggrQC
-    val tinMedI from tinMedInfer
+    val tinMedI from tinMedInfer_aggrQC
     val studyRID from studyRID_aggrQC
     val expRID from expRID_aggrQC
     val fastqCountError_aggrQC
@@ -1850,7 +1875,11 @@ process aggrQC {
     echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
-    """
+
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    @./${repRID}.multiqc_data.json \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
+  """
 }
 
 /* 
@@ -1869,6 +1898,7 @@ process uploadQC {
     val length from readLengthInfer_uploadQC
     val rawCount from rawReadsInfer_uploadQC
     val finalCount from assignedReadsInfer_uploadQC
+    val tinMed from tinMedInfer_uploadQC
     val fastqCountError_uploadQC
     val fastqReadError_uploadQC
     val speciesError_uploadQC
@@ -1912,7 +1942,7 @@ process uploadQC {
     echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
   fi
 
-  qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -o ${source} -c \${cookie} -u F)
+  qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -t ${tinMed} -o ${source} -c \${cookie} -u F)
   echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
   echo "\${qc_rid}" > qcRID.csv
@@ -2124,6 +2154,14 @@ process finalizeExecutionRun {
 
   rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
   echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
+
+  dt=`date +%FT%T.%3N%:z`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}", \
+      "Complete": "\${dt}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
@@ -2206,6 +2244,14 @@ process failPreExecutionRun {
     executionRun_rid==\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
   fi
+
+  dt=`date +%FT%T.%3N%:z`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}", \
+      "Failure": "\${dt}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
@@ -2289,6 +2335,14 @@ process failExecutionRun {
     rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
   fi
+  
+  dt=`date +%FT%T.%3N%:z`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}", \
+      "Failure": "\${dt}" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
 
