@@ -2155,7 +2155,7 @@ process finalizeExecutionRun {
   rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
   echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
 
-  dt=`date --utc +%FT%TZ`
+  dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}" \
@@ -2245,7 +2245,7 @@ process failPreExecutionRun {
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
   fi
 
-  dt=`date --utc +%FT%TZ`
+  dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}" \
@@ -2336,7 +2336,7 @@ process failExecutionRun {
     echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
   fi
   
-  dt=`date --utc +%FT%TZ`
+  dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}" \
