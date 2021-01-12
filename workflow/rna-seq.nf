@@ -1259,7 +1259,7 @@ process uploadExecutionRun {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}" \
-      "ExecutionRunRID": "\${executionRun_rid}" \
+      "ExecutionRunRID": "'\${executionRun_rid}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
