@@ -2158,7 +2158,7 @@ process finalizeExecutionRun {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
-      "Complete": "\${dt}" \
+      "Complete": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
@@ -2248,7 +2248,7 @@ process failPreExecutionRun {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
-      "Failure": "\${dt}" \
+      "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
@@ -2339,7 +2339,7 @@ process failExecutionRun {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
-      "Failure": "\${dt}" \
+      "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
