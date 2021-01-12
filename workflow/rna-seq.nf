@@ -1258,7 +1258,7 @@ process uploadExecutionRun {
 
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}" \
+      "ID": "${workflow.sessionId}", \
       "ExecutionRunRID": "'\${executionRun_rid}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
@@ -2158,7 +2158,7 @@ process finalizeExecutionRun {
   dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}" \
+      "ID": "${workflow.sessionId}", \
       "Complete": "\${dt}" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
@@ -2248,7 +2248,7 @@ process failPreExecutionRun {
   dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}" \
+      "ID": "${workflow.sessionId}", \
       "Failure": "\${dt}" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
@@ -2339,7 +2339,7 @@ process failExecutionRun {
   dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
-      "ID": "${workflow.sessionId}" \
+      "ID": "${workflow.sessionId}", \
       "Failure": "\${dt}" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
