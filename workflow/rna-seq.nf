@@ -2249,6 +2249,7 @@ process failPreExecutionRun_fastq {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${rid}'", \
       "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
@@ -2330,6 +2331,7 @@ process failPreExecutionRun_species {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${rid}'", \
       "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
@@ -2421,6 +2423,7 @@ process failExecutionRun {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${rid}'", \
       "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
