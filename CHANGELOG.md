@@ -1,4 +1,17 @@
-# v1.0.0 (in development)
+# v1.0.1 (in development)
+**User Facing**
+* 
+
+**Background**
+* Split non-metadata mismatch error handling proces into 2, 1 to handle fastq errors and one for species errors (BUG FIX)
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+* Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+
+<hr>
+
+# v1.0.0
 **User Facing**
 * Add link to reference builder script
 * Output median TIN to mRNA_QC table
