@@ -2268,7 +2268,7 @@ process failPreExecutionRun_species {
     path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_species
     val spike from spikeMeta_failPreExecutionRun_species
     val species from speciesMeta_failPreExecutionRun_species
-    val inputBagRID from inputBagRID_failPreExecutionRun_species]
+    val inputBagRID from inputBagRID_failPreExecutionRun_species
     val speciesError from speciesError_failPreExecutionRun_species
     val speciesError_details
 
