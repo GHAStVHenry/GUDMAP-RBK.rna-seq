@@ -3,7 +3,10 @@
 * 
 
 **Background**
-* Split non-metadata mismatch error handling proces into 2, 1 to handle fastq errors and one for species errors (BUG FIX)
+* Split non-metadata mismatch error handling proces into 2, 1 to handle fastq errors and one for species errors (BUG FIX #101)
+* Add known errors to integration CI tests (ambiguous species, trunkated fastq, R1/R2 mismatch (#103)
+* Fix pre exeuction run fails uploading of execution run RID to tracking site (#96, #97)
+* Change CI replicate count badge CI to count all execution runs that match major version
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
