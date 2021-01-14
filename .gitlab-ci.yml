@@ -705,6 +705,51 @@ integration_pe:
       - always
 
 
+failAmbiguousSpecies:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+        - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --upload true -with-dag dag.png --dev false --ci true
+  retry:
+    max: 0
+    when:
+      - always
+
+failTrunkation:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+        - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --upload true -with-dag dag.png --dev false --ci true
+  retry:
+    max: 0
+    when:
+      - always
+
+failMismatchR1R2:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+        - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-CWH4 --source staging --upload true -with-dag dag.png --dev false --ci true
+  retry:
+    max: 0
+    when:
+      - always
+
 override_inputBag:
   stage: integration
   only: [merge_requests]
