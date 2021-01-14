@@ -2317,13 +2317,13 @@ process failPreExecutionRun_species {
   echo \${exist} >> ${repRID}.failPreExecutionRun_species.log
   if [ "\${exist}" == "[]" ]
   then
-    rid=\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
+    rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
     echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_species.log
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
     echo \${rid} >> ${repRID}.failPreExecutionRun_species.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_species.log
   fi
 
