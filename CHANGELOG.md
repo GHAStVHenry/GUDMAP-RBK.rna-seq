@@ -1,3 +1,15 @@
+# v1.0.2 (In development)
+**User Facing**
+
+**Background**
+* Fix spelling in config file for process of failed fastq to upload error message (#104)
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+* Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+
+<hr>
+
 # v1.0.1
 **User Facing**
 
