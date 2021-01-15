@@ -47,7 +47,8 @@ deriva.into {
   deriva_uploadProcessedFile
   deriva_uploadOutputBag
   deriva_finalizeExecutionRun
-  deriva_failPreExecutionRun
+  deriva_failPreExecutionRun_fastq
+  deriva_failPreExecutionRun_species
   deriva_failExecutionRun
 }
 bdbag = Channel
@@ -98,7 +99,8 @@ script_tinHist = Channel.fromPath("${baseDir}/scripts/tin_hist.py")
 script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py")
 script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failPreExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failPreExecutionRun_fastq = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failPreExecutionRun_species = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
 script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
@@ -448,13 +450,15 @@ strandedMeta.into {
 spikeMeta.into {
   spikeMeta_checkMetadata
   spikeMeta_aggrQC
-  spikeMeta_failPreExecutionRun
+  spikeMeta_failPreExecutionRun_fastq
+  spikeMeta_failPreExecutionRun_species
   spikeMeta_failExecutionRun
 }
 speciesMeta.into {
   speciesMeta_checkMetadata
   speciesMeta_aggrQC
-  speciesMeta_failPreExecutionRun
+  speciesMeta_failPreExecutionRun_fastq
+  speciesMeta_failPreExecutionRun_species
   speciesMeta_failExecutionRun
 }
 studyRID.into {
@@ -500,7 +504,7 @@ fastqCountError.into {
   fastqCountError_uploadQC
   fastqCountError_uploadProcessedFile
   fastqCountError_uploadOutputBag
-  fastqCountError_failPreExecutionRun
+  fastqCountError_failPreExecutionRun_fastq
 }
 fastqReadError.into {
   fastqReadError_trimData
@@ -521,7 +525,7 @@ fastqReadError.into {
   fastqReadError_uploadQC
   fastqReadError_uploadProcessedFile
   fastqReadError_uploadOutputBag
-  fastqReadError_failPreExecutionRun
+  fastqReadError_failPreExecutionRun_fastq
 }
 
 /*
@@ -987,7 +991,7 @@ speciesError.into {
   speciesError_uploadQC
   speciesError_uploadProcessedFile
   speciesError_uploadOutputBag
-  speciesError_failPreExecutionRun
+  speciesError_failPreExecutionRun_species
 }
 
 /* 
@@ -1180,7 +1184,8 @@ inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
 inputBagRID.into {
   inputBagRID_uploadExecutionRun
   inputBagRID_finalizeExecutionRun
-  inputBagRID_failPreExecutionRun
+  inputBagRID_failPreExecutionRun_fastq
+  inputBagRID_failPreExecutionRun_species
   inputBagRID_failExecutionRun
 }
 
@@ -2166,32 +2171,30 @@ process finalizeExecutionRun {
 }
 
 /* 
- * failPreExecutionRun: fail the execution run prematurely
+ * failPreExecutionRun_fastq: fail the execution run prematurely for fastq errors
 */
-process failPreExecutionRun {
+process failPreExecutionRun_fastq {
   tag "${repRID}"
 
   input:
-    path script_uploadExecutionRun_failPreExecutionRun
-    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun
-    val spike from spikeMeta_failPreExecutionRun
-    val species from speciesMeta_failPreExecutionRun
-    val inputBagRID from inputBagRID_failPreExecutionRun
-    val fastqCountError from fastqCountError_failPreExecutionRun
+    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun_fastq
+    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_fastq
+    val spike from spikeMeta_failPreExecutionRun_fastq
+    val species from speciesMeta_failPreExecutionRun_fastq
+    val inputBagRID from inputBagRID_failPreExecutionRun_fastq
+    val fastqCountError from fastqCountError_failPreExecutionRun_fastq
     val fastqCountError_details
-    val fastqReadError from fastqReadError_failPreExecutionRun
+    val fastqReadError from fastqReadError_failPreExecutionRun_fastq
     val fastqReadError_details
-    val speciesError from speciesError_failPreExecutionRun
-    val speciesError_details
 
   when:
     upload
-    fastqCountError == 'true' || fastqReadError == 'true' || speciesError == 'true'
+    fastqCountError == 'true' || fastqReadError == 'true'
 
   script:
   """
-  hostname > ${repRID}.failPreExecutionRun.log
-  ulimit -a >> ${repRID}.failPreExecutionRun.log
+  hostname > ${repRID}.failPreExecutionRun_fastq.log
+  ulimit -a >> ${repRID}.failPreExecutionRun_fastq.log
 
   errorDetails=""
   if [ ${fastqCountError} == true ]
@@ -2200,16 +2203,13 @@ process failPreExecutionRun {
   elif [ ${fastqReadError} == true ]
   then
     errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
-  elif [ ${speciesError} == true ]
-  then
-    errorDetails=\$(echo \$(errorDetails)${speciesError_details}"\\n")
   fi
 
-  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun.log
+  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_fastq.log
   workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
   workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
   workflow=\${workflow:7:-6}
-  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun.log
+  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_fastq.log
 
   if [ "${species}" == "Homo sapiens" ]
   then
@@ -2222,33 +2222,116 @@ process failPreExecutionRun {
   then
     genomeName=\$(echo \${genomeName}-S)
   fi
-  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun.log
+  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_fastq.log
   genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
   genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
   genome=\${genome:7:-6}
-  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun.log
+  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_fastq.log
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:11:-1}
 
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
-  echo \${exist} >> ${repRID}.failPreExecutionRun.log
+  echo \${exist} >> ${repRID}.failPreExecutionRun_fastq.log
   if [ "\${exist}" == "[]" ]
   then
-    rid=\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
-    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun.log
+    rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
+    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
-    echo \${rid} >> ${repRID}.failPreExecutionRun.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun_failPreExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
-    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
+    echo \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
+    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastq.log
   fi
 
   dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${rid}'", \
+      "Failure": "'\${dt}'" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+  """
+}
+
+
+/* 
+ * failPreExecutionRun_species: fail the execution run prematurely for species error
+*/
+process failPreExecutionRun_species {
+  tag "${repRID}"
+
+  input:
+    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun_species
+    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_species
+    val spike from spikeMeta_failPreExecutionRun_species
+    val species from speciesMeta_failPreExecutionRun_species
+    val inputBagRID from inputBagRID_failPreExecutionRun_species
+    val speciesError from speciesError_failPreExecutionRun_species
+    val speciesError_details
+
+  when:
+    upload
+    speciesError == 'true'
+
+  script:
+  """
+  hostname > ${repRID}.failPreExecutionRun_species.log
+  ulimit -a >> ${repRID}.failPreExecutionRun_species.log
+
+  errorDetails=""
+  if [ ${speciesError} == true ]
+  then
+    errorDetails=\$(echo \$(errorDetails)${speciesError_details}"\\n")
+  fi
+
+  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_species.log
+  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
+  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  workflow=\${workflow:7:-6}
+  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_species.log
+
+  if [ "${species}" == "Homo sapiens" ]
+  then
+    genomeName=\$(echo GRCh${refHuVersion})
+  elif [ "${species}" == "Mus musculus" ]
+  then
+    genomeName=\$(echo GRCm${refMoVersion})
+  fi
+  if [ "${spike}" == "yes" ]
+  then
+    genomeName=\$(echo \${genomeName}-S)
+  fi
+  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_species.log
+  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
+  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  genome=\${genome:7:-6}
+  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_species.log
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
+  echo \${exist} >> ${repRID}.failPreExecutionRun_species.log
+  if [ "\${exist}" == "[]" ]
+  then
+    rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
+    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_species.log
+  else
+    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    rid=\${rid:7:-6}
+    echo \${rid} >> ${repRID}.failPreExecutionRun_species.log
+    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_species.log
+  fi
+
+  dt=`date +%FT%T.%3N%:z`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${rid}'", \
       "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
@@ -2340,6 +2423,7 @@ process failExecutionRun {
   curl -H 'Content-Type: application/json' -X PUT -d \
     '{ \
       "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${rid}'", \
       "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
