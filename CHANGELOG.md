@@ -1,4 +1,4 @@
-# v1.0.2 (In development)
+# v1.0.2
 **User Facing**
 
 **Background**
