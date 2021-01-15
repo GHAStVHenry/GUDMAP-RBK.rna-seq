@@ -1,6 +1,5 @@
-# v1.0.1 (in development)
+# v1.0.1
 **User Facing**
-* 
 
 **Background**
 * Split non-metadata mismatch error handling proces into 2, 1 to handle fastq errors and one for species errors (BUG FIX #101)
