@@ -1,3 +1,30 @@
+# v1.0.2
+**User Facing**
+
+**Background**
+* Fix spelling in config file for process of failed fastq to upload error message (#104)
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+* Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+
+<hr>
+
+# v1.0.1
+**User Facing**
+
+**Background**
+* Split non-metadata mismatch error handling proces into 2, 1 to handle fastq errors and one for species errors (BUG FIX #101)
+* Add known errors to integration CI tests (ambiguous species, trunkated fastq, R1/R2 mismatch (#103)
+* Fix pre exeuction run fails uploading of execution run RID to tracking site (#96, #97)
+* Change CI replicate count badge CI to count all execution runs that match major version
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+* Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+
+<hr>
+
 # v1.0.0
 **User Facing**
 * Add link to reference builder script
