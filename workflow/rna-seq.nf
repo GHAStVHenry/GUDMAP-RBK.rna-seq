@@ -529,6 +529,52 @@ fastqReadError.into {
 }
 
 /*
+ *fastqc: run fastqc on untrimmed fastq's
+*/
+process fastqc {
+  tag "${repRID}"
+
+  input:
+    path (fastq) from fastqs_fastqc
+    val fastqCountError_fastqc
+    val fastqReadError_fastqc
+
+  output:
+    path ("*.fastq.gz", includeInputs:true) into fastqs_trimData
+    path ("*_fastqc.zip") into fastqc
+    path ("rawReads.csv") into rawReadsInfer_fl
+
+  when:
+    fastqCountError_fastqc == 'false'
+    fastqReadError_fastqc == 'false'
+
+  script:
+    """
+    hostname > ${repRID}.fastqc.log
+    ulimit -a >> ${repRID}.fastqc.log
+
+    # run fastqc
+    echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
+    fastqc *.fastq.gz -o .
+
+    # count raw reads
+    zcat *.R1.fastq.gz | echo \$((`wc -l`/4)) > rawReads.csv
+    """
+}
+
+// Extract number of raw reads metadata into channel
+rawReadsInfer = Channel.create()
+rawReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
+  rawReadsInfer
+)
+
+// Replicate inferred raw reads for multiple process inputs
+rawReadsInfer.into {
+  rawReadsInfer_aggrQC
+  rawReadsInfer_uploadQC
+}
+
+/*
  * trimData: trims any adapter or non-host sequences from the data
 */
 process trimData {
@@ -1646,52 +1692,6 @@ assignedReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
 assignedReadsInfer.into {
   assignedReadsInfer_aggrQC
   assignedReadsInfer_uploadQC
-}
-
-/*
- *fastqc: run fastqc on untrimmed fastq's
-*/
-process fastqc {
-  tag "${repRID}"
-
-  input:
-    path (fastq) from fastqs_fastqc
-    val fastqCountError_fastqc
-    val fastqReadError_fastqc
-
-  output:
-    path ("*.fastq.gz", includeInputs:true) into fastqs_trimData
-    path ("*_fastqc.zip") into fastqc
-    path ("rawReads.csv") into rawReadsInfer_fl
-
-  when:
-    fastqCountError_fastqc == 'false'
-    fastqReadError_fastqc == 'false'
-
-  script:
-    """
-    hostname > ${repRID}.fastqc.log
-    ulimit -a >> ${repRID}.fastqc.log
-
-    # run fastqc
-    echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
-    fastqc *.fastq.gz -o .
-
-    # count raw reads
-    zcat *.R1.fastq.gz | echo \$((`wc -l`/4)) > rawReads.csv
-    """
-}
-
-// Extract number of raw reads metadata into channel
-rawReadsInfer = Channel.create()
-rawReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
-  rawReadsInfer
-)
-
-// Replicate inferred raw reads for multiple process inputs
-rawReadsInfer.into {
-  rawReadsInfer_aggrQC
-  rawReadsInfer_uploadQC
 }
 
 /*
