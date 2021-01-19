@@ -1,3 +1,15 @@
+# v1.0.3 (in development)
+**User Facing**
+
+**Background**
+* Add memory limit per thread for samtools sort
+
+*Known Bugs*
+* Override params (inputBag, fastq, species) aren't checked for integrity
+* Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+
+<hr>
+
 # v1.0.2
 **User Facing**
 
