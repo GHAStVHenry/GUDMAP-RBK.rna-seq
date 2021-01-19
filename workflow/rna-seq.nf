@@ -284,12 +284,12 @@ if (fastqsForce != "") {
     .ifEmpty { exit 1, "override inputBag file not found: ${fastqsForce}" }
     .collect().into {
       fastqs_parseMetadata
-      fastqs_trimData
+      fastqs_fastqc
     }
 } else {
   fastqs.into {
     fastqs_parseMetadata
-    fastqs_trimData
+    fastqs_fastqc
   }
 }
 
@@ -542,7 +542,6 @@ process trimData {
 
   output:
     path ("*.fq.gz") into fastqsTrim
-    path ("*.fastq.gz", includeInputs:true) into fastqs_fastqc
     path ("*_trimming_report.txt") into trimQC
     path ("readLength.csv") into readLengthInfer_fl
 
@@ -1659,17 +1658,16 @@ process fastqc {
     path (fastq) from fastqs_fastqc
     val fastqCountError_fastqc
     val fastqReadError_fastqc
-    val speciesError_fastqc
     val pipelineError_fastqc
 
   output:
+    path ("*.fastq.gz", includeInputs:true) into fastqs_trimData
     path ("*_fastqc.zip") into fastqc
     path ("rawReads.csv") into rawReadsInfer_fl
 
   when:
     fastqCountError_fastqc == 'false'
     fastqReadError_fastqc == 'false'
-    speciesError_fastqc == 'false'
     pipelineError_fastqc == 'false'
 
   script:
