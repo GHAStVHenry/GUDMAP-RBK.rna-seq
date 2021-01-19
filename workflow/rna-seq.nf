@@ -1658,7 +1658,6 @@ process fastqc {
     path (fastq) from fastqs_fastqc
     val fastqCountError_fastqc
     val fastqReadError_fastqc
-    val pipelineError_fastqc
 
   output:
     path ("*.fastq.gz", includeInputs:true) into fastqs_trimData
@@ -1668,7 +1667,6 @@ process fastqc {
   when:
     fastqCountError_fastqc == 'false'
     fastqReadError_fastqc == 'false'
-    pipelineError_fastqc == 'false'
 
   script:
     """
