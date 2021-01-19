@@ -1451,7 +1451,9 @@ process alignData {
 
     # sort the bam file using Samtools
     echo -e "LOG: sorting the bam file" >> ${repRID}.align.log
-    samtools sort -@ `nproc` -O BAM -o ${repRID}.sorted.bam ${repRID}.bam
+    mem=\$(vmstat -s -S K | grep 'total memory' | grep -o '[0-9]*')
+    mem=\$(expr \${mem} / `nproc` \* 85 / 100)
+    samtools sort -@ `nproc` -m \${mem}K -O BAM -o ${repRID}.sorted.bam ${repRID}.bam
 
     # index the sorted bam using Samtools
     echo -e "LOG: indexing sorted bam file" >> ${repRID}.align.log
