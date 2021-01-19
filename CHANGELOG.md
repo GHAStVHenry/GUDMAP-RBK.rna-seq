@@ -2,8 +2,8 @@
 **User Facing**
 
 **Background**
-* Add memory limit per thread for samtools sort
-* Remove parsing restrictions for submitted stranded/spike/species
+* Add memory limit per thread for samtools sort (#108)
+* Remove parsing restrictions for submitted stranded/spike/species (#105, #106)
 * Pass unidentified ends instead of overwriting it as unknown
 
 *Known Bugs*
