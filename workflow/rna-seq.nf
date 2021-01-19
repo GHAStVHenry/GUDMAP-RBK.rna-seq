@@ -757,10 +757,12 @@ process alignSampleData {
 
     # convert the output sam file to a sorted bam file using Samtools
     echo -e "LOG: converting from sam to bam" >> ${repRID}.${ref}.alignSampleData.log
-    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${ref}.sampled.bam ${ref}.sampled.sam
+    samtools view -1 -@ `nproc` -m \${mem}K -F 4 -F 8 -F 256 -o ${ref}.sampled.bam ${ref}.sampled.sam
 
     # sort the bam file using Samtools
     echo -e "LOG: sorting the bam file" >> ${repRID}.${ref}.alignSampleData.log
+    mem=\$(vmstat -s -S K | grep 'total memory' | grep -o '[0-9]*')
+    mem=\$(expr \${mem} / `nproc` \\* 85 / 100)
     samtools sort -@ `nproc` -O BAM -o ${ref}.sampled.sorted.bam ${ref}.sampled.bam
 
     # index the sorted bam using Samtools
