@@ -43,7 +43,7 @@ def main():
     # Check experiment RID metadata from 'Experiment.csv'
     if (args.parameter == "expRID"):
         if (len(metaFile.Experiment_RID.unique()) > 1):
-            print("There are multiple experoment RID's in the metadata: " +
+            print("There are multiple experiment RID's in the metadata: " +
                   " ".join(metaFile.Experiment_RID.unique()))
             exit(1)
         else:
@@ -79,10 +79,6 @@ def main():
             stranded = "stranded"
         elif (metaFile.Has_Strand_Specific_Information.unique() == "no"):
             stranded = "unstranded"
-        else:
-            print("Stranded metadata not match expected options: " +
-                  metaFile.Has_Strand_Specific_Information.unique())
-            exit(1)
         print(stranded)
 
     # Get spike-in metadata from 'Experiment Settings.csv'
@@ -91,10 +87,6 @@ def main():
             spike = "yes"
         elif (metaFile.Used_Spike_Ins.unique() == "no"):
             spike = "no"
-        else:
-            print("Spike-ins metadata not match expected options: " +
-                  metaFile.Used_Spike_Ins.unique())
-            exit(1)
         print(spike)
 
     # Get species metadata from 'Experiment.csv'
@@ -103,10 +95,6 @@ def main():
             species = "Mus musculus"
         elif (metaFile.Species.unique() == "Homo sapiens"):
             species = "Homo sapiens"
-        else:
-            print("Species metadata not match expected options: " +
-                  metaFile.Species.unique())
-            exit(1)
         print(species)
 
     # Get read length metadata from 'Experiment Settings.csv'

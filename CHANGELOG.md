@@ -3,6 +3,8 @@
 
 **Background**
 * Add memory limit per thread for samtools sort
+* Remove parsing restrictions for submitted stranded/spike/species
+* Pass unidentified ends instead of overwriting it as unknown
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity

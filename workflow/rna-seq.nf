@@ -338,7 +338,7 @@ process parseMetadata {
     then
       endsMeta="pe"
     else
-      endsMeta="unknown"
+      endsMeta=\${endsRaw}
     fi
     if [ "\${endsRaw}" == "" ]
     then
