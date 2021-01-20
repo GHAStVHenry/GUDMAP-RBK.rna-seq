@@ -337,12 +337,10 @@ process parseMetadata {
     elif [ "\${endsRaw}" == "Paired End" ]
     then
       endsMeta="pe"
-    else
-      endsMeta=\${endsRaw}
-    fi
-    if [ "\${endsRaw}" == "" ]
+    elseif [ "\${endsRaw}" == "nan" ]
     then
       endsRaw="_No value_"
+      endsMeta="NA"
     fi
 
     # ganually get endness
