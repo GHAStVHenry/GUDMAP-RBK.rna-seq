@@ -12,6 +12,7 @@
 * Remove check for multiple fastq check in parse metadata (redundant and no longer valid)
 * Handle blank submitted endness better
 * Don't use file.csv from inputBag to parse manual endness, use counted from getData
+* Detect malformed fastq's (#107)
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity

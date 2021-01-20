@@ -545,6 +545,7 @@ process fastqc {
     path ("*.R{1,2}.fastq.gz", includeInputs:true) into fastqs_trimData
     path ("*_fastqc.zip") into fastqc
     path ("rawReads.csv") into rawReadsInfer_fl
+    path "fastqFileError.csv" into fastqFileError_fl
 
   when:
     fastqCountError_fastqc == 'false'
@@ -557,10 +558,21 @@ process fastqc {
 
     # run fastqc
     echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
-    fastqc *.fastq.gz -o .
+    fastqc *.fastq.gz -o . 2> fastqcErrorOut
+    fastqcErrorOut=\$(echo \${fastqcErrorOut} | grep -o 'Failed to process file')
+    fastqFileError=false
+    fastqFileError_details=""
+    if [ "\${fastqcErrorOut}" != "" ]
+    then
+      fastqFileError=true
+      fastqFileError_details="**There is an error with the structure of the fastq**"
+    fi
 
     # count raw reads
     zcat *.R1.fastq.gz | echo \$((`wc -l`/4)) > rawReads.csv
+
+    # save fastq error file
+    echo "\${fastqFileError},\${fastqFileError_details}" > fastqFileError.csv
     """
 }
 
@@ -576,6 +588,37 @@ rawReadsInfer.into {
   rawReadsInfer_uploadQC
 }
 
+// Split fastq count error into separate channel
+fastqFileError = Channel.create()
+fastqFileError_details = Channel.create()
+fastqFileError_fl.splitCsv(sep: ",", header: false).separate(
+  fastqFileError,
+  fastqFileError_details
+)
+
+//  Replicate errors for multiple process inputs
+fastqFileError.into {
+  fastqFileError_fastqc
+  fastqFileError_trimData
+  fastqFileError_getRefInfer
+  fastqFileError_downsampleData
+  fastqFileError_alignSampleData
+  fastqFileError_inferMetadata
+  fastqFileError_checkMetadata
+  fastqFileError_uploadExecutionRun
+  fastqFileError_getRef
+  fastqFileError_alignData
+  fastqFileError_dedupData
+  fastqFileError_makeBigWig
+  fastqFileError_countData
+  fastqFileError_dataQC
+  fastqFileError_aggrQC
+  fastqFileError_uploadQC
+  fastqFileError_uploadProcessedFile
+  fastqFileError_uploadOutputBag
+  fastqFileError_failPreExecutionRun_fastq
+}
+
 /*
  * trimData: trims any adapter or non-host sequences from the data
 */
@@ -587,6 +630,7 @@ process trimData {
     val ends from endsManual_trimData
     val fastqCountError_trimData
     val fastqReadError_trimData
+    val fastqFileError_trimData
 
   output:
     path ("*.fq.gz") into fastqsTrim
@@ -596,6 +640,7 @@ process trimData {
   when:
     fastqCountError_trimData == "false"
     fastqReadError_trimData == "false"
+    fastqFileError_trimData == "false"
 
   script:
     """
@@ -639,7 +684,7 @@ fastqsTrim.into {
 }
 
 // Combine inputs of getRefInfer
-getRefInferInput = referenceInfer.combine(deriva_getRefInfer.combine(script_refDataInfer.combine(fastqCountError_getRefInfer.combine(fastqReadError_getRefInfer))))
+getRefInferInput = referenceInfer.combine(deriva_getRefInfer.combine(script_refDataInfer.combine(fastqCountError_getRefInfer.combine(fastqReadError_getRefInfer.combine(fastqFileError_getRefInfer)))))
 
 /*
   * getRefInfer: dowloads appropriate reference for metadata inference
@@ -648,7 +693,7 @@ process getRefInfer {
   tag "${refName}"
 
   input:
-    tuple val (refName), path (credential, stageAs: "credential.json"), path (script_refDataInfer), val (fastqCountError), val (fastqReadError) from getRefInferInput
+    tuple val (refName), path (credential, stageAs: "credential.json"), path (script_refDataInfer), val (fastqCountError), val (fastqReadError), val (fastqFileError) from getRefInferInput
 
   output:
     tuple val (refName), path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
@@ -657,6 +702,7 @@ process getRefInfer {
   when:
     fastqCountError == "false"
     fastqReadError == "false"
+    fastqFileError == "false"
 
   script:
     """
@@ -734,6 +780,7 @@ process downsampleData {
     val ends from endsManual_downsampleData
     val fastqCountError_downsampleData
     val fastqReadError_downsampleData
+    val fastqFileError_downsampleData
 
   output:
     path ("sampled.1.fq") into fastqs1Sample
@@ -742,6 +789,7 @@ process downsampleData {
   when:
     fastqCountError_downsampleData == "false"
     fastqReadError_downsampleData == "false"
+    fastqFileError_downsampleData == "false"
 
   script:
     """
@@ -765,7 +813,7 @@ process downsampleData {
 }
 
 // Replicate the dowsampled fastq's and attatched to the references
-inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect().combine(fastqCountError_alignSampleData.combine(fastqReadError_alignSampleData)))))
+inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect().combine(fastqCountError_alignSampleData.combine(fastqReadError_alignSampleData.combine(fastqFileError_alignSampleData))))))
 
 /*
  * alignSampleData: aligns the downsampled reads to a reference database
@@ -774,7 +822,7 @@ process alignSampleData {
   tag "${ref}"
 
   input:
-    tuple val (ends), val (ref), path (hisat2), path (fna), path (gtf), path (fastq1), path (fastq2), val (fastqCountError), val (fastqReadError) from inferInput
+    tuple val (ends), val (ref), path (hisat2), path (fna), path (gtf), path (fastq1), path (fastq2), val (fastqCountError), val (fastqReadError), val (fastqFileError) from inferInput
 
   output:
     path ("${ref}.sampled.sorted.bam") into sampleBam
@@ -784,6 +832,7 @@ process alignSampleData {
   when:
     fastqCountError == "false"
     fastqReadError == "false"
+    fastqFileError == "false"
 
   script:
     """
@@ -834,6 +883,7 @@ process inferMetadata {
     path alignSummary from alignSampleQC_inferMetadata.collect()
     val fastqCountError_inferMetadata
     val fastqReadError_inferMetadata
+    val fastqFileError_inferMetadata
 
   output:
     path "infer.csv" into inferMetadata_fl
@@ -843,6 +893,7 @@ process inferMetadata {
   when:
     fastqCountError_inferMetadata == "false"
     fastqReadError_inferMetadata == "false"
+    fastqFileError_inferMetadata == "false"
 
   script:
     """
@@ -1060,6 +1111,7 @@ process checkMetadata {
     val speciesInfer from speciesInfer_checkMetadata
     val fastqCountError_checkMetadata
     val fastqReadError_checkMetadata
+    val fastqFileError_checkMetadata
     val speciesError_checkMetadata
 
   output:
@@ -1069,6 +1121,7 @@ process checkMetadata {
   when:
     fastqCountError_checkMetadata == "false"
     fastqReadError_checkMetadata == "false"
+    fastqFileError_checkMetadata == "false"
     speciesError_checkMetadata == "false"
 
   script:
@@ -1252,6 +1305,7 @@ process uploadExecutionRun {
     val inputBagRID from inputBagRID_uploadExecutionRun
     val fastqCountError_uploadExecutionRun
     val fastqReadError_uploadExecutionRun
+    val fastqFileError_uploadExecutionRun
     val speciesError_uploadExecutionRun
     
   output:
@@ -1261,6 +1315,7 @@ process uploadExecutionRun {
     upload
     fastqCountError_uploadExecutionRun == "false"
     fastqReadError_uploadExecutionRun == "false"
+    fastqFileError_uploadExecutionRun == "false"
     speciesError_uploadExecutionRun == "false"
 
   script:
@@ -1347,6 +1402,7 @@ process getRef {
     val species from speciesInfer_getRef
     val fastqCountError_getRef
     val fastqReadError_getRef
+    val fastqFileError_getRef
     val speciesError_getRef
     val pipelineError_getRef
 
@@ -1356,6 +1412,7 @@ process getRef {
   when:
     fastqCountError_getRef == "false"
     fastqReadError_getRef == "false"
+    fastqFileError_getRef == "false"
     speciesError_getRef == "false"
     pipelineError_getRef == "false"
 
@@ -1447,6 +1504,7 @@ process alignData {
     val stranded from strandedInfer_alignData
     val fastqCountError_alignData
     val fastqReadError_alignData
+    val fastqFileError_alignData
     val speciesError_alignData
     val pipelineError_alignData
 
@@ -1457,6 +1515,7 @@ process alignData {
   when:
     fastqCountError_alignData == "false"
     fastqReadError_alignData == "false"
+    fastqFileError_alignData == "false"
     speciesError_alignData == "false"
     pipelineError_alignData == "false"
 
@@ -1526,6 +1585,7 @@ process dedupData {
     tuple path (bam), path (bai) from rawBam_dedupData
     val fastqCountError_dedupData
     val fastqReadError_dedupData
+    val fastqFileError_dedupData
     val speciesError_dedupData
     val pipelineError_dedupData
 
@@ -1537,6 +1597,7 @@ process dedupData {
   when:
     fastqCountError_dedupData == 'false'
     fastqReadError_dedupData == 'false'
+    fastqFileError_dedupData == 'false'
     speciesError_dedupData == 'false'
     pipelineError_dedupData == 'false'
 
@@ -1585,6 +1646,7 @@ process makeBigWig {
     tuple path (bam), path (bai) from dedupBam_makeBigWig
     val fastqCountError_makeBigWig
     val fastqReadError_makeBigWig
+    val fastqFileError_makeBigWig
     val speciesError_makeBigWig
     val pipelineError_makeBigWig
 
@@ -1594,6 +1656,7 @@ process makeBigWig {
   when:
     fastqCountError_makeBigWig == 'false'
     fastqReadError_makeBigWig == 'false'
+    fastqFileError_makeBigWig == 'false'
     speciesError_makeBigWig == 'false'
     pipelineError_makeBigWig == 'false'
 
@@ -1625,6 +1688,7 @@ process countData {
     val stranded from strandedInfer_countData
     val fastqCountError_countData
     val fastqReadError_countData
+    val fastqFileError_countData
     val speciesError_countData
     val pipelineError_countData
 
@@ -1636,6 +1700,7 @@ process countData {
   when:
     fastqCountError_countData == 'false'
     fastqReadError_countData == 'false'
+    fastqFileError_countData == 'false'
     speciesError_countData == 'false'
     pipelineError_countData == 'false'
 
@@ -1710,6 +1775,7 @@ process dataQC {
     val ends from endsInfer_dataQC
     val fastqCountError_dataQC
     val fastqReadError_dataQC
+    val fastqFileError_dataQC
     val speciesError_dataQC
     val pipelineError_dataQC
 
@@ -1721,6 +1787,7 @@ process dataQC {
   when:
     fastqCountError_dataQC == 'false'
     fastqReadError_dataQC == 'false'
+    fastqFileError_dataQC == 'false'
     speciesError_dataQC == 'false'
     pipelineError_dataQC == 'false'
 
@@ -1806,6 +1873,7 @@ process aggrQC {
     val expRID from expRID_aggrQC
     val fastqCountError_aggrQC
     val fastqReadError_aggrQC
+    val fastqFileError_aggrQC
     val speciesError_aggrQC
     val pipelineError_aggrQC
 
@@ -1816,6 +1884,7 @@ process aggrQC {
   when:
     fastqCountError_aggrQC == 'false'
     fastqReadError_aggrQC == 'false'
+    fastqFileError_aggrQC == 'false'
     speciesError_aggrQC == 'false'
     pipelineError_aggrQC == 'false'
 
@@ -1908,6 +1977,7 @@ process uploadQC {
     val tinMed from tinMedInfer_uploadQC
     val fastqCountError_uploadQC
     val fastqReadError_uploadQC
+    val fastqFileError_uploadQC
     val speciesError_uploadQC
     val pipelineError_uploadQC
 
@@ -1918,6 +1988,7 @@ process uploadQC {
     upload
     fastqCountError_uploadQC == 'false'
     fastqReadError_uploadQC == 'false'
+    fastqFileError_uploadQC == 'false'
     speciesError_uploadQC == 'false'
     pipelineError_uploadQC == 'false'
 
@@ -1984,6 +2055,7 @@ process uploadProcessedFile {
     val executionRunRID from executionRunRID_uploadProcessedFile
     val fastqCountError_uploadProcessedFile
     val fastqReadError_uploadProcessedFile
+    val fastqFileError_uploadProcessedFile
     val speciesError_uploadProcessedFile
     val pipelineError_uploadProcessedFile
 
@@ -1994,6 +2066,7 @@ process uploadProcessedFile {
     upload
     fastqCountError_uploadProcessedFile == 'false'
     fastqReadError_uploadProcessedFile == 'false'
+    fastqFileError_uploadProcessedFile == 'false'
     speciesError_uploadProcessedFile == 'false'
     pipelineError_uploadProcessedFile == 'false'
 
@@ -2076,6 +2149,7 @@ process uploadOutputBag {
     val executionRunRID from executionRunRID_uploadOutputBag
     val fastqCountError_uploadOutputBag
     val fastqReadError_uploadOutputBag
+    val fastqFileError_uploadOutputBag
     val speciesError_uploadOutputBag
     val pipelineError_uploadOutputBag
 
@@ -2086,6 +2160,7 @@ process uploadOutputBag {
     upload
     fastqCountError_uploadOutputBag == 'false'
     fastqReadError_uploadOutputBag == 'false'
+    fastqFileError_uploadOutputBag == 'false'
     speciesError_uploadOutputBag == 'false'
     pipelineError_uploadOutputBag == 'false'
 
@@ -2188,10 +2263,12 @@ process failPreExecutionRun_fastq {
     val fastqCountError_details
     val fastqReadError from fastqReadError_failPreExecutionRun_fastq
     val fastqReadError_details
+    val fastqFileError from fastqFileError_failPreExecutionRun_fastq
+    val fastqFileError_details
 
   when:
     upload
-    fastqCountError == 'true' || fastqReadError == 'true'
+    fastqCountError == 'true' || fastqReadError == 'true' || fastqFileError == 'true'
 
   script:
   """
@@ -2205,6 +2282,9 @@ process failPreExecutionRun_fastq {
   elif [ ${fastqReadError} == true ]
   then
     errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
+  elif [ ${fastqFileError} == true ]
+  then
+    errorDetails=\$(echo \$(errorDetails)${fastqFileError_details}"\\n")
   fi
 
   echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_fastq.log
