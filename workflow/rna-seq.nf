@@ -344,8 +344,8 @@ process parseMetadata {
     fi
 
     # ganually get endness
-    endsManual=\$(python3 ${script_parseMeta} -r ${repRID} -m "${file}" -p endsManual)
-    echo -e "LOG: endedness manually detected: \${endsManual}" >> ${repRID}.parseMetadata.log
+    endsManual=${fastqCount}
+    echo -e "LOG: endedness manually detected: ${fastqCount}" >> ${repRID}.parseMetadata.log
 
     # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p stranded)

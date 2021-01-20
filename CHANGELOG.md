@@ -11,6 +11,7 @@
 * Update input bag export config to only fetch fastq's that match *[_.]R[1-2].fastq.gz naming convention
 * Remove check for multiple fastq check in parse metadata (redundant and no longer valid)
 * Handle blank submitted endness better
+* Don't use file.csv from inputBag to parse manual endness, use counted from getData
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
