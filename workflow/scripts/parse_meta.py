@@ -61,14 +61,6 @@ def main():
         endsMeta = metaFile.Paired_End.unique()[0]
         print(endsMeta)
 
-    # Manually get endness count from 'File.csv'
-    if (args.parameter == "endsManual"):
-        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 1):
-            endsManual = "se"
-        elif (len(metaFile[metaFile["File_Type"] == "FastQ"]) == 2):
-            endsManual = "pe"
-        print(endsManual)
-
     # Get strandedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "stranded"):
         if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
