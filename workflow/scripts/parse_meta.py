@@ -78,7 +78,7 @@ def main():
         elif (metaFile.Used_Spike_Ins.unique() == "no"):
             spike = "no"
         else:
-            stranded = metaFile.Used_Spike_Ins.unique()[0]
+            spike = metaFile.Used_Spike_Ins.unique()[0]
         print(spike)
 
     # Get species metadata from 'Experiment.csv'
@@ -88,7 +88,7 @@ def main():
         elif (metaFile.Species.unique() == "Homo sapiens"):
             species = "Homo sapiens"
         else:
-            stranded = metaFile.Species.unique()[0]
+            species = metaFile.Species.unique()[0]
         print(species)
 
     # Get read length metadata from 'Experiment Settings.csv'
