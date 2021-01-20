@@ -344,7 +344,11 @@ process parseMetadata {
     fi
 
     # ganually get endness
-    endsManual=${fastqCount}
+    if [ "${fastqCount}" == "1" ]
+      endsManual="se"
+    else
+      endsManual="pe"
+    fi
     echo -e "LOG: endedness manually detected: ${fastqCount}" >> ${repRID}.parseMetadata.log
 
     # get strandedness metadata
