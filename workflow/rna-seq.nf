@@ -48,6 +48,7 @@ deriva.into {
   deriva_uploadOutputBag
   deriva_finalizeExecutionRun
   deriva_failPreExecutionRun_fastq
+  deriva_failPreExecutionRun_fastqFile
   deriva_failPreExecutionRun_species
   deriva_failExecutionRun
 }
@@ -100,6 +101,7 @@ script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py
 script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failPreExecutionRun_fastq = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failPreExecutionRun_fastqFile = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failPreExecutionRun_species = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
@@ -462,6 +464,7 @@ spikeMeta.into {
   spikeMeta_checkMetadata
   spikeMeta_aggrQC
   spikeMeta_failPreExecutionRun_fastq
+  spikeMeta_failPreExecutionRun_fastqFile
   spikeMeta_failPreExecutionRun_species
   spikeMeta_failExecutionRun
 }
@@ -469,6 +472,7 @@ speciesMeta.into {
   speciesMeta_checkMetadata
   speciesMeta_aggrQC
   speciesMeta_failPreExecutionRun_fastq
+  speciesMeta_failPreExecutionRun_fastqFile
   speciesMeta_failPreExecutionRun_species
   speciesMeta_failExecutionRun
 }
@@ -557,8 +561,7 @@ process fastqc {
     path "fastqFileError.csv" into fastqFileError_fl
 
   when:
-    fastqCountError_fastqc == 'false'
-    fastqReadError_fastqc == 'false'
+    fastqCountError_fastqc == 'false' && fastqReadError_fastqc == 'false'
 
   script:
     """
@@ -630,7 +633,7 @@ fastqFileError.into {
   fastqFileError_uploadQC
   fastqFileError_uploadProcessedFile
   fastqFileError_uploadOutputBag
-  fastqFileError_failPreExecutionRun_fastq
+  fastqFileError_failPreExecutionRun_fastqFile
 }
 
 /*
@@ -1301,6 +1304,7 @@ inputBagRID.into {
   inputBagRID_uploadExecutionRun
   inputBagRID_finalizeExecutionRun
   inputBagRID_failPreExecutionRun_fastq
+  inputBagRID_failPreExecutionRun_fastqFile
   inputBagRID_failPreExecutionRun_species
   inputBagRID_failExecutionRun
 }
@@ -2277,12 +2281,10 @@ process failPreExecutionRun_fastq {
     val fastqCountError_details
     val fastqReadError from fastqReadError_failPreExecutionRun_fastq
     val fastqReadError_details
-    val fastqFileError from fastqFileError_failPreExecutionRun_fastq
-    val fastqFileError_details
 
   when:
     upload
-    fastqCountError == 'true' || fastqReadError == 'true' || fastqFileError == 'true'
+    fastqCountError == 'true' || fastqReadError == 'true'
 
   script:
   """
@@ -2296,7 +2298,85 @@ process failPreExecutionRun_fastq {
   elif [ ${fastqReadError} == true ]
   then
     errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
-  elif [ ${fastqFileError} == true ]
+  fi
+
+  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_fastq.log
+  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
+  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  workflow=\${workflow:7:-6}
+  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_fastq.log
+
+  if [ "${species}" == "Homo sapiens" ]
+  then
+    genomeName=\$(echo GRCh${refHuVersion})
+  elif [ "${species}" == "Mus musculus" ]
+  then
+    genomeName=\$(echo GRCm${refMoVersion})
+  fi
+  if [ "${spike}" == "yes" ]
+  then
+    genomeName=\$(echo \${genomeName}-S)
+  fi
+  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_fastq.log
+  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
+  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+  genome=\${genome:7:-6}
+  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_fastq.log
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
+  echo \${exist} >> ${repRID}.failPreExecutionRun_fastq.log
+  if [ "\${exist}" == "[]" ]
+  then
+    rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
+    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
+  else
+    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    rid=\${rid:7:-6}
+    echo \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
+    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastq.log
+  fi
+
+  dt=`date +%FT%T.%3N%:z`
+  curl -H 'Content-Type: application/json' -X PUT -d \
+    '{ \
+      "ID": "${workflow.sessionId}", \
+      "ExecutionRunRID": "'\${rid}'", \
+      "Failure": "'\${dt}'" \
+    }' \
+    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+  """
+}
+
+/* 
+ * failPreExecutionRun_fastqFile: fail the execution run prematurely for fastqFile errors
+*/
+process failPreExecutionRun_fastqFile {
+  tag "${repRID}"
+
+  input:
+    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun_fastqFile
+    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_fastqFile
+    val spike from spikeMeta_failPreExecutionRun_fastqFile
+    val species from speciesMeta_failPreExecutionRun_fastqFile
+    val inputBagRID from inputBagRID_failPreExecutionRun_fastqFile
+    val fastqFileError from fastqFileError_failPreExecutionRun_fastqFile
+    val fastqFileError_details
+
+  when:
+    upload
+    fastqFileError == 'true'
+
+  script:
+  """
+  hostname > ${repRID}.failPreExecutionRun_fastq.log
+  ulimit -a >> ${repRID}.failPreExecutionRun_fastq.log
+
+  errorDetails=""
+  if [ ${fastqFileError} == true ]
   then
     errorDetails=\$(echo \$(errorDetails)${fastqFileError_details}"\\n")
   fi
@@ -2351,7 +2431,6 @@ process failPreExecutionRun_fastq {
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
-
 
 /* 
  * failPreExecutionRun_species: fail the execution run prematurely for species error
