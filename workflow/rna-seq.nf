@@ -287,7 +287,7 @@ if (fastqsForce != "") {
       fastqs_fastqc
     }
 } else {
-  fastqs.into {
+  fastqs.collect().into {
     fastqs_parseMetadata
     fastqs_fastqc
   }
@@ -304,7 +304,7 @@ process parseMetadata {
     path file from fileMeta
     path experimentSettings, stageAs: "ExperimentSettings.csv" from experimentSettingsMeta
     path experiment from experimentMeta
-    path (fastq) from fastqs_parseMetadata
+    path (fastq) from fastqs_parseMetadata.collect()
     val fastqCount
 
   output:
@@ -376,6 +376,10 @@ process parseMetadata {
     then
       fastqCountError=true
       fastqCountError_details="**Too many fastqs detected (>2)**"
+    elif [ "${fastqCount}" -eq "0" ]
+    then
+      fastqCountError=true
+      fastqCountError_details="**No valid fastqs detected (may not match .R{1,2}.fastq.gz convention)**"
     elif [ "\${endsMeta}" == "se" ] && [ "${fastqCount}" -ne "1" ]
     then
       fastqCountError=true
@@ -486,6 +490,7 @@ fastqError_fl.splitCsv(sep: ",", header: false).separate(
 
 //  Replicate errors for multiple process inputs
 fastqCountError.into {
+  fastqCountError_fastqc
   fastqCountError_trimData
   fastqCountError_getRefInfer
   fastqCountError_downsampleData
@@ -498,7 +503,6 @@ fastqCountError.into {
   fastqCountError_dedupData
   fastqCountError_makeBigWig
   fastqCountError_countData
-  fastqCountError_fastqc
   fastqCountError_dataQC
   fastqCountError_aggrQC
   fastqCountError_uploadQC
@@ -507,6 +511,7 @@ fastqCountError.into {
   fastqCountError_failPreExecutionRun_fastq
 }
 fastqReadError.into {
+  fastqReadError_fastqc
   fastqReadError_trimData
   fastqReadError_getRefInfer
   fastqReadError_downsampleData
@@ -519,7 +524,6 @@ fastqReadError.into {
   fastqReadError_dedupData
   fastqReadError_makeBigWig
   fastqReadError_countData
-  fastqReadError_fastqc
   fastqReadError_dataQC
   fastqReadError_aggrQC
   fastqReadError_uploadQC
@@ -535,12 +539,12 @@ process fastqc {
   tag "${repRID}"
 
   input:
-    path (fastq) from fastqs_fastqc
+    path (fastq) from fastqs_fastqc.collect()
     val fastqCountError_fastqc
     val fastqReadError_fastqc
 
   output:
-    path ("*.fastq.gz", includeInputs:true) into fastqs_trimData
+    path ("*.R{1,2}.fastq.gz", includeInputs:true) into fastqs_trimData
     path ("*_fastqc.zip") into fastqc
     path ("rawReads.csv") into rawReadsInfer_fl
 

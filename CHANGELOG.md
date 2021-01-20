@@ -5,6 +5,9 @@
 * Add memory limit per thread for samtools sort (#108)
 * Remove parsing restrictions for submitted stranded/spike/species (#105, #106)
 * Pass unidentified ends instead of overwriting it as unknown
+* Move fastqc process before trim to catch fastq errors (#107)
+* Only use fastq's that match *.R[1,2].fastq.gz naming convention (#107)
+* Add error output for no fastq's
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
