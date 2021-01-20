@@ -18,7 +18,7 @@ if [ "${validate}" != "is valid" ]
 then
     exit 1
 fi
-for i in $(find */ -name "*.R[1-2].fastq.gz")
+for i in $(find */ -name "*[_.]R[1-2].fastq.gz")
 do
     path=${2}.$(echo ${i##*/} | grep -o "R[1,2].fastq.gz")
     cp ${i} ./${path}
