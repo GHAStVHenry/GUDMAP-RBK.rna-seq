@@ -35,10 +35,6 @@ def main():
         else:
             rep = metaFile["Replicate_RID"].unique()[0]
             print(rep)
-        if (len(metaFile[metaFile["File_Type"] == "FastQ"]) > 2):
-            print("There are more then 2 fastq's in the metadata: " +
-                  " ".join(metaFile[metaFile["File_Type"] == "FastQ"].RID))
-            exit(1)
 
     # Check experiment RID metadata from 'Experiment.csv'
     if (args.parameter == "expRID"):
