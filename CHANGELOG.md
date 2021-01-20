@@ -8,6 +8,7 @@
 * Move fastqc process before trim to catch fastq errors (#107)
 * Only use fastq's that match *.R[1,2].fastq.gz naming convention (#107)
 * Add error output for no fastq's
+* Update input bag export config to only fetch fastq's that match *.R[1,2].fastq.gz naming convention
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
