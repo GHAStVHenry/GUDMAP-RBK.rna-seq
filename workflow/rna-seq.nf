@@ -386,7 +386,7 @@ process parseMetadata {
     elif [ "${fastqCount}" -eq "0" ]
     then
       fastqCountError=true
-      fastqCountError_details="**No valid fastqs detected (may not match .R{1,2}.fastq.gz convention)**"
+      fastqCountError_details="**No valid fastqs detected (may not match .R{12}.fastq.gz convention)**"
     elif [ "\${endsMeta}" == "se" ] && [ "${fastqCount}" -ne "1" ]
     then
       fastqCountError=true
