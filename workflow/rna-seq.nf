@@ -267,6 +267,10 @@ process getData {
     echo -e "LOG: fetched" >> ${repRID}.getData.log
     
     fastqCount=\$(ls *.fastq.gz | wc -l)
+    if [ "\${fastqCount}" == "0" ]
+    then
+      touch dummy.R1.fastq.gz
+    fi
     echo "\${fastqCount}" > fastqCount.csv
     """
 }
