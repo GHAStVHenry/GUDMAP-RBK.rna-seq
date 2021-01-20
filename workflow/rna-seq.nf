@@ -558,14 +558,15 @@ process fastqc {
 
     # run fastqc
     echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
-    fastqc *.fastq.gz -o . 2> fastqcErrorOut
-    fastqcErrorOut=\$(echo \${fastqcErrorOut} | grep -o 'Failed to process file')
+    fastqc *.fastq.gz -o . 2> fastqcErrorOut.txt
+    fastqcErrorOut=\$(cat fastqcErrorOut.txt | grep -o 'Failed to process file')
     fastqFileError=false
     fastqFileError_details=""
     if [ "\${fastqcErrorOut}" != "" ]
     then
       fastqFileError=true
       fastqFileError_details="**There is an error with the structure of the fastq**"
+      touch dummy_fastqc.zip
     fi
 
     # count raw reads
