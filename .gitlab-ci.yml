@@ -109,6 +109,7 @@ parseMetadata:
   - study=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
   - endsRaw=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
   - endsMeta="uk"
+  - endsManual="se"
   - stranded=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
   - spike=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
   - species=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)

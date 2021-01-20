@@ -19,7 +19,7 @@ def readLine(fileName):
     data = False
     file = open(fileName, "r")
     line = file.readline()
-    if line.strip() == "uk,uk,unstranded,no,Homo sapiens,75,Experiment_RID,Study_RID,Replicate_RID":
+    if line.strip() == "uk,uk,se,unstranded,no,Homo sapiens,75,Experiment_RID,Study_RID,Replicate_RID":
         data = True
 
     return data
