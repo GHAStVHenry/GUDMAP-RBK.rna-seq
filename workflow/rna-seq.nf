@@ -873,9 +873,10 @@ process alignSampleData {
 
     # sort the bam file using Samtools
     echo -e "LOG: sorting the bam file" >> ${repRID}.${ref}.alignSampleData.log
+    proc=\$(expr `nproc` - 1)
     mem=\$(vmstat -s -S K | grep 'total memory' | grep -o '[0-9]*')
-    mem=\$(expr \${mem} / `nproc` \\* 85 / 100)
-    samtools sort -@ `nproc` -m \${mem}K -O BAM -o ${ref}.sampled.sorted.bam ${ref}.sampled.bam
+    mem=\$(expr \${mem} / \${proc} \\* 85 / 100)
+    samtools sort -@ \${proc} -m \${mem}K -O BAM -o ${ref}.sampled.sorted.bam ${ref}.sampled.bam
 
     # index the sorted bam using Samtools
     echo -e "LOG: indexing sorted bam file" >> ${repRID}.${ref}.alignSampleData.log
@@ -1576,9 +1577,10 @@ process alignData {
 
     # sort the bam file using Samtools
     echo -e "LOG: sorting the bam file" >> ${repRID}.align.log
+    proc=\$(expr `nproc` - 1)
     mem=\$(vmstat -s -S K | grep 'total memory' | grep -o '[0-9]*')
-    mem=\$(expr \${mem} / `nproc` \\* 85 / 100)
-    samtools sort -@ `nproc` -m \${mem}K -O BAM -o ${repRID}.sorted.bam ${repRID}.bam
+    mem=\$(expr \${mem} / \${proc} \\* 75 / 100)
+    samtools sort -@ \${proc} -m \${mem}K -O BAM -o ${repRID}.sorted.bam ${repRID}.bam
 
     # index the sorted bam using Samtools
     echo -e "LOG: indexing sorted bam file" >> ${repRID}.align.log

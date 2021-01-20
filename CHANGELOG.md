@@ -2,7 +2,7 @@
 **User Facing**
 
 **Background**
-* Add memory limit per thread for samtools sort (#108)
+* Add memory limit (75%) per thread for samtools sort (#108)
 * Remove parsing restrictions for submitted stranded/spike/species (#105, #106)
 * Pass unidentified ends instead of overwriting it as unknown
 * Move fastqc process before trim to catch fastq errors (#107)
@@ -13,7 +13,8 @@
 * Handle blank submitted endness better
 * Don't use file.csv from inputBag to parse manual endness, use counted from getData
 * Detect malformed fastq's (#107)
-* Restrict sampled alignment process to use >32GB nodes on BioHPC
+* Restrict sampled alignment process to use >32GB nodes on BioHPC (#108)
+* Use nproc**-1** for alignment processes (#108)
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
