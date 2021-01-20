@@ -388,7 +388,7 @@ process parseMetadata {
     elif [ "${fastqCount}" -eq "0" ]
     then
       fastqCountError=true
-      fastqCountError_details="**No valid fastqs detected (may not match .R{12}.fastq.gz convention)**"
+      fastqCountError_details="**No valid fastqs detected \\(may not match .R{12}.fastq.gz convention\\)**"
     elif [ "\${endsMeta}" == "se" ] && [ "${fastqCount}" -ne "1" ]
     then
       fastqCountError=true
@@ -2372,8 +2372,8 @@ process failPreExecutionRun_fastqFile {
 
   script:
   """
-  hostname > ${repRID}.failPreExecutionRun_fastq.log
-  ulimit -a >> ${repRID}.failPreExecutionRun_fastq.log
+  hostname > ${repRID}.failPreExecutionRun_fastqfile.log
+  ulimit -a >> ${repRID}.failPreExecutionRun_fastqfile.log
 
   errorDetails=""
   if [ ${fastqFileError} == true ]
@@ -2381,11 +2381,11 @@ process failPreExecutionRun_fastqFile {
     errorDetails=\$(echo \$(errorDetails)${fastqFileError_details}"\\n")
   fi
 
-  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_fastq.log
+  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_fastqfile.log
   workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
   workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
   workflow=\${workflow:7:-6}
-  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_fastq.log
+  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_fastqfile.log
 
   if [ "${species}" == "Homo sapiens" ]
   then
@@ -2398,27 +2398,27 @@ process failPreExecutionRun_fastqFile {
   then
     genomeName=\$(echo \${genomeName}-S)
   fi
-  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_fastq.log
+  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_fastqfile.log
   genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
   genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
   genome=\${genome:7:-6}
-  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_fastq.log
+  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_fastqfile.log
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:11:-1}
 
   exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
-  echo \${exist} >> ${repRID}.failPreExecutionRun_fastq.log
+  echo \${exist} >> ${repRID}.failPreExecutionRun_fastqfile.log
   if [ "\${exist}" == "[]" ]
   then
     rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
-    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
+    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
   else
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
-    echo \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
+    echo \${rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
     executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
-    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastq.log
+    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
   fi
 
   dt=`date +%FT%T.%3N%:z`
