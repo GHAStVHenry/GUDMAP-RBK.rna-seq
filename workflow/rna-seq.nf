@@ -345,6 +345,7 @@ process parseMetadata {
 
     # ganually get endness
     if [ "${fastqCount}" == "1" ]
+    then
       endsManual="se"
     else
       endsManual="pe"
