@@ -67,7 +67,7 @@ def main():
             stranded = "stranded"
         elif (metaFile.Has_Strand_Specific_Information.unique() == "no"):
             stranded = "unstranded"
-        else
+        else:
             stranded = metaFile.Has_Strand_Specific_Information.unique()[0]
         print(stranded)
 
@@ -77,7 +77,7 @@ def main():
             spike = "yes"
         elif (metaFile.Used_Spike_Ins.unique() == "no"):
             spike = "no"
-        else
+        else:
             stranded = metaFile.Used_Spike_Ins.unique()[0]
         print(spike)
 
@@ -87,7 +87,7 @@ def main():
             species = "Mus musculus"
         elif (metaFile.Species.unique() == "Homo sapiens"):
             species = "Homo sapiens"
-        else
+        else:
             stranded = metaFile.Species.unique()[0]
         print(species)
 
