@@ -1,5 +1,6 @@
 # v1.0.3
 **User Facing**
+* Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle
 
 **Background**
 * Add memory limit (75%) per thread for samtools sort (#108)

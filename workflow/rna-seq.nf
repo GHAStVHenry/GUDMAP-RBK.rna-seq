@@ -337,7 +337,7 @@ process parseMetadata {
     # get endedness metadata
     endsRaw=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p endsMeta)
     echo -e "LOG: endedness metadata parsed: \${endsRaw}" >> ${repRID}.parseMetadata.log
-    if [ "\${endsRaw}" == "Single Read" ]
+    if [ "\${endsRaw}" == "Single End" ]
     then
       endsMeta="se"
     elif [ "\${endsRaw}" == "Paired End" ]
@@ -2021,7 +2021,7 @@ process uploadQC {
     end="Paired End"
   elif [ "${ends}" == "se" ]
   then
-    end="Single Read"
+    end="Single End"
   fi
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
