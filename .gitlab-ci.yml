@@ -109,7 +109,7 @@ parseMetadata:
   - study=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
   - endsRaw=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
   - endsMeta="uk"
-  - endsManual=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsManual)
+  - endsManual="se"
   - stranded=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
   - spike=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
   - species=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
@@ -745,6 +745,36 @@ failMismatchR1R2:
   - hostname
   - ulimit -a
   - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-CWH4 --source staging --upload true -with-dag dag.png --dev false --ci true
+  retry:
+    max: 0
+    when:
+      - always
+
+failUnexpectedMeta:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+        - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 14-3R4R --source staging --upload true -with-dag dag.png --dev false --ci true
+  retry:
+    max: 0
+    when:
+      - always
+
+failFileStructure:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+        - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5HT --source staging --upload true -with-dag dag.png --dev false --ci true
   retry:
     max: 0
     when:
