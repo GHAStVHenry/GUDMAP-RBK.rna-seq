@@ -93,10 +93,12 @@ Error reported back to the data-hub are (they aren't thrown on the command line 
 |Error|Descripton|
 |:-|:-:|
 |**Too many fastqs detected (>2)**|Data-hub standards and that of this pipeline is for one read-1 fastq and if paired-end, one read\-2 fastq. As a result, the maximum number of fastq's per replicate cannot be more than 2.|
+|**No valid fastqs detected (may not match {_.}R{12}.fastq.gz convention)**|Files may be missing, or named in a way that doesn't match the data-hub convention.|
 |**Number of fastqs detected does not match submitted endness**|Single-end sequenced replicates can only have one fastq, while paried\-end can only have two (see above).|
-|**Number of reads do not match for R1 and R2**|For paired\-end sequenced studies the number of reads in read\-1 fastq must match that of read\-2. This error is usually indicative of uploading of currupted, trunkated, or wrong fastq files|
+|**Number of reads do not match for R1 and R2**|For paired\-end sequenced studies the number of reads in read\-1 fastq must match that of read\-2. This error is usually indicative of uploading of currupted, trunkated, or wrong fastq files.|
+|**There is an error with the structure of the fastq**|The fastq's fail a test of their structure. This error is usually indicative of uploading of currupted, trunkated, or wrong fastq files.|
 |**Inference of species returns an ambiguous result**|Species of the replicate is done by aligning a random subset of 1 million reads from the data to both the human and mouse reference genomes. If there isn't a clear difference between the alignment rates (`>=40%` of one species, but `<40%` of the other), then this error is detected.|
-|**Submitted metadata does not match inferred**|All required metadata for analysis of the data is internally inferred by the pipeline, if any of those do not match the submitted metadata, this error is detected to notify of a potential error.|
+|**Submitted metadata does not match inferred**|All required metadata for analysis of the data is internally inferred by the pipeline, if any of those do not match the submitted metadata, this error is detected to notify of a potential error. The mismatched metadata will be listed.|
 
 <hr>
 [**CHANGELOG**](CHANGELOG.md)
