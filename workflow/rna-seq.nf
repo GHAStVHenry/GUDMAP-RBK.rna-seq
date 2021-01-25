@@ -2069,14 +2069,8 @@ process uploadQC {
   """
 }
 
-// Extract mRNA qc RID into channel
-qcRID = Channel.create()
-qcRID_fl.splitCsv(sep: ",", header: false).separate(
-  qcRID
-)
-
 /*
- *ouputBag: create ouputBag
+ *uploadProcessedFile: uploads the processed files
 */
 process uploadProcessedFile {
   tag "${repRID}"
