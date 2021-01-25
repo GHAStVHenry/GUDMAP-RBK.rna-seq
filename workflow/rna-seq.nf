@@ -343,6 +343,10 @@ process parseMetadata {
     elif [ "\${endsRaw}" == "Paired End" ]
     then
       endsMeta="pe"
+    elseif [ "\${endsRaw}" == "Single Read" ]
+    # "Single Read" depreciated as of Jan 2021, this option is present for backwards compatibility
+    then
+      endsMeta="se"
     elif [ "\${endsRaw}" == "nan" ]
     then
       endsRaw="_No value_"
