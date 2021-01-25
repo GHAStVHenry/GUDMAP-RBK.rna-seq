@@ -40,7 +40,7 @@
         "processor": "csv",
         "processor_params": {
           "output_path": "Experiment Settings",
-          "query_path": "/attribute/M:=RNASeq:Replicate/RID={rid}/(Experiment_RID)=(RNASeq:Experiment_Settings:Experiment_RID)/RID,Experiment_RID,Alignment_Format,Aligner,Aligner_Version,Reference_Genome,Sequence_Trimming,Duplicate_Removal,Pre-alignment_Sequence_Removal,Junction_Reads,Library_Type,Protocol_Reference,Library_Selection,Quantification_Format,Quantification_Software,Expression_Metric,Transcriptome_Model,Sequencing_Platform,Paired_End,Read_Length,Has_Strand_Specific_Information,Used_Spike_Ins,Spike_Ins_Amount,Visualization_Format,Visualization_Software,Visualization_Version,Visualization_Setting,Notes,RCT,RMT?limit=none"
+          "query_path": "/attribute/M:=RNASeq:Replicate/RID={rid}/(Experiment_RID)=(RNASeq:Experiment_Settings:Experiment_RID)/RID,Experiment_RID,Alignment_Format,Aligner,Aligner_Version,Reference_Genome,Sequence_Trimming,Duplicate_Removal,Pre-alignment_Sequence_Removal,Junction_Reads,Library_Type,Protocol_Reference,Library_Selection,Quantification_Format,Quantification_Software,Expression_Metric,Transcriptome_Model,Sequencing_Platform,Paired_End,Read_Length,Strandedness,Used_Spike_Ins,Spike_Ins_Amount,Visualization_Format,Visualization_Software,Visualization_Version,Visualization_Setting,Notes,RCT,RMT?limit=none"
         }
       },
       {
