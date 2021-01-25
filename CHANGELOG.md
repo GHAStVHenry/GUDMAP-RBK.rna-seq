@@ -1,4 +1,4 @@
-# v1.0.3
+# v2.0.0
 **User Facing**
 * Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle (#110) ("Single Read" still acceptable for backwards compatibility)
 
@@ -16,6 +16,7 @@
 * Detect malformed fastq's (#107)
 * Restrict sampled alignment process to use >32GB nodes on BioHPC (#108)
 * Use nproc**-1** for alignment processes (#108)
+* Data-hub column title change from "Sequencing_Type" to "Experiment_Type" (#114)
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
