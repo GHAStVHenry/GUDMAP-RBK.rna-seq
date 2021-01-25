@@ -44,6 +44,7 @@ deriva.into {
   deriva_uploadInputBag
   deriva_uploadExecutionRun
   deriva_uploadQC
+  deriva_uploadQC_fail
   deriva_uploadProcessedFile
   deriva_uploadOutputBag
   deriva_finalizeExecutionRun
@@ -105,8 +106,10 @@ script_uploadExecutionRun_failPreExecutionRun_fastqFile = Channel.fromPath("${ba
 script_uploadExecutionRun_failPreExecutionRun_species = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
+script_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
 script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
 script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
+script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
 script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
 
 /*
@@ -343,7 +346,7 @@ process parseMetadata {
     elif [ "\${endsRaw}" == "Paired End" ]
     then
       endsMeta="pe"
-    elseif [ "\${endsRaw}" == "Single Read" ]
+    elif [ "\${endsRaw}" == "Single Read" ]
     # "Single Read" depreciated as of Jan 2021, this option is present for backwards compatibility
     then
       endsMeta="se"
@@ -367,7 +370,7 @@ process parseMetadata {
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
 
     # get spike-in metadata
-    v=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
+    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
     if [ "\${spike}" == "f" ]
     then
@@ -375,11 +378,11 @@ process parseMetadata {
     elif [ "\${spike}" == "t" ]
     then
       spike="true"
-    elseif [ "\${spike}" == "no" ]
+    elif [ "\${spike}" == "no" ]
     # "yes"/"no" depreciated as of Jan 2021, this option is present for backwards compatibility
     then
       spike="false"
-    elseif [ "\${spike}" == "yes" ]
+    elif [ "\${spike}" == "yes" ]
     # "yes"/"no" depreciated as of Jan 2021, this option is present for backwards compatibility
     then
       spike="true"
@@ -540,6 +543,7 @@ fastqCountError.into {
   fastqCountError_dataQC
   fastqCountError_aggrQC
   fastqCountError_uploadQC
+  fastqCountError_uploadQC_fail
   fastqCountError_uploadProcessedFile
   fastqCountError_uploadOutputBag
   fastqCountError_failPreExecutionRun_fastq
@@ -561,6 +565,7 @@ fastqReadError.into {
   fastqReadError_dataQC
   fastqReadError_aggrQC
   fastqReadError_uploadQC
+  fastqReadError_uploadQC_fail
   fastqReadError_uploadProcessedFile
   fastqReadError_uploadOutputBag
   fastqReadError_failPreExecutionRun_fastq
@@ -653,6 +658,7 @@ fastqFileError.into {
   fastqFileError_dataQC
   fastqFileError_aggrQC
   fastqFileError_uploadQC
+  fastqFileError_uploadQC_fail
   fastqFileError_uploadProcessedFile
   fastqFileError_uploadOutputBag
   fastqFileError_failPreExecutionRun_fastqFile
@@ -1129,6 +1135,7 @@ speciesError.into {
   speciesError_dataQC
   speciesError_aggrQC
   speciesError_uploadQC
+  speciesError_uploadQC_fail
   speciesError_uploadProcessedFile
   speciesError_uploadOutputBag
   speciesError_failPreExecutionRun_species
@@ -1257,6 +1264,7 @@ pipelineError.into {
   pipelineError_dataQC
   pipelineError_aggrQC
   pipelineError_uploadQC
+  pipelineError_uploadQC_fail
   pipelineError_uploadProcessedFile
   pipelineError_uploadOutputBag
   pipelineError_failExecutionRun
@@ -1428,6 +1436,7 @@ executionRunRID.into {
   executionRunRID_uploadOutputBag
   executionRunRID_finalizeExecutionRun
   executionRunRID_failExecutionRun
+  executionRunRID_fail
 }
 
 /*
@@ -2300,6 +2309,9 @@ process failPreExecutionRun_fastq {
     val fastqReadError from fastqReadError_failPreExecutionRun_fastq
     val fastqReadError_details
 
+  output:
+    path ("executionRunRID.csv") into executionRunRID_fastqFail_fl
+
   when:
     upload
     fastqCountError == 'true' || fastqReadError == 'true'
@@ -2331,7 +2343,7 @@ process failPreExecutionRun_fastq {
   then
     genomeName=\$(echo GRCm${refMoVersion})
   fi
-  if [ "${spike}" == "yes" ]
+  if [ "${spike}" == "true" ]
   then
     genomeName=\$(echo \${genomeName}-S)
   fi
@@ -2354,9 +2366,11 @@ process failPreExecutionRun_fastq {
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
     echo \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+    executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastq.log
   fi
+
+  echo "\${rid}" > executionRunRID.csv
 
   dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
@@ -2383,6 +2397,9 @@ process failPreExecutionRun_fastqFile {
     val inputBagRID from inputBagRID_failPreExecutionRun_fastqFile
     val fastqFileError from fastqFileError_failPreExecutionRun_fastqFile
     val fastqFileError_details
+
+  output:
+    path ("executionRunRID.csv") into executionRunRID_fastqFileFail_fl
 
   when:
     upload
@@ -2435,9 +2452,11 @@ process failPreExecutionRun_fastqFile {
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
     echo \${rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+    executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
   fi
+
+  echo "\${rid}" > executionRunRID.csv
 
   dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
@@ -2464,6 +2483,9 @@ process failPreExecutionRun_species {
     val inputBagRID from inputBagRID_failPreExecutionRun_species
     val speciesError from speciesError_failPreExecutionRun_species
     val speciesError_details
+
+  output:
+    path ("executionRunRID.csv") into executionRunRID_speciesFail_fl
 
   when:
     upload
@@ -2516,9 +2538,11 @@ process failPreExecutionRun_species {
     rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
     rid=\${rid:7:-6}
     echo \${rid} >> ${repRID}.failPreExecutionRun_species.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+    executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
     echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_species.log
   fi
+
+  echo "\${rid}" > executionRunRID.csv
 
   dt=`date +%FT%T.%3N%:z`
   curl -H 'Content-Type: application/json' -X PUT -d \
@@ -2530,6 +2554,22 @@ process failPreExecutionRun_species {
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
 }
+
+// Extract execution run RID into channel
+executionRunRID_fastqFail = Channel.create()
+executionRunRID_fastqFail_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID_fastqFail
+)
+executionRunRID_fastqFileFail = Channel.create()
+executionRunRID_fastqFileFail_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID_fastqFileFail
+)
+executionRunRID_speciesFail = Channel.create()
+executionRunRID_speciesFail_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID_speciesFail
+)
+
+failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_fastqFail.ifEmpty(''),executionRunRID_fastqFileFail.ifEmpty(''),executionRunRID_speciesFail.ifEmpty('')).filter { it != "" }
 
 /* 
  * failExecutionRun: fail the execution run
@@ -2620,6 +2660,53 @@ process failExecutionRun {
       "Failure": "'\${dt}'" \
     }' \
     "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+  """
+}
+
+// Combine errors
+error_uploadQC_fail = fastqCountError_uploadQC_fail.ifEmpty(false).combine(fastqReadError_uploadQC_fail.ifEmpty(false).combine(fastqFileError_uploadQC_fail.ifEmpty(false).combine(speciesError_uploadQC_fail.ifEmpty(false).combine(pipelineError_uploadQC_fail.ifEmpty(false)))))
+
+/* 
+ * uploadQC_fail: uploads the mRNA QC on failed execution run
+*/
+process uploadQC_fail {
+  tag "${repRID}"
+
+  input:
+    path script_deleteEntry_uploadQC_fail
+    path script_uploadQC_fail
+    path credential, stageAs: "credential.json" from deriva_uploadQC_fail
+    val executionRunRID from failExecutionRunRID
+    tuple val (fastqCountError), val (fastqReadError_uploadQC), val (fastqFileError_uploadQC), val (speciesError_uploadQC), val (pipelineError_uploadQC) from error_uploadQC_fail
+
+  when:
+    upload
+    fastqCountError_uploadQC == 'true' || fastqReadError_uploadQC == 'true' || fastqFileError_uploadQC == 'true' || speciesError_uploadQC == 'true' || pipelineError_uploadQC == 'true'
+
+  script:
+  """
+  hostname > ${repRID}.uploadQC.log
+  ulimit -a >> ${repRID}.uploadQC.log
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID})
+  if [ "\${exist}" != "[]" ]
+  then
+    rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+    for rid in \${rids}
+    do
+      python3 ${script_deleteEntry_uploadQC_fail} -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
+      echo LOG: old mRNA QC RID deleted - \${rid} >> ${repRID}.uploadQC.log
+    done
+    echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
+  fi
+
+  qc_rid=\$(python3 ${script_uploadQC_fail} -r ${repRID} -e ${executionRunRID} -o ${source} -c \${cookie} -u E)
+  echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
+
+  echo "\${qc_rid}" > qcRID.csv
   """
 }
 

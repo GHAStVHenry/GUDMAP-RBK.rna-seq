@@ -63,7 +63,7 @@ def main():
 
     # Get strandedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "stranded"):
-        stranded = metaFile.Stranded.unique()[0]
+        stranded = metaFile.Strandedness.unique()[0]
         print(stranded)
 
     # Get spike-in metadata from 'Experiment Settings.csv'
