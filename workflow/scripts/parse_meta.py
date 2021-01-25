@@ -73,12 +73,7 @@ def main():
 
     # Get spike-in metadata from 'Experiment Settings.csv'
     if (args.parameter == "spike"):
-        if (metaFile.Used_Spike_Ins.unique() == "yes"):
-            spike = "yes"
-        elif (metaFile.Used_Spike_Ins.unique() == "no"):
-            spike = "no"
-        else:
-            spike = metaFile.Used_Spike_Ins.unique()[0]
+        spike = metaFile.Used_Spike_Ins.unique()[0]
         print(spike)
 
     # Get species metadata from 'Experiment.csv'

@@ -367,8 +367,27 @@ process parseMetadata {
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
 
     # get spike-in metadata
-    spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
+    v=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
+    if [ "\${spike}" == "f" ]
+    then
+      spike="false"
+    elif [ "\${spike}" == "t" ]
+    then
+      spike="true"
+    elseif [ "\${spike}" == "no" ]
+    # "yes"/"no" depreciated as of Jan 2021, this option is present for backwards compatibility
+    then
+      spike="false"
+    elseif [ "\${spike}" == "yes" ]
+    # "yes"/"no" depreciated as of Jan 2021, this option is present for backwards compatibility
+    then
+      spike="true"
+    elif [ "\${spike}" == "nan" ]
+    then
+      endsRaw="_No value_"
+      endsMeta="NA"
+    fi
 
     # get species metadata
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p species)
@@ -935,9 +954,9 @@ process inferMetadata {
     # determine spike-in
     if [ 1 -eq \$(echo \$(expr \${align_ercc} ">=" 10)) ]
     then
-      spike="yes"
+      spike="true"
     else
-      spike="no"
+      spike="false"
     fi
     echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
 
