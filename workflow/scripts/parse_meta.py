@@ -63,12 +63,7 @@ def main():
 
     # Get strandedness metadata from 'Experiment Settings.csv'
     if (args.parameter == "stranded"):
-        if (metaFile.Has_Strand_Specific_Information.unique() == "yes"):
-            stranded = "stranded"
-        elif (metaFile.Has_Strand_Specific_Information.unique() == "no"):
-            stranded = "unstranded"
-        else:
-            stranded = metaFile.Has_Strand_Specific_Information.unique()[0]
+        stranded = metaFile.Stranded.unique()[0]
         print(stranded)
 
     # Get spike-in metadata from 'Experiment Settings.csv'
@@ -78,12 +73,7 @@ def main():
 
     # Get species metadata from 'Experiment.csv'
     if (args.parameter == "species"):
-        if (metaFile.Species.unique() == "Mus musculus"):
-            species = "Mus musculus"
-        elif (metaFile.Species.unique() == "Homo sapiens"):
-            species = "Homo sapiens"
-        else:
-            species = metaFile.Species.unique()[0]
+        species = metaFile.Species.unique()[0]
         print(species)
 
     # Get read length metadata from 'Experiment Settings.csv'
