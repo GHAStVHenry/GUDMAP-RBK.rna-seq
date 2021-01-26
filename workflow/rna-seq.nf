@@ -2023,7 +2023,7 @@ process aggrQC {
     fi
     if [ "${params.spikeForce}" == "" ]
     then
-      input=\$(echo \${input}"${spikeI}\t-\t-\t-\t-"")
+      input=\$(echo \${input}"${spikeI}\t-\t-\t-\t-")
     else
       input=\$(echo \${input}"${spikeI} (FORCED)\t-\t-\t-\t-" >> metadata.tsv
     fi
