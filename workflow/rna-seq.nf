@@ -27,6 +27,8 @@ params.refSource = "biohpc"
 params.inputBagForce = ""
 params.fastqsForce = ""
 params.speciesForce = ""
+params.strandedForce = ""
+params.spikeForce = ""
 
 // Define tracking input variables
 params.ci = false
@@ -64,6 +66,8 @@ upload = params.upload
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
+sptrandedForce = params.speciesForce
+spikeForce = params.speciesForce
 email = params.email
 
 // Define fixed files and variables
@@ -311,6 +315,8 @@ process parseMetadata {
     path experiment from experimentMeta
     path (fastq) from fastqs_parseMetadata.collect()
     val fastqCount
+    val strandedForce
+    val spikeForce
 
   output:
     path "design.csv" into metadata_fl
@@ -364,10 +370,20 @@ process parseMetadata {
     # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p stranded)
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
+    if [ "\${strandedForce}" != "" ]
+    then
+      stranded=${strandedForce}
+      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
+    fi
 
     # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
+    if [ "\${spikeForce}" != "" ]
+    then
+      spike=${spikeForce}
+      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
+    fi
     if [ "\${spike}" == "f" ]
     then
       spike="false"
@@ -1170,6 +1186,33 @@ process checkMetadata {
 
     pipelineError=false
     # check if submitted metadata matches inferred
+    if [ "${strandedMeta}" != "${strandedInfer}" ]
+    then
+      if [ "${params.strandedForce}" != "" ]
+      then
+        pipelineError=false
+        echo -e "LOG: stranded forced: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_stranded=true
+        if [ "${strandedMeta}" == "stranded" ]
+        then
+          if [[ "${strandedInfer}" == "forward" ]] || [[ "${strandedInfer}" == "reverse" ]]
+          then
+            pipelineError=false
+            pipelineError_stranded=false
+            echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          else
+            echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          fi
+        else
+          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        fi
+      fi
+    else
+      pipelineError=false
+      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+    fi
     if [ "${endsMeta}" != "${endsInfer}" ]
     then
       pipelineError=true
@@ -1179,42 +1222,32 @@ process checkMetadata {
       pipelineError_ends=false
       echo -e "LOG: ends matches: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
     fi
-    if [ "${strandedMeta}" != "${strandedInfer}" ]
-    then
-      pipelineError=true
-      pipelineError_stranded=true
-      if [ "${strandedMeta}" == "stranded" ]
-      then
-        if [[ "${strandedInfer}" == "forward" ]] || [[ "${strandedInfer}" == "reverse" ]]
-        then
-          pipelineError=false
-          pipelineError_stranded=false
-          echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-        else
-          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-        fi
-      else
-        echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-      fi
-    else
-      pipelineError=false
-      pipelineError_stranded=false
-      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-    fi
     if [ "${spikeMeta}" != "${spikeInfer}" ]
     then
-      pipelineError=true
-      pipelineError_spike=true
-      echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      if [[ "${params.spikeForce}" != "" ]]
+      then
+        pipelineError_spike=false
+        echo -e "LOG: spike forced: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_spike=true
+        echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      fi
     else
       pipelineError_spike=false
-      echo -e "LOG: stranded matches: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: spike matches: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
     fi
     if [ "${speciesMeta}" != "${speciesInfer}" ]
     then
-      pipelineError=true
-      pipelineError_species=true
-      echo -e "LOG: species does not match: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
+    if [[ "${params.speciesForce}" != "" ]]
+      then
+        pipelineError_species=false
+        echo -e "LOG: species forced: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_species=true
+        echo -e "LOG: species does not match: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
+      fi
     else
       pipelineError_species=false
       echo -e "LOG: species matches: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
@@ -1935,7 +1968,7 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.log
 
     # make run table
-    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ]
+    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" && [ "${params.strandedForce}" == "" && [ "${params.spikeForce}" == "" ]
     then
       input="default"
     else
@@ -1951,6 +1984,14 @@ process aggrQC {
       if [ "${params.speciesForce}" != "" ]
       then
         input=\$(echo \${input} species)
+      fi
+      if [ "${params.strandedForce}" != "" ]
+      then
+        input=\$(echo \${input} stranded)
+      fi
+      if [ "${params.spikeForce}" != "" ]
+      then
+        input=\$(echo \${input} spike)
       fi
     fi
     echo -e "LOG: creating run table" >> ${repRID}.aggrQC.log
@@ -1969,10 +2010,24 @@ process aggrQC {
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
     if [ "${params.speciesForce}" == "" ]
     then
-      echo -e "Inferred\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+      input=\$(echo "Inferred\t${speciesI}\t)
     else
-      echo -e "Inferred\t${speciesI} (FORCED)\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+      input=\${echo "Inferred\t${speciesI} (FORCED)\t)
     fi
+    input=\$(echo \${input}${endsI}\t)
+    if [ "${params.strandedForce}" == "" ]
+    then
+      input=\$(echo \${input}${strandedI}\t)
+    else
+      input=$(echo \${input}${strandedI} (FORCED)\t)
+    fi
+    if [ "${params.spikeForce}" == "" ]
+    then
+      input=$(echo \${input}${spikeI}\t-\t-\t-\t-)
+    else
+      input=$(echo \${input}${spikeI} (FORCED)\t-\t-\t-\t-" >> metadata.tsv
+    fi
+    echo -e \${input} >> metadata.tsv
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
 
     # make reference table
@@ -2231,11 +2286,11 @@ process uploadOutputBag {
     echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
     rid=\${outputBag_rid}
   else
-      exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-      exist=\${exist:8:-6}
-      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -o ${source} -c \${cookie} -u \${exist})
-      echo LOG: output bag RID already exists - \${exist} >> ${repRID}.uploadOutputBag.log
-      rid=\${exist}
+    exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    exist=\${exist:8:-6}
+    outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -o ${source} -c \${cookie} -u \${exist})
+    echo LOG: output bag RID already exists - \${exist} >> ${repRID}.uploadOutputBag.log
+    rid=\${exist}
   fi
 
   echo "\${rid}" > outputBagRID.csv

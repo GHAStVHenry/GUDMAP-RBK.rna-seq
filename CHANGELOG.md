@@ -3,6 +3,7 @@
 * Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle (#110) ("Single Read" still acceptable for backwards compatibility)
 * Strandedness metadata "yes"/"no" changed to boolean "t"/"f" in data-hub, pipeline updated to handle (#70) ("yes"/"no" still acceptable for backwards compatibility)
 * Upload empty mRNA_QC entry if data error (#111)
+* Allow forcing of strandedness and spike (#100)
 
 **Background**
 * Add memory limit (75%) per thread for samtools sort (#108)
