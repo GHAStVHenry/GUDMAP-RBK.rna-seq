@@ -2019,13 +2019,13 @@ process aggrQC {
     then
       input=\$(echo \${input}"${strandedI}\t")
     else
-      input=$(echo \${input}"${strandedI} (FORCED)\t")
+      input=\$(echo \${input}"${strandedI} (FORCED)\t")
     fi
     if [ "${params.spikeForce}" == "" ]
     then
-      input=$(echo \${input}"${spikeI}\t-\t-\t-\t-"")
+      input=\$(echo \${input}"${spikeI}\t-\t-\t-\t-"")
     else
-      input=$(echo \${input}"${spikeI} (FORCED)\t-\t-\t-\t-" >> metadata.tsv
+      input=\$(echo \${input}"${spikeI} (FORCED)\t-\t-\t-\t-" >> metadata.tsv
     fi
     echo -e \${input} >> metadata.tsv
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
