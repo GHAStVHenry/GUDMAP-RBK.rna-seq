@@ -2217,7 +2217,7 @@ process uploadOutputBag {
   loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
   echo LOG: output bag uploaded - \${loc} >> ${repRID}.uploadOutputBag.log
   # url-ify the location
-  loc=\${loc//\//%2F}
+  loc=\${loc//\\//%2F}
   loc=\${loc//:/%3A}
   loc=\${loc// /@20}
 
