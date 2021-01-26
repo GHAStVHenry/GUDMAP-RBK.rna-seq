@@ -2213,20 +2213,22 @@ process uploadOutputBag {
   echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
   size=\$(wc -c < ./\${file})
   echo LOG: ${repRID} output bag size - \${size} bytes >> ${repRID}.uploadOutputBag.log
-    
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=\${md5})
+  
+  loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
+
+  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+  cookie=\${cookie:11:-1}
+
+  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_URL=\${loc})
   if [ "\${exist}" == "[]" ]
   then
-    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-      cookie=\${cookie:11:-1}
-
-      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
-      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
-      echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
-      rid=\${outputBag_rid}
+    outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie} -u F)
+    echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
+    rid=\${outputBag_rid}
   else
       exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
       exist=\${exist:8:-6}
+      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -o ${source} -c \${cookie} -u \${exist})
       echo LOG: output bag RID already exists - \${exist} >> ${repRID}.uploadOutputBag.log
       rid=\${exist}
   fi

@@ -48,7 +48,6 @@ def main(hostname, catalog_number, credential):
         }
         entities = run_table.update([run_data])
         rid = args.update
-    
 
     print(rid)
 
