@@ -2217,9 +2217,9 @@ process uploadOutputBag {
   loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
   echo LOG: output bag uploaded - \${loc} >> ${repRID}.uploadOutputBag.log
   # url-ify the location
-  loc=${loc//\//%2F}
-  loc=${loc//:/%3A}
-  loc=${loc// /@20}
+  loc=\${loc//\//%2F}
+  loc=\${loc//:/%3A}
+  loc=\${loc// /@20}
 
   cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
   cookie=\${cookie:11:-1}
