@@ -23,6 +23,7 @@
 * Data-hub column title change from "Has_Strand_Specific_Information" to "Strandedness" (#115)
 * Merge data error pre-inference execution run upload/finalize to 1 process
 * Change uploadOutputBag logic to change reuse hatrac file if alread exists (re-uses Output_Bag entry by reassigning Execution_Run RID) (#112)
+* Add new CI py tests for override and integration
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
