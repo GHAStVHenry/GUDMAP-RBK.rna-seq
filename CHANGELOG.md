@@ -20,6 +20,7 @@
 * Use nproc**-1** for alignment processes (#108)
 * Data-hub column title change from "Sequencing_Type" to "Experiment_Type" (#114)
 * Data-hub column title change from "Has_Strand_Specific_Information" to "Strandedness" (#115)
+* Merge data error pre-inference execution run upload/finalize to 1 process
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
