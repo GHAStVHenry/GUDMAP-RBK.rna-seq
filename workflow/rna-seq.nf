@@ -66,8 +66,8 @@ upload = params.upload
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
-sptrandedForce = params.speciesForce
-spikeForce = params.speciesForce
+strandedForce = params.strandedForce
+spikeForce = params.spikeForce
 email = params.email
 
 // Define fixed files and variables
