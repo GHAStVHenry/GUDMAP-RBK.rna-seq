@@ -370,7 +370,7 @@ process parseMetadata {
     # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p stranded)
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
-    if [ "\${strandedForce}" != "" ]
+    if [ "${strandedForce}" != "" ]
     then
       stranded=${strandedForce}
       echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
@@ -379,7 +379,7 @@ process parseMetadata {
     # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
-    if [ "\${spikeForce}" != "" ]
+    if [ "${spikeForce}" != "" ]
     then
       spike=${spikeForce}
       echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
