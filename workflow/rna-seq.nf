@@ -138,7 +138,7 @@ process trackStart {
       }' \
       "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
 
-    if [ ${prarams.track} == true ]
+    if [ ${params.track} == true ]
     then
       curl -H 'Content-Type: application/json' -X PUT -d \
         '{ \
@@ -1442,7 +1442,7 @@ process uploadExecutionRun {
 
     echo "\${executionRun_rid}" > executionRunRID.csv
 
-    if [ ${prarams.track} == true ]
+    if [ ${params.track} == true ]
     then
       curl -H 'Content-Type: application/json' -X PUT -d \
         '{ \
@@ -2056,7 +2056,7 @@ process aggrQC {
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
 
-    if [ ${prarams.track} == true ]
+    if [ ${params.track} == true ]
     then
       curl -H 'Content-Type: application/json' -X PUT -d \
         @./${repRID}.multiqc_data.json \
@@ -2345,7 +2345,7 @@ process finalizeExecutionRun {
     rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
 
-    if [ ${prarams.track} == true ]
+    if [ ${params.track} == true ]
     then
     dt=`date +%FT%T.%3N%:z`
       curl -H 'Content-Type: application/json' -X PUT -d \
@@ -2450,7 +2450,7 @@ process failPreExecutionRun {
 
     echo "\${rid}" > executionRunRID.csv
 
-    if [ ${prarams.track} == true ]
+    if [ ${params.track} == true ]
     then
     dt=`date +%FT%T.%3N%:z`
       curl -H 'Content-Type: application/json' -X PUT -d \
@@ -2552,7 +2552,7 @@ process failExecutionRun {
       echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
     fi
     
-    if [ ${prarams.track} == true ]
+    if [ ${params.track} == true ]
     then
       dt=`date +%FT%T.%3N%:z`
       curl -H 'Content-Type: application/json' -X PUT -d \
