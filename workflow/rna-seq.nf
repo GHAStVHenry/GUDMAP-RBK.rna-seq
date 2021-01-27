@@ -373,7 +373,7 @@ process parseMetadata {
     if [ "${strandedForce}" != "" ]
     then
       stranded=${strandedForce}
-      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
+      echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.parseMetadata.log
     fi
 
     # get spike-in metadata
