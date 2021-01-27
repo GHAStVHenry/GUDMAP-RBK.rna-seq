@@ -10,33 +10,43 @@ test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
     '/../../'
 
 
-@pytest.mark.consistencySE
-def test_consistencySE():
+@pytest.mark.completionIntegration_se
+def test_multiqc():
     assert os.path.exists(os.path.join(
         test_output_path, 'SE_multiqc_data.json'))
 
-    with open(os.path.join(
-        test_output_path, 'SE_multiqc_data.json')) as f:
-        assigned_reads_json = json.load(f)
-    assigned_reads = assigned_reads_json['report_general_stats_data'][4]['16-1ZX4_sorted']['Assigned']
-    baseline = 7746121
-    baseline_hi = baseline+(baseline*0.05)
-    baseline_lo = baseline-(baseline*0.05)
-    assert (assigned_reads >= baseline_lo)
-    assert (assigned_reads <=  baseline_hi)
 
-
-@pytest.mark.consistencyPE
-def test_consistencyPE():
+@pytest.mark.completionIntegration_pe
+def test_multiqc():
     assert os.path.exists(os.path.join(
         test_output_path, 'PE_multiqc_data.json'))
 
-    with open(os.path.join(
-        test_output_path, 'PE_multiqc_data.json')) as f:
-        assigned_reads_json = json.load(f)
-    assigned_reads = assigned_reads_json['report_general_stats_data'][4]['Q-Y5JA_sorted']['Assigned']
-    baseline = 2596053
-    baseline_hi = baseline+(baseline*0.05)
-    baseline_lo = baseline-(baseline*0.05)
-    assert (assigned_reads >= baseline_lo)
-    assert (assigned_reads <=  baseline_hi)
+
+@pytest.mark.completionOverride_inputBag
+def test_multiqc():
+    assert os.path.exists(os.path.join(
+        test_output_path, 'inputBagOverride_PE_multiqc_data.json'))
+
+
+@pytest.mark.completionOverride_fastq
+def test_multiqc():
+    assert os.path.exists(os.path.join(
+        test_output_path, 'fastqOverride_PE_multiqc_data.json'))
+
+
+@pytest.mark.completionOverride_species
+def test_multiqc():
+    assert os.path.exists(os.path.join(
+        test_output_path, 'speciesOverride_PE_multiqc_data.json'))
+
+
+@pytest.mark.completionOverride_stranded
+def test_multiqc():
+    assert os.path.exists(os.path.join(
+        test_output_path, 'strandedOverride_PE_multiqc_data.json'))
+
+
+@pytest.mark.completionOverride_spike
+def test_multiqc():
+    assert os.path.exists(os.path.join(
+        test_output_path, 'spikeOverride_PE_multiqc_data.json'))
