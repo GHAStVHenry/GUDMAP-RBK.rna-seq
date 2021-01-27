@@ -2012,7 +2012,7 @@ process aggrQC {
     then
       input=\$(echo "Inferred\t${speciesI}\t")
     else
-      input=\${echo "Inferred\t${speciesI} (FORCED)\t")
+      input=\$(echo "Inferred\t${speciesI} (FORCED)\t")
     fi
     input=\$(echo \${input}"${endsI}\t")
     if [ "${params.strandedForce}" == "" ]
