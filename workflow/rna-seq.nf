@@ -1976,7 +1976,7 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.log
 
     # make run table
-    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" && [ "${params.strandedForce}" == "" && [ "${params.spikeForce}" == "" ]
+    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ] && [ "${params.strandedForce}" == "" ] && [ "${params.spikeForce}" == "" ]
     then
       input="default"
     else
