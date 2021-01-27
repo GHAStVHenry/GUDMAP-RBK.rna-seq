@@ -5,10 +5,10 @@ import pandas as pd
 import os
 import utils
 
-data_output_path = os.path.dirname(os.path.abspath(__file__)) + \
+test_output_path = os.path.dirname(os.path.abspath(__file__)) + \
     '/../../'
 
 
 @pytest.mark.makeBigWig
 def test_makeBigWig():
-    assert os.path.exists(os.path.join(data_output_path, 'Q-Y5F6_1M.se.bw'))
+    assert os.path.exists(os.path.join(test_output_path, 'Q-Y5F6_1M.se.bw'))
