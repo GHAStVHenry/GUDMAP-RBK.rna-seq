@@ -2025,7 +2025,7 @@ process aggrQC {
     then
       input=\$(echo \${input}"${spikeI}\t-\t-\t-\t-")
     else
-      input=\$(echo \${input}"${spikeI} (FORCED)\t-\t-\t-\t-" >> metadata.tsv
+      input=\$(echo \${input}"${spikeI} (FORCED)\t-\t-\t-\t-")
     fi
     echo -e \${input} >> metadata.tsv
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
