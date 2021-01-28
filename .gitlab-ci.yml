@@ -1,6 +1,6 @@
 before_script:
   - module load python/3.6.4-anaconda
-  - pip install --user  attrs==20.3.0 pytest==6.2.2 pytest-pythonpath==0.7.3 pytest-cov==2.11.1
+  - pip install --user attrs==20.3.0 pytest==6.2.2 pytest-pythonpath==0.7.3 pytest-cov==2.11.1
   - module load singularity/3.5.3
   - module load nextflow/20.01.0
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
@@ -837,7 +837,7 @@ override_species:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EP --source staging --speciesForce 'Homo sapiens' --upload false --dev false --ci true --track false -with-report ./speciesOverride_report.html
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_PE_multiqc_data.json \;
   - pytest -m completionMultiqc --filename speciesOverride_PE_multiqc_data.json
   artifacts:
@@ -860,7 +860,7 @@ override_stranded:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EP --source staging --strandedForce unstranded --upload false --dev false --ci true --track false -with-report ./strandedOverride_report.html
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EP --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./strandedOverride_PE_multiqc_data.json \;
   - pytest -m completionMultiqc --filename strandedOverride_PE_multiqc_data.json
   artifacts:
@@ -883,7 +883,7 @@ override_spike:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --spikeForce t --upload false --dev false --ci true --track false -with-report ./spikeOverride_report.html
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --spikeForce t --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./spikeOverride_PE_multiqc_data.json \;
   - pytest -m completionMultiqc --filename spikedOverride_PE_multiqc_data.json
   artifacts:
