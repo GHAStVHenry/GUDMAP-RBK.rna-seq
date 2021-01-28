@@ -837,7 +837,7 @@ override_species:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_PE_multiqc_data.json \;
   - pytest -m completionMultiqc --filename speciesOverride_PE_multiqc_data.json
   artifacts:
@@ -860,7 +860,7 @@ override_stranded:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EP --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EY --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./strandedOverride_PE_multiqc_data.json \;
   - pytest -m completionMultiqc --filename strandedOverride_PE_multiqc_data.json
   artifacts:
@@ -883,7 +883,7 @@ override_spike:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --spikeForce t --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce t --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./spikeOverride_PE_multiqc_data.json \;
   - pytest -m completionMultiqc --filename spikedOverride_PE_multiqc_data.json
   artifacts:
