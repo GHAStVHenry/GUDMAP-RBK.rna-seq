@@ -2024,22 +2024,22 @@ process aggrQC {
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
     if [ "${params.speciesForce}" == "" ]
     then
-      input=\$(echo "Inferred\t${speciesI}\t")
+      input=\$(echo -e "Inferred\t${speciesI}\t")
     else
-      input=\$(echo "Inferred\t${speciesI} (FORCED)\t")
+      input=\$(echo -e "Inferred\t${speciesI} (FORCED)\t")
     fi
-    input=\$(echo \${input}"${endsI}\t")
+    input=\$(echo -e \${input}"${endsI}\t")
     if [ "${params.strandedForce}" == "" ]
     then
-      input=\$(echo \${input}"${strandedI}\t")
+      input=\$(echo -e \${input}"${strandedI}\t")
     else
-      input=\$(echo \${input}"${strandedI} (FORCED)\t")
+      input=\$(echo -e \${input}"${strandedI} (FORCED)\t")
     fi
     if [ "${params.spikeForce}" == "" ]
     then
-      input=\$(echo \${input}"${spikeI}\t-\t-\t-\t-")
+      input=\$(echo -e \${input}"${spikeI}\t-\t-\t-\t-")
     else
-      input=\$(echo \${input}"${spikeI} (FORCED)\t-\t-\t-\t-")
+      input=\$(echo -e \${input}"${spikeI} (FORCED)\t-\t-\t-\t-")
     fi
     echo -e \${input} >> metadata.tsv
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
