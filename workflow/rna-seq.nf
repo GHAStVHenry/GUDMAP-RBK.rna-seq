@@ -1190,12 +1190,17 @@ process checkMetadata {
     ulimit -a >> ${repRID}.checkMetadata.log
 
     pipelineError=false
+    pipelineError_ends=false
+    pipelineError_stranded=false
+    pipelineError_spike=false
+    pipelineError_species=false
     # check if submitted metadata matches inferred
     if [ "${strandedMeta}" != "${strandedInfer}" ]
     then
       if [ "${params.strandedForce}" != "" ]
       then
         pipelineError=false
+        pipelineError_stranded=false
         echo -e "LOG: stranded forced: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
       else
         pipelineError=true
@@ -1216,6 +1221,7 @@ process checkMetadata {
       fi
     else
       pipelineError=false
+      pipelineError_stranded=false
       echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
     fi
     if [ "${endsMeta}" != "${endsInfer}" ]
