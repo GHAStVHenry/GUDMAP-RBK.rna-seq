@@ -375,6 +375,10 @@ process parseMetadata {
     # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p stranded)
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
+    if [ "\${stranded}" == "nan" ]
+    then
+      stranded="_No value_"
+    fi
     if [ "${strandedForce}" != "" ]
     then
       stranded=${strandedForce}
@@ -384,6 +388,10 @@ process parseMetadata {
     # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
+    if [ "\${spike}" == "nan" ]
+    then
+      spike="_No value_"
+    fi
     if [ "${spikeForce}" != "" ]
     then
       spike=${spikeForce}
@@ -412,6 +420,10 @@ process parseMetadata {
     # get species metadata
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p species)
     echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
+    if [ "\${species}" == "nan" ]
+    then
+      species="_No value_"
+    fi
 
     # get read length metadata
     readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p readLength)
