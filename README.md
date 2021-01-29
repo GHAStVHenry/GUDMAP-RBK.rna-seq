@@ -61,8 +61,8 @@ To Run:
     * eg: `--speciesForce 'Mus musculus'`
   * `--strandedForce` forces the strandedness to be "forward", "reverse" or "unstranded", it bypasses a metadata mismatch error
     * eg: `--strandedForce 'unstranded'`
-  * `--spikeForce` forces the spike-in to be "f" or "t", it bypasses a metadata mismatch error
-    * eg: `--spikeForce 't'`
+  * `--spikeForce` forces the spike-in to be "false" or "true", it bypasses a metadata mismatch error
+    * eg: `--spikeForce 'true'`
 * Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
   * `--ci` boolean (default = false)
   * `--dev` boolean (default = true)
