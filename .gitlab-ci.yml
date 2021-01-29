@@ -894,7 +894,7 @@ override_spike:
   - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce t --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./spikeOverride_multiqc_data.json \;
   - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./spikeOverride_multiqc.html \;
-  - pytest -m completionMultiqc --filename spikeOverride_multiqc_data
+  - pytest -m completionMultiqc --filename spikeOverride_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
