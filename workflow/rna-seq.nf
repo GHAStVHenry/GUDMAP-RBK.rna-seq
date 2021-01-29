@@ -320,8 +320,6 @@ process parseMetadata {
     path experiment from experimentMeta
     path (fastq) from fastqs_parseMetadata.collect()
     val fastqCount
-    val strandedForce
-    val spikeForce
 
   output:
     path "design.csv" into metadata_fl
@@ -379,11 +377,6 @@ process parseMetadata {
     then
       stranded="_No value_"
     fi
-    if [ "${strandedForce}" != "" ]
-    then
-      stranded=${strandedForce}
-      echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.parseMetadata.log
-    fi
 
     # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
@@ -391,11 +384,6 @@ process parseMetadata {
     if [ "\${spike}" == "nan" ]
     then
       spike="_No value_"
-    fi
-    if [ "${spikeForce}" != "" ]
-    then
-      spike=${spikeForce}
-      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
     fi
     if [ "\${spike}" == "f" ]
     then
@@ -952,6 +940,8 @@ process inferMetadata {
     path bam from sampleBam.collect()
     path bai from sampleBai.collect()
     path alignSummary from alignSampleQC_inferMetadata.collect()
+    val strandedForce
+    val spikeForce
     val fastqCountError_inferMetadata
     val fastqReadError_inferMetadata
     val fastqFileError_inferMetadata
@@ -990,6 +980,11 @@ process inferMetadata {
       spike="false"
     fi
     echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
+    if [ "${spikeForce}" != "" ]
+    then
+      spike=${spikeForce}
+      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
+    fi
 
     speciesError=false
     speciesError_details=""
@@ -1062,6 +1057,11 @@ process inferMetadata {
         stranded="unstranded"
       fi
       echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
+      if [ "${strandedForce}" != "" ]
+      then
+        stranded=${strandedForce}
+        echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.inferMetadata.log
+      fi
     else
       ends=""
       stranded=""
