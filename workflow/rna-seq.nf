@@ -1529,11 +1529,11 @@ process getRef {
     # set the reference name
     if [ "${species}" == "Mus musculus" ]
     then
-      references=\$(echo ${referenceBase}/GRCm${refMoVersion})
+      reference=\$(echo ${referenceBase}/GRCm${refMoVersion})
       refName=GRCm
     elif [ '${species}' == "Homo sapiens" ]
     then
-      references=\$(echo ${referenceBase}/GRCh${refHuVersion})
+      reference=\$(echo ${referenceBase}/GRCh${refHuVersion})
       refName=GRCh
     else
       echo -e "LOG: ERROR - References could not be set!\nSpecies reference found: ${species}" >> ${repRID}.getRef.log
@@ -1541,12 +1541,12 @@ process getRef {
     fi
     if [ "${spike}" == "true" ]
     then
-      references=\$(echo \${reference}-S)
+      reference=\$(echo \${reference}-S)
     elif [ "${spike}" == "false" ]
     then
-      reference=\$(echo \${references})
+      reference=\$(echo \${reference})
     fi
-    echo -e "LOG: species set to \${references}" >> ${repRID}.getRef.log
+    echo -e "LOG: species set to \${reference}" >> ${repRID}.getRef.log
 
     # retreive appropriate reference appropriate location
     echo -e "LOG: fetching ${species} reference files from ${referenceBase}" >> ${repRID}.getRef.log
@@ -1558,9 +1558,9 @@ process getRef {
     elif [ arams.refSource == "datahub" ]
     then
       echo -e "LOG: grabbing reference files from datahub" >> ${repRID}.getRef.log
-      GRCv=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f1)
-      GRCp=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f2)
-      GENCODE=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f3)
+      GRCv=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f1)
+      GRCp=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f2)
+      GENCODE=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f3)
       query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ${script_refData} --returnParam URL)
