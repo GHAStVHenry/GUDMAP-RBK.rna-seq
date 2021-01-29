@@ -1539,10 +1539,10 @@ process getRef {
       echo -e "LOG: ERROR - References could not be set!\nSpecies reference found: ${species}" >> ${repRID}.getRef.log
       exit 1
     fi
-    if [ "${spike}" == "t" ]
+    if [ "${spike}" == "true" ]
     then
       references=\$(echo \${reference}-S)
-    elif [ "${spike}" == "f" ]
+    elif [ "${spike}" == "false" ]
     then
       reference=\$(echo \${references})
     fi
