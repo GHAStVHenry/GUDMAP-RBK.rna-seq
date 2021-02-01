@@ -19,7 +19,7 @@
         "processor": "csv",
         "processor_params": {
           "output_path": "Experiment",
-          "query_path": "/attribute/M:=RNASeq:Replicate/RID={rid}/(Experiment_RID)=(RNASeq:Experiment:RID)/Experiment_RID:=RID,Study_RID,Internal_ID,Name,Description,Experiment_Method,Sequencing_Type,Species,Specimen_Type,Molecule_Type,Pooled_Sample,Pool_Size,Markers,Cell_Count,Treatment_Protocol,Treatment_Protocol_Reference,Isolation_Protocol,Isolation_Protocol_Reference,Growth_Protocol,Growth_Protocol_Reference,Label_Protocol,Label_Protocol_Reference,Hybridization_Protocol,Hybridization_Protocol_Reference,Scan_Protocol,Scan_Protocol_Reference,Data_Processing,Value_Definition,Notes,Principal_Investigator,Consortium,Release_Date,RCT,RMT?limit=none"
+          "query_path": "/attribute/M:=RNASeq:Replicate/RID={rid}/(Experiment_RID)=(RNASeq:Experiment:RID)/Experiment_RID:=RID,Study_RID,Internal_ID,Name,Description,Experiment_Method,Experiment_Type,Species,Specimen_Type,Molecule_Type,Pooled_Sample,Pool_Size,Markers,Cell_Count,Treatment_Protocol,Treatment_Protocol_Reference,Isolation_Protocol,Isolation_Protocol_Reference,Growth_Protocol,Growth_Protocol_Reference,Label_Protocol,Label_Protocol_Reference,Hybridization_Protocol,Hybridization_Protocol_Reference,Scan_Protocol,Scan_Protocol_Reference,Data_Processing,Value_Definition,Notes,Principal_Investigator,Consortium,Release_Date,RCT,RMT?limit=none"
         }
       },
       {
@@ -40,7 +40,7 @@
         "processor": "csv",
         "processor_params": {
           "output_path": "Experiment Settings",
-          "query_path": "/attribute/M:=RNASeq:Replicate/RID={rid}/(Experiment_RID)=(RNASeq:Experiment_Settings:Experiment_RID)/RID,Experiment_RID,Alignment_Format,Aligner,Aligner_Version,Reference_Genome,Sequence_Trimming,Duplicate_Removal,Pre-alignment_Sequence_Removal,Junction_Reads,Library_Type,Protocol_Reference,Library_Selection,Quantification_Format,Quantification_Software,Expression_Metric,Transcriptome_Model,Sequencing_Platform,Paired_End,Read_Length,Has_Strand_Specific_Information,Used_Spike_Ins,Spike_Ins_Amount,Visualization_Format,Visualization_Software,Visualization_Version,Visualization_Setting,Notes,RCT,RMT?limit=none"
+          "query_path": "/attribute/M:=RNASeq:Replicate/RID={rid}/(Experiment_RID)=(RNASeq:Experiment_Settings:Experiment_RID)/RID,Experiment_RID,Alignment_Format,Aligner,Aligner_Version,Reference_Genome,Sequence_Trimming,Duplicate_Removal,Pre-alignment_Sequence_Removal,Junction_Reads,Library_Type,Protocol_Reference,Library_Selection,Quantification_Format,Quantification_Software,Expression_Metric,Transcriptome_Model,Sequencing_Platform,Paired_End,Read_Length,Strandedness,Used_Spike_Ins,Spike_Ins_Amount,Visualization_Format,Visualization_Software,Visualization_Version,Visualization_Setting,Notes,RCT,RMT?limit=none"
         }
       },
       {

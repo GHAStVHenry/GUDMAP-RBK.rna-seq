@@ -7,12 +7,12 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--repRID', help="replicate RID", required=True)
     parser.add_argument('-e', '--executionRunRID', help="exection run RID", required=True)
-    parser.add_argument('-p', '--ends', help="single/paired ends", required=True)
-    parser.add_argument('-s', '--stranded', help="stranded?", required=True)
-    parser.add_argument('-l', '--length', help="median read length", required=True)
-    parser.add_argument('-w', '--rawCount', help="raw count", required=True)
-    parser.add_argument('-f', '--assignedCount', help="final assigned count", required=True)
-    parser.add_argument('-t', '--tin', help="median TIN", required=True)
+    parser.add_argument('-p', '--ends', help="single/paired ends", required=False)
+    parser.add_argument('-s', '--stranded', help="stranded?", required=False)
+    parser.add_argument('-l', '--length', help="median read length", required=False)
+    parser.add_argument('-w', '--rawCount', help="raw count", required=False)
+    parser.add_argument('-f', '--assignedCount', help="final assigned count", required=False)
+    parser.add_argument('-t', '--tin', help="median TIN", required=False)
     parser.add_argument('-n', '--notes', help="notes", default="", required=False)
     parser.add_argument('-o', '--host', help="datahub host", required=True)
     parser.add_argument('-c', '--cookie', help="cookie token", required=True)
@@ -36,6 +36,13 @@ def main(hostname, catalog_number, credential):
             "Final_Count": args.assignedCount,
             "Median_TIN": args.tin,
             "Notes": args.notes
+        }
+        entities = run_table.insert([run_data])
+        rid = entities[0]["RID"]
+    elif args.update == "E":
+        run_data = {
+            "Execution_Run": args.executionRunRID,
+            "Replicate": args.repRID
         }
         entities = run_table.insert([run_data])
         rid = entities[0]["RID"]

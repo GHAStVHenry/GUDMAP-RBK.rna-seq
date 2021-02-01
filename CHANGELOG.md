@@ -1,5 +1,9 @@
-# v1.0.3
+# v2.0.0rc01
 **User Facing**
+* Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle (#110) ("Single Read" still acceptable for backwards compatibility)
+* Strandedness metadata "yes"/"no" changed to boolean "t"/"f" in data-hub, pipeline updated to handle (#70) ("yes"/"no" still acceptable for backwards compatibility)
+* Upload empty mRNA_QC entry if data error (#111)
+* Allow forcing of strandedness and spike (#100)
 
 **Background**
 * Add memory limit (75%) per thread for samtools sort (#108)
@@ -15,10 +19,16 @@
 * Detect malformed fastq's (#107)
 * Restrict sampled alignment process to use >32GB nodes on BioHPC (#108)
 * Use nproc**-1** for alignment processes (#108)
+* Data-hub column title change from "Sequencing_Type" to "Experiment_Type" (#114)
+* Data-hub column title change from "Has_Strand_Specific_Information" to "Strandedness" (#115)
+* Merge data error pre-inference execution run upload/finalize to 1 process
+* Change uploadOutputBag logic to change reuse hatrac file if alread exists (re-uses Output_Bag entry by reassigning Execution_Run RID) (#112)
+* Add new CI py tests for override and integration
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
 * Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
+* Check for outputBag in hatrac doesn't check for any uploaded by chaise
 
 <hr>
 

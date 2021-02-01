@@ -57,8 +57,12 @@ To Run:
     * eg: `--inputBagForce test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip` (must be the expected bag structure, this example will not work because it is a test bag)
   * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)
     * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order)
-  * `--speciesForce` forces the species to be "Mus musculus" or "Homo sapiens", it bypasses ambiguous species error
+  * `--speciesForce` forces the species to be "Mus musculus" or "Homo sapiens", it bypasses a metadata mismatch or an ambiguous species error
     * eg: `--speciesForce 'Mus musculus'`
+  * `--strandedForce` forces the strandedness to be "forward", "reverse" or "unstranded", it bypasses a metadata mismatch error
+    * eg: `--strandedForce 'unstranded'`
+  * `--spikeForce` forces the spike-in to be "false" or "true", it bypasses a metadata mismatch error
+    * eg: `--spikeForce 'true'`
 * Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
   * `--ci` boolean (default = false)
   * `--dev` boolean (default = true)
