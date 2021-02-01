@@ -20,6 +20,7 @@ params.refERCCVersion = "92"
 params.outDir = "${baseDir}/../output"
 params.upload = false
 params.email = ""
+params.track = false
 
 
 // Define override input variable
@@ -27,6 +28,8 @@ params.refSource = "biohpc"
 params.inputBagForce = ""
 params.fastqsForce = ""
 params.speciesForce = ""
+params.strandedForce = ""
+params.spikeForce = ""
 
 // Define tracking input variables
 params.ci = false
@@ -44,12 +47,11 @@ deriva.into {
   deriva_uploadInputBag
   deriva_uploadExecutionRun
   deriva_uploadQC
+  deriva_uploadQC_fail
   deriva_uploadProcessedFile
   deriva_uploadOutputBag
   deriva_finalizeExecutionRun
-  deriva_failPreExecutionRun_fastq
-  deriva_failPreExecutionRun_fastqFile
-  deriva_failPreExecutionRun_species
+  deriva_failPreExecutionRun
   deriva_failExecutionRun
 }
 bdbag = Channel
@@ -65,6 +67,8 @@ upload = params.upload
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
 speciesForce = params.speciesForce
+strandedForce = params.strandedForce
+spikeForce = params.spikeForce
 email = params.email
 
 // Define fixed files and variables
@@ -100,13 +104,13 @@ script_tinHist = Channel.fromPath("${baseDir}/scripts/tin_hist.py")
 script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py")
 script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failPreExecutionRun_fastq = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failPreExecutionRun_fastqFile = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failPreExecutionRun_species = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failPreExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
 script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
+script_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
 script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
 script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
+script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
 script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
 
 /*
@@ -115,37 +119,40 @@ script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/de
 process trackStart {
   container 'docker://gudmaprbk/gudmap-rbk_base:1.0.0'
   script:
-  """
-  hostname
-  ulimit -a
+    """
+    hostname
+    ulimit -a
 
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "sessionId": "${workflow.sessionId}", \
-      "pipeline": "gudmap.rbk_rnaseq", \
-      "start": "${workflow.start}", \
-      "repRID": "${repRID}", \
-      "astrocyte": false, \
-      "status": "started", \
-      "nextflowVersion": "${workflow.nextflow.version}", \
-      "pipelineVersion": "${workflow.manifest.version}", \
-      "ci": ${params.ci}, \
-      "dev": ${params.dev} \
-    }' \
-    "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
+    curl -H 'Content-Type: application/json' -X PUT -d \
+      '{ \
+        "sessionId": "${workflow.sessionId}", \
+        "pipeline": "gudmap.rbk_rnaseq", \
+        "start": "${workflow.start}", \
+        "repRID": "${repRID}", \
+        "astrocyte": false, \
+        "status": "started", \
+        "nextflowVersion": "${workflow.nextflow.version}", \
+        "pipelineVersion": "${workflow.manifest.version}", \
+        "ci": ${params.ci}, \
+        "dev": ${params.dev} \
+      }' \
+      "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
 
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "ID": "${workflow.sessionId}", \
-      "repRID": "${repRID}", \
-      "PipelineVersion": "${workflow.manifest.version}", \
-      "Server": "${params.source}", \
-      "Queued": "NA", \
-      "CheckedOut": "NA", \
-      "Started": "${workflow.start}" \
-    }' \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-  """
+    if [ ${params.track} == true ]
+    then
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "repRID": "${repRID}", \
+          "PipelineVersion": "${workflow.manifest.version}", \
+          "Server": "${params.source}", \
+          "Queued": "NA", \
+          "CheckedOut": "NA", \
+          "Started": "${workflow.start}" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    fi
+    """
 }
 
 log.info """\
@@ -160,6 +167,7 @@ ERCC Reference Version : ${params.refERCCVersion}
 Reference source       : ${params.refSource}
 Output Directory       : ${params.outDir}
 Upload                 : ${upload}
+Track                  : ${params.track}
 ------------------------------------
 Nextflow Version       : ${workflow.nextflow.version}
 Pipeline Version       : ${workflow.manifest.version}
@@ -337,12 +345,16 @@ process parseMetadata {
     # get endedness metadata
     endsRaw=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p endsMeta)
     echo -e "LOG: endedness metadata parsed: \${endsRaw}" >> ${repRID}.parseMetadata.log
-    if [ "\${endsRaw}" == "Single Read" ]
+    if [ "\${endsRaw}" == "Single End" ]
     then
       endsMeta="se"
     elif [ "\${endsRaw}" == "Paired End" ]
     then
       endsMeta="pe"
+    elif [ "\${endsRaw}" == "Single Read" ]
+    # "Single Read" depreciated as of Jan 2021, this option is present for backwards compatibility
+    then
+      endsMeta="se"
     elif [ "\${endsRaw}" == "nan" ]
     then
       endsRaw="_No value_"
@@ -361,14 +373,45 @@ process parseMetadata {
     # get strandedness metadata
     stranded=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p stranded)
     echo -e "LOG: strandedness metadata parsed: \${stranded}" >> ${repRID}.parseMetadata.log
+    if [ "\${stranded}" == "nan" ]
+    then
+      stranded="_No value_"
+    fi
 
     # get spike-in metadata
     spike=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p spike)
     echo -e "LOG: spike-in metadata parsed: \${spike}" >> ${repRID}.parseMetadata.log
+    if [ "\${spike}" == "nan" ]
+    then
+      spike="_No value_"
+    fi
+    if [ "\${spike}" == "f" ]
+    then
+      spike="false"
+    elif [ "\${spike}" == "t" ]
+    then
+      spike="true"
+    elif [ "\${spike}" == "no" ]
+    # "yes"/"no" depreciated as of Jan 2021, this option is present for backwards compatibility
+    then
+      spike="false"
+    elif [ "\${spike}" == "yes" ]
+    # "yes"/"no" depreciated as of Jan 2021, this option is present for backwards compatibility
+    then
+      spike="true"
+    elif [ "\${spike}" == "nan" ]
+    then
+      endsRaw="_No value_"
+      endsMeta="NA"
+    fi
 
     # get species metadata
     species=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experiment}" -p species)
     echo -e "LOG: species metadata parsed: \${species}" >> ${repRID}.parseMetadata.log
+    if [ "\${species}" == "nan" ]
+    then
+      species="_No value_"
+    fi
 
     # get read length metadata
     readLength=\$(python3 ${script_parseMeta} -r ${repRID} -m "${experimentSettings}" -p readLength)
@@ -463,17 +506,13 @@ strandedMeta.into {
 spikeMeta.into {
   spikeMeta_checkMetadata
   spikeMeta_aggrQC
-  spikeMeta_failPreExecutionRun_fastq
-  spikeMeta_failPreExecutionRun_fastqFile
-  spikeMeta_failPreExecutionRun_species
+  spikeMeta_failPreExecutionRun
   spikeMeta_failExecutionRun
 }
 speciesMeta.into {
   speciesMeta_checkMetadata
   speciesMeta_aggrQC
-  speciesMeta_failPreExecutionRun_fastq
-  speciesMeta_failPreExecutionRun_fastqFile
-  speciesMeta_failPreExecutionRun_species
+  speciesMeta_failPreExecutionRun
   speciesMeta_failExecutionRun
 }
 studyRID.into {
@@ -517,6 +556,7 @@ fastqCountError.into {
   fastqCountError_dataQC
   fastqCountError_aggrQC
   fastqCountError_uploadQC
+  fastqCountError_uploadQC_fail
   fastqCountError_uploadProcessedFile
   fastqCountError_uploadOutputBag
   fastqCountError_failPreExecutionRun_fastq
@@ -538,6 +578,7 @@ fastqReadError.into {
   fastqReadError_dataQC
   fastqReadError_aggrQC
   fastqReadError_uploadQC
+  fastqReadError_uploadQC_fail
   fastqReadError_uploadProcessedFile
   fastqReadError_uploadOutputBag
   fastqReadError_failPreExecutionRun_fastq
@@ -630,6 +671,7 @@ fastqFileError.into {
   fastqFileError_dataQC
   fastqFileError_aggrQC
   fastqFileError_uploadQC
+  fastqFileError_uploadQC_fail
   fastqFileError_uploadProcessedFile
   fastqFileError_uploadOutputBag
   fastqFileError_failPreExecutionRun_fastqFile
@@ -898,6 +940,8 @@ process inferMetadata {
     path bam from sampleBam.collect()
     path bai from sampleBai.collect()
     path alignSummary from alignSampleQC_inferMetadata.collect()
+    val strandedForce
+    val spikeForce
     val fastqCountError_inferMetadata
     val fastqReadError_inferMetadata
     val fastqFileError_inferMetadata
@@ -931,11 +975,16 @@ process inferMetadata {
     # determine spike-in
     if [ 1 -eq \$(echo \$(expr \${align_ercc} ">=" 10)) ]
     then
-      spike="yes"
+      spike="true"
     else
-      spike="no"
+      spike="false"
     fi
     echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
+    if [ "${spikeForce}" != "" ]
+    then
+      spike=${spikeForce}
+      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
+    fi
 
     speciesError=false
     speciesError_details=""
@@ -1008,6 +1057,11 @@ process inferMetadata {
         stranded="unstranded"
       fi
       echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
+      if [ "${strandedForce}" != "" ]
+      then
+        stranded=${strandedForce}
+        echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.inferMetadata.log
+      fi
     else
       ends=""
       stranded=""
@@ -1106,6 +1160,7 @@ speciesError.into {
   speciesError_dataQC
   speciesError_aggrQC
   speciesError_uploadQC
+  speciesError_uploadQC_fail
   speciesError_uploadProcessedFile
   speciesError_uploadOutputBag
   speciesError_failPreExecutionRun_species
@@ -1147,7 +1202,40 @@ process checkMetadata {
     ulimit -a >> ${repRID}.checkMetadata.log
 
     pipelineError=false
+    pipelineError_ends=false
+    pipelineError_stranded=false
+    pipelineError_spike=false
+    pipelineError_species=false
     # check if submitted metadata matches inferred
+    if [ "${strandedMeta}" != "${strandedInfer}" ]
+    then
+      if [ "${params.strandedForce}" != "" ]
+      then
+        pipelineError=false
+        pipelineError_stranded=false
+        echo -e "LOG: stranded forced: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_stranded=true
+        if [ "${strandedMeta}" == "stranded" ]
+        then
+          if [[ "${strandedInfer}" == "forward" ]] || [[ "${strandedInfer}" == "reverse" ]]
+          then
+            pipelineError=false
+            pipelineError_stranded=false
+            echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          else
+            echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          fi
+        else
+          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        fi
+      fi
+    else
+      pipelineError=false
+      pipelineError_stranded=false
+      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+    fi
     if [ "${endsMeta}" != "${endsInfer}" ]
     then
       pipelineError=true
@@ -1157,42 +1245,32 @@ process checkMetadata {
       pipelineError_ends=false
       echo -e "LOG: ends matches: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
     fi
-    if [ "${strandedMeta}" != "${strandedInfer}" ]
-    then
-      pipelineError=true
-      pipelineError_stranded=true
-      if [ "${strandedMeta}" == "stranded" ]
-      then
-        if [[ "${strandedInfer}" == "forward" ]] || [[ "${strandedInfer}" == "reverse" ]]
-        then
-          pipelineError=false
-          pipelineError_stranded=false
-          echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-        else
-          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-        fi
-      else
-        echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-      fi
-    else
-      pipelineError=false
-      pipelineError_stranded=false
-      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-    fi
     if [ "${spikeMeta}" != "${spikeInfer}" ]
     then
-      pipelineError=true
-      pipelineError_spike=true
-      echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      if [[ "${params.spikeForce}" != "" ]]
+      then
+        pipelineError_spike=false
+        echo -e "LOG: spike forced: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_spike=true
+        echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      fi
     else
       pipelineError_spike=false
-      echo -e "LOG: stranded matches: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      echo -e "LOG: spike matches: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
     fi
     if [ "${speciesMeta}" != "${speciesInfer}" ]
     then
-      pipelineError=true
-      pipelineError_species=true
-      echo -e "LOG: species does not match: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
+    if [[ "${params.speciesForce}" != "" ]]
+      then
+        pipelineError_species=false
+        echo -e "LOG: species forced: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_species=true
+        echo -e "LOG: species does not match: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
+      fi
     else
       pipelineError_species=false
       echo -e "LOG: species matches: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
@@ -1234,6 +1312,7 @@ pipelineError.into {
   pipelineError_dataQC
   pipelineError_aggrQC
   pipelineError_uploadQC
+  pipelineError_uploadQC_fail
   pipelineError_uploadProcessedFile
   pipelineError_uploadOutputBag
   pipelineError_failExecutionRun
@@ -1258,39 +1337,39 @@ process uploadInputBag {
     upload
 
   script:
-  """
-  hostname > ${repRID}.uploadInputBag.log
-  ulimit -a >> ${repRID}.uploadInputBag.log
+    """
+    hostname > ${repRID}.uploadInputBag.log
+    ulimit -a >> ${repRID}.uploadInputBag.log
 
-  yr=\$(date +'%Y')
-  mn=\$(date +'%m')
-  dy=\$(date +'%d')
+    yr=\$(date +'%Y')
+    mn=\$(date +'%m')
+    dy=\$(date +'%d')
 
-  file=\$(basename -a ${inputBag})
-  md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
-  echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
-  size=\$(wc -c < ./\${file})
-  echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
-  
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
-  if [ "\${exist}" == "[]" ]
-  then
-      cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-      cookie=\${cookie:11:-1}
+    file=\$(basename -a ${inputBag})
+    md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
+    echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
+    size=\$(wc -c < ./\${file})
+    echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
+    
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
+    if [ "\${exist}" == "[]" ]
+    then
+        cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+        cookie=\${cookie:11:-1}
 
-      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
-      inputBag_rid=\$(python3 ${script_uploadInputBag} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
-      echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
-      rid=\${inputBag_rid}
-  else
-      exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-      exist=\${exist:7:-6}
-      echo LOG: input bag RID already exists - \${exist} >> ${repRID}.uploadInputBag.log
-      rid=\${exist}
-  fi
+        loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
+        inputBag_rid=\$(python3 ${script_uploadInputBag} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+        echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
+        rid=\${inputBag_rid}
+    else
+        exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+        exist=\${exist:7:-6}
+        echo LOG: input bag RID already exists - \${exist} >> ${repRID}.uploadInputBag.log
+        rid=\${exist}
+    fi
 
-  echo "\${rid}" > inputBagRID.csv
-  """
+    echo "\${rid}" > inputBagRID.csv
+    """
 }
 
 // Extract input bag RID into channel
@@ -1303,9 +1382,7 @@ inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
 inputBagRID.into {
   inputBagRID_uploadExecutionRun
   inputBagRID_finalizeExecutionRun
-  inputBagRID_failPreExecutionRun_fastq
-  inputBagRID_failPreExecutionRun_fastqFile
-  inputBagRID_failPreExecutionRun_species
+  inputBagRID_failPreExecutionRun
   inputBagRID_failExecutionRun
 }
 
@@ -1337,59 +1414,62 @@ process uploadExecutionRun {
     speciesError_uploadExecutionRun == "false"
 
   script:
-  """
-  hostname > ${repRID}.uploadExecutionRun.log
-  ulimit -a >> ${repRID}.uploadExecutionRun.log
+    """
+    hostname > ${repRID}.uploadExecutionRun.log
+    ulimit -a >> ${repRID}.uploadExecutionRun.log
 
-  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
-  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
-  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  workflow=\${workflow:7:-6}
-  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.uploadExecutionRun.log
+    echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
+    workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
+    workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    workflow=\${workflow:7:-6}
+    echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.uploadExecutionRun.log
 
-  if [ "${species}" == "Homo sapiens" ]
-  then
-    genomeName=\$(echo GRCh${refHuVersion})
-  elif [ "${species}" == "Mus musculus" ]
-  then
-    genomeName=\$(echo GRCm${refMoVersion})
-  fi
-  if [ "${spike}" == "yes" ]
-  then
-    genomeName=\$(echo \${genomeName}-S)
-  fi
-  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.uploadExecutionRun.log
-  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
-  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  genome=\${genome:7:-6}
-  echo LOG: genome RID extracted - \${genome} >> ${repRID}.uploadExecutionRun.log
+    if [ "${species}" == "Homo sapiens" ]
+    then
+      genomeName=\$(echo GRCh${refHuVersion})
+    elif [ "${species}" == "Mus musculus" ]
+    then
+      genomeName=\$(echo GRCm${refMoVersion})
+    fi
+    if [ "${spike}" == "true" ]
+    then
+      genomeName=\$(echo \${genomeName}-S)
+    fi
+    echo LOG: searching for genome name - \${genomeName} >> ${repRID}.uploadExecutionRun.log
+    genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
+    genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    genome=\${genome:7:-6}
+    echo LOG: genome RID extracted - \${genome} >> ${repRID}.uploadExecutionRun.log
 
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
 
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
-  echo \${exist} >> ${repRID}.uploadExecutionRun.log
-  if [ "\${exist}" == "[]" ]
-  then
-    executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
-    echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
-  else
-    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-    rid=\${rid:7:-6}
-    echo \${rid} >> ${repRID}.uploadExecutionRun.log
-    executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
-    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
-  fi
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
+    echo \${exist} >> ${repRID}.uploadExecutionRun.log
+    if [ "\${exist}" == "[]" ]
+    then
+      executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
+      echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+    else
+      rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      rid=\${rid:7:-6}
+      echo \${rid} >> ${repRID}.uploadExecutionRun.log
+      executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
+      echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+    fi
 
-  echo "\${executionRun_rid}" > executionRunRID.csv
+    echo "\${executionRun_rid}" > executionRunRID.csv
 
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "ID": "${workflow.sessionId}", \
-      "ExecutionRunRID": "'\${executionRun_rid}'" \
-    }' \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-  """
+    if [ ${params.track} == true ]
+    then
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "ExecutionRunRID": "'\${executionRun_rid}'" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    fi
+    """
 }
 
 // Extract execution run RID into channel
@@ -1405,6 +1485,7 @@ executionRunRID.into {
   executionRunRID_uploadOutputBag
   executionRunRID_finalizeExecutionRun
   executionRunRID_failExecutionRun
+  executionRunRID_fail
 }
 
 /*
@@ -1448,24 +1529,24 @@ process getRef {
     # set the reference name
     if [ "${species}" == "Mus musculus" ]
     then
-      references=\$(echo ${referenceBase}/GRCm${refMoVersion})
+      reference=\$(echo ${referenceBase}/GRCm${refMoVersion})
       refName=GRCm
     elif [ '${species}' == "Homo sapiens" ]
     then
-      references=\$(echo ${referenceBase}/GRCh${refHuVersion})
+      reference=\$(echo ${referenceBase}/GRCh${refHuVersion})
       refName=GRCh
     else
       echo -e "LOG: ERROR - References could not be set!\nSpecies reference found: ${species}" >> ${repRID}.getRef.log
       exit 1
     fi
-    if [ "${spike}" == "yes" ]
+    if [ "${spike}" == "true" ]
     then
-      references=\$(echo \${reference}-S)
-    elif [ "${spike}" == "no" ]
+      reference=\$(echo \${reference}-S)
+    elif [ "${spike}" == "false" ]
     then
-      reference=\$(echo \${references})
+      reference=\$(echo \${reference})
     fi
-    echo -e "LOG: species set to \${references}" >> ${repRID}.getRef.log
+    echo -e "LOG: species set to \${reference}" >> ${repRID}.getRef.log
 
     # retreive appropriate reference appropriate location
     echo -e "LOG: fetching ${species} reference files from ${referenceBase}" >> ${repRID}.getRef.log
@@ -1477,9 +1558,9 @@ process getRef {
     elif [ arams.refSource == "datahub" ]
     then
       echo -e "LOG: grabbing reference files from datahub" >> ${repRID}.getRef.log
-      GRCv=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f1)
-      GRCp=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f2)
-      GENCODE=\$(echo \${references} | grep -o \${refName}.* | cut -d '.' -f3)
+      GRCv=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f1)
+      GRCp=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f2)
+      GENCODE=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f3)
       query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ${script_refData} --returnParam URL)
@@ -1913,7 +1994,7 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.log
 
     # make run table
-    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ]
+    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ] && [ "${params.strandedForce}" == "" ] && [ "${params.spikeForce}" == "" ]
     then
       input="default"
     else
@@ -1929,6 +2010,14 @@ process aggrQC {
       if [ "${params.speciesForce}" != "" ]
       then
         input=\$(echo \${input} species)
+      fi
+      if [ "${params.strandedForce}" != "" ]
+      then
+        input=\$(echo \${input} stranded)
+      fi
+      if [ "${params.spikeForce}" != "" ]
+      then
+        input=\$(echo \${input} spike)
       fi
     fi
     echo -e "LOG: creating run table" >> ${repRID}.aggrQC.log
@@ -1947,10 +2036,24 @@ process aggrQC {
     echo -e "Submitter\t${speciesM}\t${endsM}\t${strandedM}\t${spikeM}\t-\t-\t'${readLengthM}'\t-" >> metadata.tsv
     if [ "${params.speciesForce}" == "" ]
     then
-      echo -e "Inferred\t${speciesI}\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+      input=\$(echo "Inferred\\t${speciesI}\\t")
     else
-      echo -e "Inferred\t${speciesI} (FORCED)\t${endsI}\t${strandedI}\t${spikeI}\t-\t-\t-\t-" >> metadata.tsv
+      input=\$(echo "Inferred\\t${speciesI} (FORCED)\\t")
     fi
+    input=\$(echo \${input}"${endsI}\\t")
+    if [ "${params.strandedForce}" == "" ]
+    then
+      input=\$(echo \${input}"${strandedI}\\t")
+    else
+      input=\$(echo \${input}"${strandedI} (FORCED)\\t")
+    fi
+    if [ "${params.spikeForce}" == "" ]
+    then
+      input=\$(echo \${input}"${spikeI}\\t-\\t-\\t-\\t-")
+    else
+      input=\$(echo \${input}"${spikeI} (FORCED)\\t-\\t-\\t-\\t-")
+    fi
+    echo -e \${input} >> metadata.tsv
     echo -e "Measured\t-\t${endsManual}\t-\t-\t'${rawReadsI}'\t'${assignedReadsI}'\t'${readLengthI}'\t'${tinMedI}'" >> metadata.tsv
 
     # make reference table
@@ -1971,10 +2074,13 @@ process aggrQC {
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
 
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    @./${repRID}.multiqc_data.json \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
-  """
+    if [ ${params.track} == true ]
+    then
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        @./${repRID}.multiqc_data.json \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
+    fi
+    """
 }
 
 /* 
@@ -2012,48 +2118,42 @@ process uploadQC {
     pipelineError_uploadQC == 'false'
 
   script:
-  """
-  hostname > ${repRID}.uploadQC.log
-  ulimit -a >> ${repRID}.uploadQC.log
+    """
+    hostname > ${repRID}.uploadQC.log
+    ulimit -a >> ${repRID}.uploadQC.log
 
-  if [ "${ends}" == "pe" ]
-  then
-    end="Paired End"
-  elif [ "${ends}" == "se" ]
-  then
-    end="Single Read"
-  fi
+    if [ "${ends}" == "pe" ]
+    then
+      end="Paired End"
+    elif [ "${ends}" == "se" ]
+    then
+      end="Single End"
+    fi
 
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
 
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID})
-  if [ "\${exist}" != "[]" ]
-  then
-    rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
-    for rid in \${rids}
-    do
-      python3 ${script_deleteEntry_uploadQC} -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
-      echo LOG: old mRNA QC RID deleted - \${rid} >> ${repRID}.uploadQC.log
-    done
-    echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
-  fi
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID})
+    if [ "\${exist}" != "[]" ]
+    then
+      rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+      for rid in \${rids}
+      do
+        python3 ${script_deleteEntry_uploadQC} -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
+        echo LOG: old mRNA QC RID deleted - \${rid} >> ${repRID}.uploadQC.log
+      done
+      echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
+    fi
 
-  qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -t ${tinMed} -o ${source} -c \${cookie} -u F)
-  echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
+    qc_rid=\$(python3 ${script_uploadQC} -r ${repRID} -e ${executionRunRID} -p "\${end}" -s ${stranded} -l ${length} -w ${rawCount} -f ${finalCount} -t ${tinMed} -o ${source} -c \${cookie} -u F)
+    echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
 
-  echo "\${qc_rid}" > qcRID.csv
-  """
+    echo "\${qc_rid}" > qcRID.csv
+    """
 }
 
-// Extract mRNA qc RID into channel
-qcRID = Channel.create()
-qcRID_fl.splitCsv(sep: ",", header: false).separate(
-  qcRID
-)
-
 /*
- *ouputBag: create ouputBag
+ *uploadProcessedFile: uploads the processed files
 */
 process uploadProcessedFile {
   tag "${repRID}"
@@ -2090,68 +2190,68 @@ process uploadProcessedFile {
     pipelineError_uploadProcessedFile == 'false'
 
   script:
-  """
-  hostname > ${repRID}.outputBag.log
-  ulimit -a >> ${repRID}.outputBag.log
+    """
+    hostname > ${repRID}.outputBag.log
+    ulimit -a >> ${repRID}.outputBag.log
 
-  mkdir -p ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
-  cp ${bam} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
-  cp ${bai} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
-  cp ${bigwig} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
-  cp ${counts} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+    mkdir -p ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+    cp ${bam} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+    cp ${bai} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+    cp ${bigwig} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
+    cp ${counts} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
 
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
 
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${repRID})
-  if [ "\${exist}" != "[]" ]
-  then
-    rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
-    for rid in \${rids}
-    do
-      python3 ${script_deleteEntry_uploadProcessedFile} -r \${rid} -t Processed_File -o ${source} -c \${cookie}
-    done
-    echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
-  fi
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${repRID})
+    if [ "\${exist}" != "[]" ]
+    then
+      rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+      for rid in \${rids}
+      do
+        python3 ${script_deleteEntry_uploadProcessedFile} -r \${rid} -t Processed_File -o ${source} -c \${cookie}
+      done
+      echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
+    fi
 
-  deriva-upload-cli --catalog 2 --token \${cookie:9} ${source} ./deriva
-  echo LOG: processed files uploaded >> ${repRID}.outputBag.log
+    deriva-upload-cli --catalog 2 --token \${cookie:9} ${source} ./deriva
+    echo LOG: processed files uploaded >> ${repRID}.outputBag.log
 
-  deriva-download-cli --catalog 2 --token \${cookie:9} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
-  echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
+    deriva-download-cli --catalog 2 --token \${cookie:9} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
+    echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
 
-  echo -e "### Run Details" >> runDetails.md
-  echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
-  echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
-  echo -e "**Description:** ${workflow.manifest.description}" >> runDetails.md
-  if [ "${species}" == "Mus musculus" ]; then
-    genome=\$(echo GRCm${refMoVersion} | cut -d '.' -f1)
-    patch=\$(echo ${refMoVersion} | cut -d '.' -f2)
-    annotation=\$(echo ${refMoVersion} | cut -d '.' -f3 | tr -d 'v')
-  elif [ "${species}" == "Homo sapiens" ]; then
-    genome=\$(echo GRCh${refHuVersion} | cut -d '.' -f1)
-    patch=\$(echo ${refHuVersion} | cut -d '.' -f2)
-    annotation=\$(echo ${refHuVersion} | cut -d '.' -f3 | tr -d 'v')
-  fi
-  echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
-  echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
-  echo -e "**Run ID:** ${repRID}" >> runDetails.md
-  echo LOG: runDetails.md created >> ${repRID}.outputBag.log
+    echo -e "### Run Details" >> runDetails.md
+    echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
+    echo -e "**Workflow Version:** ${workflow.manifest.version}" >> runDetails.md
+    echo -e "**Description:** ${workflow.manifest.description}" >> runDetails.md
+    if [ "${species}" == "Mus musculus" ]; then
+      genome=\$(echo GRCm${refMoVersion} | cut -d '.' -f1)
+      patch=\$(echo ${refMoVersion} | cut -d '.' -f2)
+      annotation=\$(echo ${refMoVersion} | cut -d '.' -f3 | tr -d 'v')
+    elif [ "${species}" == "Homo sapiens" ]; then
+      genome=\$(echo GRCh${refHuVersion} | cut -d '.' -f1)
+      patch=\$(echo ${refHuVersion} | cut -d '.' -f2)
+      annotation=\$(echo ${refHuVersion} | cut -d '.' -f3 | tr -d 'v')
+    fi
+    echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
+    echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
+    echo -e "**Run ID:** ${repRID}" >> runDetails.md
+    echo LOG: runDetails.md created >> ${repRID}.outputBag.log
 
-  unzip Execution_Run_${executionRunRID}.zip
-  yr=\$(date +'%Y')
-  mn=\$(date +'%m')
-  dy=\$(date +'%d')
-  mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag_\${yr}\${mn}\${dy}
-  loc=./${repRID}_Output_Bag/data/assets/Study/${studyRID}/Experiment/${expRID}/Replicate/${repRID}/Execution_Run/${executionRunRID}/Output_Files/
-  mkdir -p \${loc}
-  cp runDetails.md \${loc}
-  cp ${multiqc} \${loc}
-  cp ${multiqcJSON} \${loc}
+    unzip Execution_Run_${executionRunRID}.zip
+    yr=\$(date +'%Y')
+    mn=\$(date +'%m')
+    dy=\$(date +'%d')
+    mv Execution_Run_${executionRunRID} ${repRID}_Output_Bag_\${yr}\${mn}\${dy}
+    loc=./${repRID}_Output_Bag/data/assets/Study/${studyRID}/Experiment/${expRID}/Replicate/${repRID}/Execution_Run/${executionRunRID}/Output_Files/
+    mkdir -p \${loc}
+    cp runDetails.md \${loc}
+    cp ${multiqc} \${loc}
+    cp ${multiqcJSON} \${loc}
 
-  bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
-  echo LOG: output bag created >> ${repRID}.outputBag.log
-  """
+    bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
+    echo LOG: output bag created >> ${repRID}.outputBag.log
+    """
 }
 
 /* 
@@ -2184,39 +2284,46 @@ process uploadOutputBag {
     pipelineError_uploadOutputBag == 'false'
 
   script:
-  """
-  hostname > ${repRID}.uploadOutputBag.log
-  ulimit -a >> ${repRID}.uploadOutputBag.log
+    """
+    hostname > ${repRID}.uploadOutputBag.log
+    ulimit -a >> ${repRID}.uploadOutputBag.log
 
-  yr=\$(date +'%Y')
-  mn=\$(date +'%m')
-  dy=\$(date +'%d')
+    yr=\$(date +'%Y')
+    mn=\$(date +'%m')
+    dy=\$(date +'%d')
 
-  file=\$(basename -a ${outputBag})
-  md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
-  echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
-  size=\$(wc -c < ./\${file})
-  echo LOG: ${repRID} output bag size - \${size} bytes >> ${repRID}.uploadOutputBag.log
+    file=\$(basename -a ${outputBag})
+    md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
+    echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
+    size=\$(wc -c < ./\${file})
+    echo LOG: ${repRID} output bag size - \${size} bytes >> ${repRID}.uploadOutputBag.log
     
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=\${md5})
-  if [ "\${exist}" == "[]" ]
-  then
-    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-      cookie=\${cookie:11:-1}
+    loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
+    echo LOG: output bag uploaded - \${loc} >> ${repRID}.uploadOutputBag.log
+    # url-ify the location
+    loc=\${loc//\\//%2F}
+    loc=\${loc//:/%3A}
+    loc=\${loc// /@20}
 
-      loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
-      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
+
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_URL=\${loc})
+    if [ "\${exist}" == "[]" ]
+    then
+      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie} -u F)
       echo LOG: output bag RID uploaded - \${outputBag_rid} >> ${repRID}.uploadOutputBag.log
       rid=\${outputBag_rid}
-  else
+    else
       exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
       exist=\${exist:8:-6}
+      outputBag_rid=\$(python3 ${script_uploadOutputBag} -e ${executionRunRID} -o ${source} -c \${cookie} -u \${exist})
       echo LOG: output bag RID already exists - \${exist} >> ${repRID}.uploadOutputBag.log
       rid=\${exist}
-  fi
+    fi
 
-  echo "\${rid}" > outputBagRID.csv
-  """
+    echo "\${rid}" > outputBagRID.csv
+    """
 }
 
 // Extract output bag RID into channel
@@ -2242,277 +2349,145 @@ process finalizeExecutionRun {
     upload
 
   script:
-  """
-  hostname > ${repRID}.finalizeExecutionRun.log
-  ulimit -a >> ${repRID}.finalizeExecutionRun.log
+    """
+    hostname > ${repRID}.finalizeExecutionRun.log
+    ulimit -a >> ${repRID}.finalizeExecutionRun.log
 
-  executionRun=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/RID=${executionRunRID})
-  workflow=\$(echo \${executionRun} | grep -o '\\"Workflow\\":.*\\"Reference' | grep -oP '(?<=\\"Workflow\\":\\").*(?=\\",\\"Reference)')
-  genome=\$(echo \${executionRun} | grep -o '\\"Reference_Genome\\":.*\\"Input_Bag' | grep -oP '(?<=\\"Reference_Genome\\":\\").*(?=\\",\\"Input_Bag)')
+    executionRun=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/RID=${executionRunRID})
+    workflow=\$(echo \${executionRun} | grep -o '\\"Workflow\\":.*\\"Reference' | grep -oP '(?<=\\"Workflow\\":\\").*(?=\\",\\"Reference)')
+    genome=\$(echo \${executionRun} | grep -o '\\"Reference_Genome\\":.*\\"Input_Bag' | grep -oP '(?<=\\"Reference_Genome\\":\\").*(?=\\",\\"Input_Bag)')
 
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
 
-  rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
-  echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
+    rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
+    echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
 
-  dt=`date +%FT%T.%3N%:z`
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "ID": "${workflow.sessionId}", \
-      "Complete": "'\${dt}'" \
-    }' \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-  """
+    if [ ${params.track} == true ]
+    then
+    dt=`date +%FT%T.%3N%:z`
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "Complete": "'\${dt}'" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    fi
+    """
 }
+
+// Combine errors
+error_meta = fastqCountError_uploadQC_fail.ifEmpty(false).combine(fastqReadError_uploadQC_fail.ifEmpty(false).combine(fastqFileError_uploadQC_fail.ifEmpty(false).combine(speciesError_uploadQC_fail.ifEmpty(false).combine(pipelineError_uploadQC_fail.ifEmpty(false)))))
+error_meta. into{
+  error_failPreExecutionRun
+  error_uploadQC_fail
+}
+errorDetails = fastqCountError_details.ifEmpty("").combine(fastqReadError_details.ifEmpty("").combine(fastqFileError_details.ifEmpty("").combine(speciesError_details.ifEmpty(""))))
 
 /* 
  * failPreExecutionRun_fastq: fail the execution run prematurely for fastq errors
 */
-process failPreExecutionRun_fastq {
+process failPreExecutionRun {
   tag "${repRID}"
 
   input:
-    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun_fastq
-    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_fastq
-    val spike from spikeMeta_failPreExecutionRun_fastq
-    val species from speciesMeta_failPreExecutionRun_fastq
-    val inputBagRID from inputBagRID_failPreExecutionRun_fastq
-    val fastqCountError from fastqCountError_failPreExecutionRun_fastq
-    val fastqCountError_details
-    val fastqReadError from fastqReadError_failPreExecutionRun_fastq
-    val fastqReadError_details
+    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun
+    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun
+    val spike from spikeMeta_failPreExecutionRun
+    val species from speciesMeta_failPreExecutionRun
+    val inputBagRID from inputBagRID_failPreExecutionRun
+    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (speciesError), val (pipelineError) from error_failPreExecutionRun
+    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (speciesError_details) from errorDetails
+
+  output:
+    path ("executionRunRID.csv") into executionRunRID_preFail_fl
 
   when:
     upload
-    fastqCountError == 'true' || fastqReadError == 'true'
+    fastqCountError == 'true' || fastqReadError == 'true' || fastqFileError == 'true' || speciesError == 'true'
 
   script:
-  """
-  hostname > ${repRID}.failPreExecutionRun_fastq.log
-  ulimit -a >> ${repRID}.failPreExecutionRun_fastq.log
+    """
+    hostname > ${repRID}.failPreExecutionRun.log
+    ulimit -a >> ${repRID}.failPreExecutionRun.log
 
-  errorDetails=""
-  if [ ${fastqCountError} == true ]
-  then
-    errorDetails=\$(echo ${fastqCountError_details}"\\n")
-  elif [ ${fastqReadError} == true ]
-  then
-    errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
-  fi
+    errorDetails=""
+    if [ ${fastqCountError} == true ]
+    then
+      errorDetails=\$(echo ${fastqCountError_details}"\\n")
+    elif [ ${fastqReadError} == true ]
+    then
+      errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
+    elif [ ${fastqFileError} == true ]
+    then
+      errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
+    elif [ ${speciesError} == true ]
+    then
+      errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
+    fi
 
-  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_fastq.log
-  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
-  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  workflow=\${workflow:7:-6}
-  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_fastq.log
+    echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun.log
+    workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
+    workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    workflow=\${workflow:7:-6}
+    echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun.log
 
-  if [ "${species}" == "Homo sapiens" ]
-  then
-    genomeName=\$(echo GRCh${refHuVersion})
-  elif [ "${species}" == "Mus musculus" ]
-  then
-    genomeName=\$(echo GRCm${refMoVersion})
-  fi
-  if [ "${spike}" == "yes" ]
-  then
-    genomeName=\$(echo \${genomeName}-S)
-  fi
-  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_fastq.log
-  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
-  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  genome=\${genome:7:-6}
-  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_fastq.log
+    if [ "${species}" == "Homo sapiens" ]
+    then
+      genomeName=\$(echo GRCh${refHuVersion})
+    elif [ "${species}" == "Mus musculus" ]
+    then
+      genomeName=\$(echo GRCm${refMoVersion})
+    fi
+    if [ "${spike}" == "true" ]
+    then
+      genomeName=\$(echo \${genomeName}-S)
+    fi
+    echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun.log
+    genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
+    genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    genome=\${genome:7:-6}
+    echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun.log
 
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
 
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
-  echo \${exist} >> ${repRID}.failPreExecutionRun_fastq.log
-  if [ "\${exist}" == "[]" ]
-  then
-    rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
-    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
-  else
-    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-    rid=\${rid:7:-6}
-    echo \${rid} >> ${repRID}.failPreExecutionRun_fastq.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
-    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastq.log
-  fi
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
+    echo \${exist} >> ${repRID}.failPreExecutionRun.log
+    if [ "\${exist}" == "[]" ]
+    then
+      rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
+      echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun.log
+    else
+      rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      rid=\${rid:7:-6}
+      echo \${rid} >> ${repRID}.failPreExecutionRun.log
+      executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+      echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
+    fi
 
-  dt=`date +%FT%T.%3N%:z`
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "ID": "${workflow.sessionId}", \
-      "ExecutionRunRID": "'\${rid}'", \
-      "Failure": "'\${dt}'" \
-    }' \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-  """
-}
+    echo "\${rid}" > executionRunRID.csv
 
-/* 
- * failPreExecutionRun_fastqFile: fail the execution run prematurely for fastqFile errors
-*/
-process failPreExecutionRun_fastqFile {
-  tag "${repRID}"
-
-  input:
-    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun_fastqFile
-    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_fastqFile
-    val spike from spikeMeta_failPreExecutionRun_fastqFile
-    val species from speciesMeta_failPreExecutionRun_fastqFile
-    val inputBagRID from inputBagRID_failPreExecutionRun_fastqFile
-    val fastqFileError from fastqFileError_failPreExecutionRun_fastqFile
-    val fastqFileError_details
-
-  when:
-    upload
-    fastqFileError == 'true'
-
-  script:
-  """
-  hostname > ${repRID}.failPreExecutionRun_fastqfile.log
-  ulimit -a >> ${repRID}.failPreExecutionRun_fastqfile.log
-
-  errorDetails=""
-  if [ ${fastqFileError} == true ]
-  then
-    errorDetails=\$(echo \$(errorDetails)${fastqFileError_details}"\\n")
-  fi
-
-  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_fastqfile.log
-  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
-  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  workflow=\${workflow:7:-6}
-  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_fastqfile.log
-
-  if [ "${species}" == "Homo sapiens" ]
-  then
-    genomeName=\$(echo GRCh${refHuVersion})
-  elif [ "${species}" == "Mus musculus" ]
-  then
-    genomeName=\$(echo GRCm${refMoVersion})
-  fi
-  if [ "${spike}" == "yes" ]
-  then
-    genomeName=\$(echo \${genomeName}-S)
-  fi
-  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_fastqfile.log
-  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
-  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  genome=\${genome:7:-6}
-  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_fastqfile.log
-
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
-
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
-  echo \${exist} >> ${repRID}.failPreExecutionRun_fastqfile.log
-  if [ "\${exist}" == "[]" ]
-  then
-    rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
-    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
-  else
-    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-    rid=\${rid:7:-6}
-    echo \${rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
-    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_fastqfile.log
-  fi
-
-  dt=`date +%FT%T.%3N%:z`
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "ID": "${workflow.sessionId}", \
-      "ExecutionRunRID": "'\${rid}'", \
-      "Failure": "'\${dt}'" \
-    }' \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    if [ ${params.track} == true ]
+    then
+    dt=`date +%FT%T.%3N%:z`
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "ExecutionRunRID": "'\${rid}'", \
+          "Failure": "'\${dt}'" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    fi
   """
 }
+// Extract execution run RID into channel
+executionRunRID_preFail = Channel.create()
+executionRunRID_preFail_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID_preFail
+)
 
-/* 
- * failPreExecutionRun_species: fail the execution run prematurely for species error
-*/
-process failPreExecutionRun_species {
-  tag "${repRID}"
-
-  input:
-    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun_species
-    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_species
-    val spike from spikeMeta_failPreExecutionRun_species
-    val species from speciesMeta_failPreExecutionRun_species
-    val inputBagRID from inputBagRID_failPreExecutionRun_species
-    val speciesError from speciesError_failPreExecutionRun_species
-    val speciesError_details
-
-  when:
-    upload
-    speciesError == 'true'
-
-  script:
-  """
-  hostname > ${repRID}.failPreExecutionRun_species.log
-  ulimit -a >> ${repRID}.failPreExecutionRun_species.log
-
-  errorDetails=""
-  if [ ${speciesError} == true ]
-  then
-    errorDetails=\$(echo \$(errorDetails)${speciesError_details}"\\n")
-  fi
-
-  echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun_species.log
-  workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
-  workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  workflow=\${workflow:7:-6}
-  echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun_species.log
-
-  if [ "${species}" == "Homo sapiens" ]
-  then
-    genomeName=\$(echo GRCh${refHuVersion})
-  elif [ "${species}" == "Mus musculus" ]
-  then
-    genomeName=\$(echo GRCm${refMoVersion})
-  fi
-  if [ "${spike}" == "yes" ]
-  then
-    genomeName=\$(echo \${genomeName}-S)
-  fi
-  echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun_species.log
-  genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
-  genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-  genome=\${genome:7:-6}
-  echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun_species.log
-
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
-
-  exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
-  echo \${exist} >> ${repRID}.failPreExecutionRun_species.log
-  if [ "\${exist}" == "[]" ]
-  then
-    rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
-    echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun_species.log
-  else
-    rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-    rid=\${rid:7:-6}
-    echo \${rid} >> ${repRID}.failPreExecutionRun_species.log
-    executionRun_rid==\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
-    echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun_species.log
-  fi
-
-  dt=`date +%FT%T.%3N%:z`
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "ID": "${workflow.sessionId}", \
-      "ExecutionRunRID": "'\${rid}'", \
-      "Failure": "'\${dt}'" \
-    }' \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-  """
-}
+failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFail.ifEmpty('')).filter { it != "" }
 
 /* 
  * failExecutionRun: fail the execution run
@@ -2545,65 +2520,112 @@ process failExecutionRun {
     pipelineError == 'true'
 
   script:
-  """
-  hostname > ${repRID}.failExecutionRun.log
-  ulimit -a >> ${repRID}.failExecutionRun.log
+    """
+    hostname > ${repRID}.failExecutionRun.log
+    ulimit -a >> ${repRID}.failExecutionRun.log
 
-  executionRun=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/RID=${executionRunRID})
-  workflow=\$(echo \${executionRun} | grep -o '\\"Workflow\\":.*\\"Reference' | grep -oP '(?<=\\"Workflow\\":\\").*(?=\\",\\"Reference)')
-  genome=\$(echo \${executionRun} | grep -o '\\"Reference_Genome\\":.*\\"Input_Bag' | grep -oP '(?<=\\"Reference_Genome\\":\\").*(?=\\",\\"Input_Bag)')
+    executionRun=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/RID=${executionRunRID})
+    workflow=\$(echo \${executionRun} | grep -o '\\"Workflow\\":.*\\"Reference' | grep -oP '(?<=\\"Workflow\\":\\").*(?=\\",\\"Reference)')
+    genome=\$(echo \${executionRun} | grep -o '\\"Reference_Genome\\":.*\\"Input_Bag' | grep -oP '(?<=\\"Reference_Genome\\":\\").*(?=\\",\\"Input_Bag)')
 
-  cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-  cookie=\${cookie:11:-1}
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
 
-  errorDetails=""
-  if [ ${pipelineError} == false ]
-  then
-    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
-    echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.failExecutionRun.log
-  else
-    pipelineError_details=\$(echo "**Submitted metadata does not match inferred:**\\n")
-    pipelineError_details=\$(echo \${pipelineError_details}"|Metadata|Submitted value|Inferred value|\\n")
-    pipelineError_details=\$(echo \${pipelineError_details}"|:-:|-:|-:|\\n")
-    if ${pipelineError_ends}
+    errorDetails=""
+    if [ ${pipelineError} == false ]
     then
-      if [ "${endsInfer}" == "se" ]
+      rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
+      echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.failExecutionRun.log
+    else
+      pipelineError_details=\$(echo "**Submitted metadata does not match inferred:**\\n")
+      pipelineError_details=\$(echo \${pipelineError_details}"|Metadata|Submitted value|Inferred value|\\n")
+      pipelineError_details=\$(echo \${pipelineError_details}"|:-:|-:|-:|\\n")
+      if ${pipelineError_ends}
       then
-        endInfer="Single End"
-      elif [ "${endsInfer}" == "pe" ]
-      then
-        endInfer="Paired End"
-      else
-        endInfer="unknown"
+        if [ "${endsInfer}" == "se" ]
+        then
+          endInfer="Single End"
+        elif [ "${endsInfer}" == "pe" ]
+        then
+          endInfer="Paired End"
+        else
+          endInfer="unknown"
+        fi
+        pipelineError_details=\$(echo \${pipelineError_details}"|Paired End|${endsRaw}|"\${endInfer}"|\\n")
       fi
-      pipelineError_details=\$(echo \${pipelineError_details}"|Paired End|${endsRaw}|"\${endInfer}"|\\n")
+      if ${pipelineError_stranded}
+      then
+        pipelineError_details=\$(echo \${pipelineError_details}"|Strandedness|${strandedMeta}|${strandedInfer}|\\n")
+      fi
+      if ${pipelineError_spike}
+      then
+        pipelineError_details=\$(echo \${pipelineError_details}"|Used Spike Ins|${spikeMeta}|${spikeInfer}|\\n")
+      fi
+      if ${pipelineError_species}
+      then
+        pipelineError_details=\$(echo \${pipelineError_details}"|Species|${speciesMeta}|${speciesInfer}|\\n")
+      fi
+      pipelineError_details=\${pipelineError_details::-2}
+      rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
+      echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
     fi
-    if ${pipelineError_stranded}
+    
+    if [ ${params.track} == true ]
     then
-      pipelineError_details=\$(echo \${pipelineError_details}"|Strandedness|${strandedMeta}|${strandedInfer}|\\n")
+      dt=`date +%FT%T.%3N%:z`
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "ExecutionRunRID": "'\${rid}'", \
+          "Failure": "'\${dt}'" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
     fi
-    if ${pipelineError_spike}
-    then
-      pipelineError_details=\$(echo \${pipelineError_details}"|Used Spike Ins|${spikeMeta}|${spikeInfer}|\\n")
-    fi
-    if ${pipelineError_species}
-    then
-      pipelineError_details=\$(echo \${pipelineError_details}"|Species|${speciesMeta}|${speciesInfer}|\\n")
-    fi
-    pipelineError_details=\${pipelineError_details::-2}
-    rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
-    echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
-  fi
-  
-  dt=`date +%FT%T.%3N%:z`
-  curl -H 'Content-Type: application/json' -X PUT -d \
-    '{ \
-      "ID": "${workflow.sessionId}", \
-      "ExecutionRunRID": "'\${rid}'", \
-      "Failure": "'\${dt}'" \
-    }' \
-    "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
   """
+}
+
+/* 
+ * uploadQC_fail: uploads the mRNA QC on failed execution run
+*/
+process uploadQC_fail {
+  tag "${repRID}"
+
+  input:
+    path script_deleteEntry_uploadQC_fail
+    path script_uploadQC_fail
+    path credential, stageAs: "credential.json" from deriva_uploadQC_fail
+    val executionRunRID from failExecutionRunRID
+    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (speciesError), val (pipelineError) from error_uploadQC_fail
+
+  when:
+    upload
+    fastqCountError == 'true' || fastqReadError == 'true' || fastqFileError == 'true' || speciesError == 'true' || pipelineError == 'true'
+
+  script:
+    """
+    hostname > ${repRID}.uploadQC.log
+    ulimit -a >> ${repRID}.uploadQC.log
+
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
+
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${repRID})
+    if [ "\${exist}" != "[]" ]
+    then
+      rids=\$(echo \${exist} | grep -o '\\"RID\\":\\".\\{7\\}' | sed 's/^.\\{7\\}//')
+      for rid in \${rids}
+      do
+        python3 ${script_deleteEntry_uploadQC_fail} -r \${rid} -t mRNA_QC -o ${source} -c \${cookie}
+        echo LOG: old mRNA QC RID deleted - \${rid} >> ${repRID}.uploadQC.log
+      done
+      echo LOG: all old mRNA QC RIDs deleted >> ${repRID}.uploadQC.log
+    fi
+
+    qc_rid=\$(python3 ${script_uploadQC_fail} -r ${repRID} -e ${executionRunRID} -o ${source} -c \${cookie} -u E)
+    echo LOG: mRNA QC RID uploaded - \${qc_rid} >> ${repRID}.uploadQC.log
+
+    echo "\${qc_rid}" > qcRID.csv
+    """
 }
 
 
