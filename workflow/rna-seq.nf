@@ -2420,10 +2420,10 @@ process failPreExecutionRun {
       errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
     elif [ ${fastqFileError} == true ]
     then
-      errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
+      errorDetails=\$(echo \$(errorDetails)${fastqFileError_details}"\\n")
     elif [ ${speciesError} == true ]
     then
-      errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
+      errorDetails=\$(echo \$(errorDetails)${speciesError_details}"\\n")
     fi
 
     echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun.log
