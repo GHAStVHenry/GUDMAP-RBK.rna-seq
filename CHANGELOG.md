@@ -1,4 +1,4 @@
-# v2.0.0rc01
+# v2.0.0rc02
 **User Facing**
 * Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle (#110) ("Single Read" still acceptable for backwards compatibility)
 * Strandedness metadata "yes"/"no" changed to boolean "t"/"f" in data-hub, pipeline updated to handle (#70) ("yes"/"no" still acceptable for backwards compatibility)
@@ -24,6 +24,7 @@
 * Merge data error pre-inference execution run upload/finalize to 1 process
 * Change uploadOutputBag logic to change reuse hatrac file if alread exists (re-uses Output_Bag entry by reassigning Execution_Run RID) (#112)
 * Add new CI py tests for override and integration
+* Fix fastq file and species error status detail bub (#118)
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
