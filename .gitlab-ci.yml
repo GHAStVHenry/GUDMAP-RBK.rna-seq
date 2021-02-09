@@ -924,3 +924,34 @@ consistency:
       - SE_multiqc_data.json
       - PE_multiqc_data.json
     expire_in: 7 days
+
+
+temp_build_badges:
+  stage: badges
+  only:
+    - docs
+  before_script:
+    - module load singularity/3.5.3
+    - chmod +x ./workflow/scripts/get_updated_badge_info.sh
+  script:
+    - echo "Building badges"
+    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_badge_info.sh
+    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_rep_count.sh
+  artifacts:
+    paths:
+      - badges/
+
+temp_pages:
+  stage: deploy
+  only:
+    - master
+    - develop
+    - tags
+  dependencies:
+    - temp_build_badges
+  script:
+    - mkdir -p public
+    - mv badges/ public/badges/
+  artifacts:
+    paths:
+    - public
