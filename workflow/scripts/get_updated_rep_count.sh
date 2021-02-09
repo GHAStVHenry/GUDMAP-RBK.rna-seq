@@ -52,12 +52,12 @@ done
 
 echo "collecting badges"
 mkdir -p ./badges/counts
-curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${dev_success}/${dev_total}-green?style=flat > ./badges/counts/dev_success.svg
-curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${dev_error}/${dev_total}-red?style=flat > ./badges/counts/dev_error.svg
-curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${staging_success}/${staging_total}-green?style=flat > ./badges/counts/staging_success.svg
-curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${staging_error}/${staging_total}-red?style=flat > ./badges/counts/staging_error.svg
-curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${prod_success}/${prod_total}-green?style=flat > ./badges/counts/prod_success.svg
-curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${prod_error}/${prod_total}-red?style=flat > ./badges/counts/prod_error.svg
+curl --request GET https://img.shields.io/badge/Development%Successful%20Replicates-${dev_success}/${dev_total}-green?style=flat > ./badges/counts/dev_success.svg
+curl --request GET https://img.shields.io/badge/Development%Erroneous%20Replicates-${dev_error}/${dev_total}-red?style=flat > ./badges/counts/dev_error.svg
+curl --request GET https://img.shields.io/badge/Development%Successful%20Replicates-${staging_success}/${staging_total}-green?style=flat > ./badges/counts/staging_success.svg
+curl --request GET https://img.shields.io/badge/Development%Erroneous%20Replicates-${staging_error}/${staging_total}-red?style=flat > ./badges/counts/staging_error.svg
+curl --request GET https://img.shields.io/badge/Development%Successful%20Replicates-${prod_success}/${prod_total}-green?style=flat > ./badges/counts/prod_success.svg
+curl --request GET https://img.shields.io/badge/Development%Erroneous%20Replicates-${prod_error}/${prod_total}-red?style=flat > ./badges/counts/prod_error.svg
 
 curl --request GET https://img.shields.io/badge/Development%20Replicate%20Count-${dev_success}-lightgrey?style=flat > ./badges/counts/dev_counts.svg
 curl --request GET https://img.shields.io/badge/Staging%20Replicate%20Count-${staging_success}-lightgrey?style=flat > ./badges/counts/staging_counts.svg
