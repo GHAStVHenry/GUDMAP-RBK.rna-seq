@@ -944,9 +944,7 @@ temp_build_badges:
 temp_pages:
   stage: deploy
   only:
-    - master
-    - develop
-    - tags
+    - docs
   dependencies:
     - temp_build_badges
   script:
