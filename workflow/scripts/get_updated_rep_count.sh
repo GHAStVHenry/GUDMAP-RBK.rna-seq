@@ -18,11 +18,11 @@ dev_success=0
 dev_error=0
 for rid in ${dev_workflow_RID}
 do
-    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/\!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     dev_total=$(expr ${dev_total} + ${temp_total})
-    temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Success/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     dev_success=$(expr ${dev_success} + ${temp_success})
-    temp_error=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_error=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Error/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     dev_error=$(expr ${dev_error} + ${temp_error})
 done
 staging_total=0
@@ -30,11 +30,11 @@ staging_success=0
 staging_error=0
 for rid in ${staging_workflow_RID}
 do
-    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/\!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     staging_total=$(expr ${staging_total} + ${temp_total})
-    temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Success/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     staging_success=$(expr ${staging_success} + ${temp_success})
-    temp_error=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_error=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Error/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     staging_error=$(expr ${staging_error} + ${temp_error})
 done
 prod_total=0
@@ -44,9 +44,9 @@ for rid in ${prod_workflow_RID}
 do
     temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     prod_total=$(expr ${prod_total} + ${temp_total})
-    temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Success/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     prod_success=$(expr ${prod_success} + ${temp_success})
-    temp_error=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_error=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Error/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     prod_error=$(expr ${prod_error} + ${temp_error})
 done
 
