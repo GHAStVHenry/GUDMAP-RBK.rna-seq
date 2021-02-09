@@ -18,7 +18,7 @@ dev_success=0
 dev_error=0
 for rid in ${dev_workflow_RID}
 do
-    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/\!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     dev_total=$(expr ${dev_total} + ${temp_total})
     temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Success/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     dev_success=$(expr ${dev_success} + ${temp_success})
@@ -30,7 +30,7 @@ staging_success=0
 staging_error=0
 for rid in ${staging_workflow_RID}
 do
-    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/\!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
+    temp_total=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/!Execution_Status=In-progress/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     staging_total=$(expr ${staging_total} + ${temp_total})
     temp_sucess=$(curl -s https://dev.gudmap.org/ermrest/catalog/2/entity/Q:=RNASeq:mRNA_QC/E:=(Execution_Run)=(RNASeq:Execution_Run:RID)/Workflow=${rid}/Execution_Status=Success/\$Q | grep -o \"Replicate\".*,\"Paired_End | grep -oP "(?<=\"Replicate\":\").*(?=\",\"Paired_End)" | sort | uniq | wc -l)
     staging_success=$(expr ${staging_success} + ${temp_success})
