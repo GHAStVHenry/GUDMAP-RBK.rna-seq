@@ -790,20 +790,20 @@ process getRefInfer {
 
     # retreive appropriate reference appropriate location
     echo -e "LOG: fetching ${refName} reference files from ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
-    if [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references/new" ]
+    if [ "${referenceBase}" == "/project/BICF/BICF_Core/shared/gudmap/references/new" ]
     then
       unzip \${references}.zip
       mv \$(basename \${references})/data/* .
-    elif [ params.refSource == "datahub" ]
+    elif [ "${params.refSource}" == "datahub" ]
     then
       GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
       if [ "${refName}" != "ERCC" ]
       then
-        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE}'/Used_Spike_Ins=false')
       else
-        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version=${refName}${refERCCVersion}/Annotation_Version=${refName}${refERCCVersion}')
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${refName}${refERCCVersion}'/Annotation_Version='${refName}${refERCCVersion}'/Used_Spike_Ins=false')
       fi
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ${script_refDataInfer} --returnParam URL)
@@ -1555,13 +1555,18 @@ process getRef {
       echo -e "LOG: grabbing reference files from local (BioHPC)" >> ${repRID}.getRef.log
       unzip \${reference}.zip
       mv \$(basename \${reference})/data/* .
-    elif [ arams.refSource == "datahub" ]
+    elif [ ${params.refSource} == "datahub" ]
     then
       echo -e "LOG: grabbing reference files from datahub" >> ${repRID}.getRef.log
       GRCv=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f3)
-      query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      if [ "${spike}" == "true" ]
+      then
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE}'/Used_Spike_Ins=true')
+      else
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE}'/Used_Spike_Ins=false')
+      fi
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ${script_refData} --returnParam URL)
       loc=\$(dirname \${refURL})
