@@ -493,6 +493,7 @@ endsMeta.into {
   endsMeta_failExecutionRun
 }
 endsManual.into {
+  endsManual_seqwho
   endsManual_trimData
   endsManual_downsampleData
   endsManual_alignSampleData
@@ -541,6 +542,7 @@ fastqError_fl.splitCsv(sep: ",", header: false).separate(
 //  Replicate errors for multiple process inputs
 fastqCountError.into {
   fastqCountError_fastqc
+  fastqCountError_seqwho
   fastqCountError_trimData
   fastqCountError_getRefInfer
   fastqCountError_downsampleData
@@ -563,6 +565,7 @@ fastqCountError.into {
 }
 fastqReadError.into {
   fastqReadError_fastqc
+  fastqReadError_seqwho
   fastqReadError_trimData
   fastqReadError_getRefInfer
   fastqReadError_downsampleData
@@ -596,7 +599,7 @@ process fastqc {
     val fastqReadError_fastqc
 
   output:
-    path ("*.R{1,2}.fastq.gz", includeInputs:true) into fastqs_trimData
+    path ("*.R{1,2}.fastq.gz", includeInputs:true) into fastqs_out
     path ("*_fastqc.zip") into fastqc
     path ("rawReads.csv") into rawReadsInfer_fl
     path "fastqFileError.csv" into fastqFileError_fl
@@ -633,6 +636,12 @@ process fastqc {
     """
 }
 
+// Replicate fastqs for downstream process inputs
+fastqs_out.into {
+  fastqs_seqwho
+  fastqs_trimData
+}
+
 // Extract number of raw reads metadata into channel
 rawReadsInfer = Channel.create()
 rawReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
@@ -655,7 +664,7 @@ fastqFileError_fl.splitCsv(sep: ",", header: false).separate(
 
 //  Replicate errors for multiple process inputs
 fastqFileError.into {
-  fastqFileError_fastqc
+  fastqFileError_seqwho
   fastqFileError_trimData
   fastqFileError_getRefInfer
   fastqFileError_downsampleData
@@ -675,6 +684,152 @@ fastqFileError.into {
   fastqFileError_uploadProcessedFile
   fastqFileError_uploadOutputBag
   fastqFileError_failPreExecutionRun_fastqFile
+}
+
+/*
+ * seqwho: use seqwho to infer species and seq type
+*/
+process seqwho {
+  tag "${repRID}"
+
+  input:
+    path (fastq) from fastqs_seqwho
+    val ends from endsManual_seqwho
+    val fastqCountError_seqwho
+    val fastqReadError_seqwho
+    val fastqFileError_seqwho
+
+  output:
+    path 
+
+  when:
+    fastqCountError_seqwho == "false"
+    fastqReadError_seqwho == "false"
+    fastqFileError_seqwho == "false"
+
+  script:
+    """
+    hostname > ${repRID}.seqwho.log
+    ulimit -a >> ${repRID}.seqwho.log
+
+    # get seqwho index
+    wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
+    echo -e "LOG: seqwho index downloaded" >> ${repRID}.seqwho.log
+    
+    # run seqwho
+    python3 seqwho.py -f *.fastq.gz -x SeqWho.ix
+    echo -e "LOG: seqwho ran" >> ${repRID}.seqwho.log
+
+    # parse inference from R1
+    speciesR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    seqtypeR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    confidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    if [ "\${confidenceR1}" == "low" ]
+    then
+      speciesConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f3 -d":" | tr -d " ")
+      seqtypeConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f4 -d":" | tr -d " ")
+    else
+      speciesConfidenceR1="1"
+      seqtypeConfidenceR1="1"
+    fi
+    echo -e "LOG: R1 inference parsed" >> ${repRID}.seqwho.log
+
+    # parse inference from R2
+    if [ "${ends}" == "pe" ]
+    then
+      speciesR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      confidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      if [ "\${confidenceR2}" == "low" ]
+      then
+        speciesConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f3 -d":" | tr -d " ")
+        seqtypeConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f4 -d":" | tr -d " ")
+      else
+        speciesConfidenceR2="1"
+        seqtypeConfidenceR2="1"
+      fi
+      echo -e "LOG: R2 inference parsed" >> ${repRID}.seqwho.log
+    else
+      speciesR2=\${speciesR1}
+      seqtypeR2=\${seqtypeR1}
+      confidenceR2=\${confidenceR1}
+      speciesConfidenceR2="1"
+      seqtypeConfidenceR2="1"
+    fi
+
+    # convert numeric confidence to string
+    if [ \${speciesConfidenceR1} == "1" ]
+    then
+      speciesConfidenceR1="high"
+    else
+      speciesConfidenceR1="low"
+    fi
+    if [ \${speciesConfidenceR2} == "1" ]
+    then
+      speciesConfidenceR2="high"
+    else
+      speciesConfidenceR2="low"
+    fi
+    if [ \${seqtypeConfidenceR1} == "1" ]
+    then
+      seqtypeConfidenceR1="high"
+    else
+      seqtypeConfidenceR1="low"
+    fi
+    if [ \${seqtypeConfidenceR2} == "1" ]
+    then
+      seqtypeConfidenceR1="high"
+    else
+      seqtypeConfidenceR2="low"
+    fi
+    echo -e "LOG: confidence converted to string" >> ${repRID}.seqwho.log
+
+    # detect errors
+    speciesInferError=false
+    speciesInferError_details=""
+    seqtpeInferError=false
+    seqtpeInferError_details=""
+    if [ "\${confidenceR1}" == "high" ] && [ "\${confidenceR2}" == "high" ]
+    then
+      echo -e "LOG: high confidence inference detected" >> ${repRID}.seqwho.log
+      if [ "\${speciesR1}" == "\${speciesR2}" ]
+      then
+        speciesInfer=\${speciesR1}
+        echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
+      else
+        speciesInferError=true
+        speciesInferError_details="**Infered species does not match for R1 and R2:** Infered R1 = \${speciesR1} and infered R2 = \${speciesR2}"
+        echo -e "LOG: inference error: \${speciesInferError_details}" >> ${repRID}.seqwho.log
+      fi
+      if [ "\${seqtypeR1}" == "\${seqtypeR2}" ]
+      then
+        if [ "\${seqtypeR1}" == "rnaseq" ]
+        then
+          seqtpeInfer="rnaseq"
+          echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
+        else
+          seqtpeInferError=true
+          seqtpeInferError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
+          echo -e "LOG: inference error: \${seqtpeInferError_details}" >> ${repRID}.seqwho.log
+        fi
+      else
+        seqtpeInferError=true
+        seqtpeInferError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
+        echo -e "LOG: inference error: \${seqtpeInferError_details}" >> ${repRID}.seqwho.log
+      fi
+    else
+      speciesInferError=true
+      speciesInferError_details=\$(echo "**Infered species and or sequencing type confidence is low:**\\n")
+      speciesInferError_details=\$(echo \${speciesInferError_details}|fastq|Infered species confidence|Infered sequencing type confidence|\\n)
+      speciesInferError_details=\$(echo \${speciesInferError_details}|:--|:--:|:--:|\\n)
+      speciesInferError_details=\$(echo \${speciesInferError_details}|Read 1|\${speciesConfidenceR1}|\${seqtypeConfidenceR1}|\\n)
+      if [ "${ends}" == "pe" ]
+      then
+        speciesInferError_details=\$(echo \${speciesInferError_details}|Read 2|\${speciesConfidenceR2}|\${seqtypeConfidenceR2}|\\n)
+      fi
+      echo -e "LOG: inference error: \${speciesInferError_details}" >> ${repRID}.seqwho.log
+    fi
+    """
 }
 
 /*
