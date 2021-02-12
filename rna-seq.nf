@@ -117,7 +117,7 @@ script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/de
  * trackStart: track start of pipeline
  */
 process trackStart {
-  container 'docker://gudmaprbk/gudmap-rbk_base:1.0.0'
+  container 'gudmaprbk/gudmap-rbk_base:1.0.0'
   script:
     """
     hostname
