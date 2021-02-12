@@ -240,7 +240,7 @@ process getData {
 
   input:
     path script_bdbagFetch
-    path cookies, stageAs: "deriva-cookies.txt" from bdbag
+    path cookies from bdbag
     path inputBag from inputBag_getData
 
   output:
@@ -258,7 +258,7 @@ process getData {
     # link deriva cookie for authentication
     echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
     mkdir -p ~/.bdbag
-    ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
+    ln -sf `readlink -e cookies.txt` ~/.bdbag/deriva-cookies.txt
     echo -e "LOG: linked" >> ${repRID}.getData.log
 
     # get bag basename
