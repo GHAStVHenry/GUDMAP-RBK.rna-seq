@@ -17,7 +17,7 @@ params.source = "dev"
 params.refMoVersion = "38.p6.vM25"
 params.refHuVersion = "38.p13.v36"
 params.refERCCVersion = "92"
-params.outDir = "${baseDir}/../output"
+params.outDir = "${baseDir}/output"
 params.upload = false
 params.email = ""
 params.track = false
@@ -88,30 +88,30 @@ if (params.refSource == "biohpc") {
 }
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
 multiqcConfig = Channel.fromPath("${baseDir}/conf/multiqc_config.yaml")
-bicfLogo = Channel.fromPath("${baseDir}/../docs/bicf_logo.png")
-softwareReferences = Channel.fromPath("${baseDir}/../docs/software_references_mqc.yaml")
-softwareVersions = Channel.fromPath("${baseDir}/../docs/software_versions_mqc.yaml")
+bicfLogo = Channel.fromPath("${baseDir}/docs/bicf_logo.png")
+softwareReferences = Channel.fromPath("${baseDir}/docs/software_references_mqc.yaml")
+softwareVersions = Channel.fromPath("${baseDir}/docs/software_versions_mqc.yaml")
 
 // Define script files
-script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbag_fetch.sh")
-script_parseMeta = Channel.fromPath("${baseDir}/scripts/parse_meta.py")
-script_inferMeta = Channel.fromPath("${baseDir}/scripts/infer_meta.sh")
-script_refDataInfer = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
-script_refData = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
-script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
-script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
-script_tinHist = Channel.fromPath("${baseDir}/scripts/tin_hist.py")
-script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py")
-script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failPreExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
-script_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
-script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
-script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
-script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
-script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
+script_bdbagFetch = Channel.fromPath("${baseDir}/workflow/scripts/bdbag_fetch.sh")
+script_parseMeta = Channel.fromPath("${baseDir}/workflow/scripts/parse_meta.py")
+script_inferMeta = Channel.fromPath("${baseDir}/workflow/scripts/infer_meta.sh")
+script_refDataInfer = Channel.fromPath("${baseDir}/workflow/scripts/extract_ref_data.py")
+script_refData = Channel.fromPath("${baseDir}/workflow/scripts/extract_ref_data.py")
+script_calculateTPM = Channel.fromPath("${baseDir}/workflow/scripts/calculateTPM.R")
+script_convertGeneSymbols = Channel.fromPath("${baseDir}/workflow/scripts/convertGeneSymbols.R")
+script_tinHist = Channel.fromPath("${baseDir}/workflow/scripts/tin_hist.py")
+script_uploadInputBag = Channel.fromPath("${baseDir}/workflow/scripts/upload_input_bag.py")
+script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failPreExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/upload_qc.py")
+script_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/upload_qc.py")
+script_uploadOutputBag = Channel.fromPath("${baseDir}/workflow/scripts/upload_output_bag.py")
+script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
+script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
+script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 
 /*
  * trackStart: track start of pipeline
