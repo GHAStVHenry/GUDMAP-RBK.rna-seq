@@ -211,7 +211,7 @@ process getBag {
     deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
 
-    name=${repRID}_inputBag.zip
+    name=${repRID}_inputBag
     yr=\$(date +'%Y')
     mn=\$(date +'%m')
     dy=\$(date +'%d')
