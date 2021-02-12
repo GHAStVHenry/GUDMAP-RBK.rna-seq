@@ -258,7 +258,7 @@ process getData {
     # link deriva cookie for authentication
     echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
     mkdir -p ~/.bdbag
-    ln -sf `readlink -e cookies.txt` ~/.bdbag/deriva-cookies.txt
+    cp `readlink -e cookies.txt` ~/.bdbag/deriva-cookies.txt
     echo -e "LOG: linked" >> ${repRID}.getData.log
 
     # get bag basename
