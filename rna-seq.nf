@@ -1335,6 +1335,12 @@ process uploadInputBag {
     hostname > ${repRID}.uploadInputBag.log
     ulimit -a >> ${repRID}.uploadInputBag.log
 
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadInputBag.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadInputBag.log
+
     yr=\$(date +'%Y')
     mn=\$(date +'%m')
     dy=\$(date +'%d')
@@ -2286,6 +2292,12 @@ process uploadOutputBag {
     """
     hostname > ${repRID}.uploadOutputBag.log
     ulimit -a >> ${repRID}.uploadOutputBag.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadOutputBag.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadOutputBag.log
 
     yr=\$(date +'%Y')
     mn=\$(date +'%m')
