@@ -72,6 +72,7 @@ spikeForce = params.spikeForce
 email = params.email
 
 // Define fixed files and variables
+bdbagConfig = Channel.fromPath("${baseDir}/conf/bdbag.json")
 replicateExportConfig = Channel.fromPath("${baseDir}/conf/Replicate_For_Input_Bag.json")
 executionRunExportConfig = Channel.fromPath("${baseDir}/conf/Execution_Run_For_Output_Bag.json")
 if (params.source == "dev") {
@@ -239,8 +240,9 @@ process getData {
   tag "${repRID}"
 
   input:
+    path bdbagConfig
     path script_bdbagFetch
-    path cookies from bdbag
+    path cookies, stageAs: "deriva-cookies.txt" from bdbag
     path inputBag from inputBag_getData
 
   output:
@@ -256,10 +258,10 @@ process getData {
     ulimit -a >> ${repRID}.getData.log
 
     # link deriva cookie for authentication
-    echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
-    mkdir -p ~/.bdbag
-    cp `readlink -e cookies.txt` ~/.bdbag/deriva-cookies.txt
-    echo -e "LOG: linked" >> ${repRID}.getData.log
+    #echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
+    #mkdir -p ~/.bdbag
+    #cp `readlink -e cookies.txt` ~/.bdbag/deriva-cookies.txt
+    #echo -e "LOG: linked" >> ${repRID}.getData.log
 
     # get bag basename
     replicate=\$(basename "${inputBag}")

@@ -9,7 +9,7 @@ then
     n=0
     until [ "${n}" -ge "3" ]
     do
-        bdbag --resolve-fetch missing --validate full ${1} --debug && validate=$(tail -n validate.txt | grep -o 'is valid') && break
+        bdbag --resolve-fetch missing --validate full ${1} --debug --config-file bdbag.json && validate=$(tail -n validate.txt | grep -o 'is valid') && break
         n=$((n+1)) 
         sleep 15
     done
