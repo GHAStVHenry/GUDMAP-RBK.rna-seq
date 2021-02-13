@@ -257,12 +257,6 @@ process getData {
     hostname > ${repRID}.getData.log
     ulimit -a >> ${repRID}.getData.log
 
-    # link deriva cookie for authentication
-    #echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
-    #mkdir -p ~/.bdbag
-    #cp `readlink -e cookies.txt` ~/.bdbag/deriva-cookies.txt
-    #echo -e "LOG: linked" >> ${repRID}.getData.log
-
     # get bag basename
     replicate=\$(basename "${inputBag}")
     echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
@@ -274,10 +268,9 @@ process getData {
 
     # bag fetch fastq's only and rename by repRID
     echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
-    sh ${script_bdbagFetch} \${replicate::-13} ${repRID}
+    fastqCount=\$(sh ${script_bdbagFetch} \${replicate::-13} ${repRID})
     echo -e "LOG: fetched" >> ${repRID}.getData.log
-    
-    fastqCount=\$(find . -name '*.fastq.gz' | wc -l)
+
     if [ "\${fastqCount}" == "0" ]
     then
       touch dummy.R1.fastq.gz
