@@ -2196,8 +2196,14 @@ process uploadProcessedFile {
 
   script:
     """
-    hostname > ${repRID}.outputBag.log
-    ulimit -a >> ${repRID}.outputBag.log
+    hostname > ${repRID}.uploadProcessedFile.log
+    ulimit -a >> ${repRID}.uploadProcessedFile.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadProcessedFile.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadProcessedFile.log
 
     mkdir -p ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
     cp ${bam} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
@@ -2216,14 +2222,14 @@ process uploadProcessedFile {
       do
         python3 ${script_deleteEntry_uploadProcessedFile} -r \${rid} -t Processed_File -o ${source} -c \${cookie}
       done
-      echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
+      echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadProcessedFile.log
     fi
 
     deriva-upload-cli --catalog 2 --token \${cookie:9} ${source} ./deriva
-    echo LOG: processed files uploaded >> ${repRID}.outputBag.log
+    echo LOG: processed files uploaded >> ${repRID}.outpuploadProcessedFileutBag.log
 
     deriva-download-cli --catalog 2 --token \${cookie:9} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
-    echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
+    echo LOG: execution run bag downloaded >> ${repRID}.uploadProcessedFile.log
 
     echo -e "### Run Details" >> runDetails.md
     echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
@@ -2241,7 +2247,7 @@ process uploadProcessedFile {
     echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
     echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
     echo -e "**Run ID:** ${repRID}" >> runDetails.md
-    echo LOG: runDetails.md created >> ${repRID}.outputBag.log
+    echo LOG: runDetails.md created >> ${repRID}.uploadProcessedFile.log
 
     unzip Execution_Run_${executionRunRID}.zip
     yr=\$(date +'%Y')
@@ -2255,7 +2261,7 @@ process uploadProcessedFile {
     cp ${multiqcJSON} \${loc}
 
     bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
-    echo LOG: output bag created >> ${repRID}.outputBag.log
+    echo LOG: output bag created >> ${repRID}.uploadProcessedFile.log
     """
 }
 
