@@ -1745,7 +1745,7 @@ dedupBam.into {
 */
 process makeBigWig {
   tag "${repRID}"
-  publishDir "${outDir}/bigwig", mode: 'copy', pattern: "${repRID}.bw"
+  publishDir "${outDir}/bigwig", mode: 'copy', pattern: "${repRID}_sorted.deduped.bw"
 
   input:
     tuple path (bam), path (bai) from dedupBam_makeBigWig
