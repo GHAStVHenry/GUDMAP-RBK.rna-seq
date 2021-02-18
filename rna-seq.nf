@@ -1418,6 +1418,12 @@ process uploadExecutionRun {
     hostname > ${repRID}.uploadExecutionRun.log
     ulimit -a >> ${repRID}.uploadExecutionRun.log
 
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadExecutionRun.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadExecutionRun.log
+
     echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
     workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
     workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
@@ -2127,6 +2133,12 @@ process uploadQC {
     hostname > ${repRID}.uploadQC.log
     ulimit -a >> ${repRID}.uploadQC.log
 
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadQC.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadQC.log
+
     if [ "${ends}" == "pe" ]
     then
       end="Paired End"
@@ -2622,6 +2634,12 @@ process uploadQC_fail {
     """
     hostname > ${repRID}.uploadQC.log
     ulimit -a >> ${repRID}.uploadQC.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadQC.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadQC.log
 
     cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
     cookie=\${cookie:11:-1}
