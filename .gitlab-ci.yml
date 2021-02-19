@@ -782,6 +782,21 @@ failFileStructure:
     when:
       - always
 
+failSeqType:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+  - hostname
+  - ulimit -a
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-DNDJ --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failSeqType_report.html
+  retry:
+    max: 0
+    when:
+      - always
+
 override_inputBag:
   stage: integration
   only: [merge_requests]
