@@ -9,8 +9,8 @@
 //  ########  ####  ######  ##
 
 // Define input variables
-params.deriva = "${baseDir}/../test_data/auth/credential.json"
-params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
+params.deriva = "${baseDir}/test_data/auth/credential.json"
+params.bdbag = "${baseDir}/test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5F6"
 params.source = "dev"
@@ -72,9 +72,9 @@ spikeForce = params.spikeForce
 email = params.email
 
 // Define fixed files and variables
-bdbagConfig = Channel.fromPath("${baseDir}/conf/bdbag.json")
-replicateExportConfig = Channel.fromPath("${baseDir}/conf/Replicate_For_Input_Bag.json")
-executionRunExportConfig = Channel.fromPath("${baseDir}/conf/Execution_Run_For_Output_Bag.json")
+bdbagConfig = Channel.fromPath("${baseDir}/workflow/conf/bdbag.json")
+replicateExportConfig = Channel.fromPath("${baseDir}/workflow/conf/Replicate_For_Input_Bag.json")
+executionRunExportConfig = Channel.fromPath("${baseDir}/workflow/conf/Execution_Run_For_Output_Bag.json")
 if (params.source == "dev") {
   source = "dev.gudmap.org"
 } else if (params.source == "staging") {
@@ -88,7 +88,7 @@ if (params.refSource == "biohpc") {
   referenceBase = "www.gudmap.org"
 }
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
-multiqcConfig = Channel.fromPath("${baseDir}/conf/multiqc_config.yaml")
+multiqcConfig = Channel.fromPath("${baseDir}/workflow/conf/multiqc_config.yaml")
 bicfLogo = Channel.fromPath("${baseDir}/docs/bicf_logo.png")
 softwareReferences = Channel.fromPath("${baseDir}/docs/software_references_mqc.yaml")
 softwareVersions = Channel.fromPath("${baseDir}/docs/software_versions_mqc.yaml")
