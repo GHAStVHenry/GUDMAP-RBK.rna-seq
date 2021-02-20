@@ -9,7 +9,7 @@ then
     n=0
     until [ "${n}" -ge "3" ]
     do
-        bdbag --resolve-fetch missing --validate full ${1} --debug && validate=$(tail -n validate.txt | grep -o 'is valid') && break
+        bdbag --resolve-fetch missing --validate full ${1} --debug --config-file bdbag.json && validate=$(tail -n validate.txt | grep -o 'is valid') && break
         n=$((n+1)) 
         sleep 15
     done
@@ -18,8 +18,10 @@ if [ "${validate}" != "is valid" ]
 then
     exit 1
 fi
+count=$(find */ -name "*[_.]R[1-2].fastq.gz" | wc -l)
 for i in $(find */ -name "*[_.]R[1-2].fastq.gz")
 do
     path=${2}.$(echo ${i##*/} | grep -o "R[1,2].fastq.gz")
     cp ${i} ./${path}
 done
+echo ${count}

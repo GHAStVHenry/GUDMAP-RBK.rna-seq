@@ -9,15 +9,15 @@
 //  ########  ####  ######  ##
 
 // Define input variables
-params.deriva = "${baseDir}/../test_data/auth/credential.json"
-params.bdbag = "${baseDir}/../test_data/auth/cookies.txt"
+params.deriva = "${baseDir}/test_data/auth/credential.json"
+params.bdbag = "${baseDir}/test_data/auth/cookies.txt"
 //params.repRID = "16-1ZX4"
 params.repRID = "Q-Y5F6"
 params.source = "dev"
 params.refMoVersion = "38.p6.vM25"
 params.refHuVersion = "38.p13.v36"
 params.refERCCVersion = "92"
-params.outDir = "${baseDir}/../output"
+params.outDir = "${baseDir}/output"
 params.upload = false
 params.email = ""
 params.track = false
@@ -72,8 +72,9 @@ spikeForce = params.spikeForce
 email = params.email
 
 // Define fixed files and variables
-replicateExportConfig = Channel.fromPath("${baseDir}/conf/Replicate_For_Input_Bag.json")
-executionRunExportConfig = Channel.fromPath("${baseDir}/conf/Execution_Run_For_Output_Bag.json")
+bdbagConfig = Channel.fromPath("${baseDir}/workflow/conf/bdbag.json")
+replicateExportConfig = Channel.fromPath("${baseDir}/workflow/conf/Replicate_For_Input_Bag.json")
+executionRunExportConfig = Channel.fromPath("${baseDir}/workflow/conf/Execution_Run_For_Output_Bag.json")
 if (params.source == "dev") {
   source = "dev.gudmap.org"
 } else if (params.source == "staging") {
@@ -87,37 +88,37 @@ if (params.refSource == "biohpc") {
   referenceBase = "www.gudmap.org"
 }
 referenceInfer = Channel.fromList(["ERCC","GRCh","GRCm"])
-multiqcConfig = Channel.fromPath("${baseDir}/conf/multiqc_config.yaml")
-bicfLogo = Channel.fromPath("${baseDir}/../docs/bicf_logo.png")
-softwareReferences = Channel.fromPath("${baseDir}/../docs/software_references_mqc.yaml")
-softwareVersions = Channel.fromPath("${baseDir}/../docs/software_versions_mqc.yaml")
+multiqcConfig = Channel.fromPath("${baseDir}/workflow/conf/multiqc_config.yaml")
+bicfLogo = Channel.fromPath("${baseDir}/docs/bicf_logo.png")
+softwareReferences = Channel.fromPath("${baseDir}/docs/software_references_mqc.yaml")
+softwareVersions = Channel.fromPath("${baseDir}/docs/software_versions_mqc.yaml")
 
 // Define script files
-script_bdbagFetch = Channel.fromPath("${baseDir}/scripts/bdbag_fetch.sh")
-script_parseMeta = Channel.fromPath("${baseDir}/scripts/parse_meta.py")
-script_inferMeta = Channel.fromPath("${baseDir}/scripts/infer_meta.sh")
-script_refDataInfer = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
-script_refData = Channel.fromPath("${baseDir}/scripts/extract_ref_data.py")
-script_calculateTPM = Channel.fromPath("${baseDir}/scripts/calculateTPM.R")
-script_convertGeneSymbols = Channel.fromPath("${baseDir}/scripts/convertGeneSymbols.R")
-script_tinHist = Channel.fromPath("${baseDir}/scripts/tin_hist.py")
-script_uploadInputBag = Channel.fromPath("${baseDir}/scripts/upload_input_bag.py")
-script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failPreExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/scripts/upload_execution_run.py")
-script_uploadQC = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
-script_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/upload_qc.py")
-script_uploadOutputBag = Channel.fromPath("${baseDir}/scripts/upload_output_bag.py")
-script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
-script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
-script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/scripts/delete_entry.py")
+script_bdbagFetch = Channel.fromPath("${baseDir}/workflow/scripts/bdbag_fetch.sh")
+script_parseMeta = Channel.fromPath("${baseDir}/workflow/scripts/parse_meta.py")
+script_inferMeta = Channel.fromPath("${baseDir}/workflow/scripts/infer_meta.sh")
+script_refDataInfer = Channel.fromPath("${baseDir}/workflow/scripts/extract_ref_data.py")
+script_refData = Channel.fromPath("${baseDir}/workflow/scripts/extract_ref_data.py")
+script_calculateTPM = Channel.fromPath("${baseDir}/workflow/scripts/calculateTPM.R")
+script_convertGeneSymbols = Channel.fromPath("${baseDir}/workflow/scripts/convertGeneSymbols.R")
+script_tinHist = Channel.fromPath("${baseDir}/workflow/scripts/tin_hist.py")
+script_uploadInputBag = Channel.fromPath("${baseDir}/workflow/scripts/upload_input_bag.py")
+script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failPreExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/upload_qc.py")
+script_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/upload_qc.py")
+script_uploadOutputBag = Channel.fromPath("${baseDir}/workflow/scripts/upload_output_bag.py")
+script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
+script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
+script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 
 /*
  * trackStart: track start of pipeline
  */
 process trackStart {
-  container 'docker://gudmaprbk/gudmap-rbk_base:1.0.0'
+  container 'gudmaprbk/gudmap-rbk_base:1.0.0'
   script:
     """
     hostname
@@ -211,8 +212,7 @@ process getBag {
     deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
     echo -e "LOG: fetched" >> ${repRID}.getBag.log
 
-    name=\$(ls *.zip)
-    name=\$(basename \${name} | cut -d "." -f1)
+    name=${repRID}_inputBag
     yr=\$(date +'%Y')
     mn=\$(date +'%m')
     dy=\$(date +'%d')
@@ -240,6 +240,7 @@ process getData {
   tag "${repRID}"
 
   input:
+    path bdbagConfig
     path script_bdbagFetch
     path cookies, stageAs: "deriva-cookies.txt" from bdbag
     path inputBag from inputBag_getData
@@ -256,12 +257,6 @@ process getData {
     hostname > ${repRID}.getData.log
     ulimit -a >> ${repRID}.getData.log
 
-    # link deriva cookie for authentication
-    echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
-    mkdir -p ~/.bdbag
-    ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
-    echo -e "LOG: linked" >> ${repRID}.getData.log
-
     # get bag basename
     replicate=\$(basename "${inputBag}")
     echo -e "LOG: bag replicate name \${replicate}" >> ${repRID}.getData.log
@@ -273,10 +268,9 @@ process getData {
 
     # bag fetch fastq's only and rename by repRID
     echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
-    sh ${script_bdbagFetch} \${replicate::-13} ${repRID}
+    fastqCount=\$(sh ${script_bdbagFetch} \${replicate::-13} ${repRID})
     echo -e "LOG: fetched" >> ${repRID}.getData.log
-    
-    fastqCount=\$(ls *.fastq.gz | wc -l)
+
     if [ "\${fastqCount}" == "0" ]
     then
       touch dummy.R1.fastq.gz
@@ -790,20 +784,20 @@ process getRefInfer {
 
     # retreive appropriate reference appropriate location
     echo -e "LOG: fetching ${refName} reference files from ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
-    if [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references/new" ]
+    if [ "${referenceBase}" == "/project/BICF/BICF_Core/shared/gudmap/references/new" ]
     then
       unzip \${references}.zip
       mv \$(basename \${references})/data/* .
-    elif [ params.refSource == "datahub" ]
+    elif [ "${params.refSource}" == "datahub" ]
     then
       GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
       if [ "${refName}" != "ERCC" ]
       then
-        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE}'/Used_Spike_Ins=false')
       else
-        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version=${refName}${refERCCVersion}/Annotation_Version=${refName}${refERCCVersion}')
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${refName}${refERCCVersion}'/Annotation_Version='${refName}${refERCCVersion}'/Used_Spike_Ins=false')
       fi
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ${script_refDataInfer} --returnParam URL)
@@ -1341,6 +1335,12 @@ process uploadInputBag {
     hostname > ${repRID}.uploadInputBag.log
     ulimit -a >> ${repRID}.uploadInputBag.log
 
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadInputBag.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadInputBag.log
+
     yr=\$(date +'%Y')
     mn=\$(date +'%m')
     dy=\$(date +'%d')
@@ -1417,6 +1417,12 @@ process uploadExecutionRun {
     """
     hostname > ${repRID}.uploadExecutionRun.log
     ulimit -a >> ${repRID}.uploadExecutionRun.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadExecutionRun.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadExecutionRun.log
 
     echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
     workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
@@ -1555,13 +1561,18 @@ process getRef {
       echo -e "LOG: grabbing reference files from local (BioHPC)" >> ${repRID}.getRef.log
       unzip \${reference}.zip
       mv \$(basename \${reference})/data/* .
-    elif [ arams.refSource == "datahub" ]
+    elif [ ${params.refSource} == "datahub" ]
     then
       echo -e "LOG: grabbing reference files from datahub" >> ${repRID}.getRef.log
       GRCv=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f1)
       GRCp=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f2)
       GENCODE=\$(echo \${reference} | grep -o \${refName}.* | cut -d '.' -f3)
-      query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      if [ "${spike}" == "true" ]
+      then
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE}'/Used_Spike_Ins=true')
+      else
+        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE}'/Used_Spike_Ins=false')
+      fi
       curl --request GET \${query} > refQuery.json
       refURL=\$(python ${script_refData} --returnParam URL)
       loc=\$(dirname \${refURL})
@@ -1740,7 +1751,7 @@ dedupBam.into {
 */
 process makeBigWig {
   tag "${repRID}"
-  publishDir "${outDir}/bigwig", mode: 'copy', pattern: "${repRID}.bw"
+  publishDir "${outDir}/bigwig", mode: 'copy', pattern: "${repRID}_sorted.deduped.bw"
 
   input:
     tuple path (bam), path (bai) from dedupBam_makeBigWig
@@ -2122,6 +2133,12 @@ process uploadQC {
     hostname > ${repRID}.uploadQC.log
     ulimit -a >> ${repRID}.uploadQC.log
 
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadQC.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadQC.log
+
     if [ "${ends}" == "pe" ]
     then
       end="Paired End"
@@ -2191,8 +2208,14 @@ process uploadProcessedFile {
 
   script:
     """
-    hostname > ${repRID}.outputBag.log
-    ulimit -a >> ${repRID}.outputBag.log
+    hostname > ${repRID}.uploadProcessedFile.log
+    ulimit -a >> ${repRID}.uploadProcessedFile.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadProcessedFile.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadProcessedFile.log
 
     mkdir -p ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
     cp ${bam} ./deriva/Seq/pipeline/${studyRID}/${executionRunRID}/
@@ -2211,14 +2234,14 @@ process uploadProcessedFile {
       do
         python3 ${script_deleteEntry_uploadProcessedFile} -r \${rid} -t Processed_File -o ${source} -c \${cookie}
       done
-      echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadQC.log
+      echo LOG: all old processed file RIDs deleted >> ${repRID}.uploadProcessedFile.log
     fi
 
     deriva-upload-cli --catalog 2 --token \${cookie:9} ${source} ./deriva
-    echo LOG: processed files uploaded >> ${repRID}.outputBag.log
+    echo LOG: processed files uploaded >> ${repRID}.outpuploadProcessedFileutBag.log
 
     deriva-download-cli --catalog 2 --token \${cookie:9} ${source} ${executionRunExportConfig} . rid=${executionRunRID}
-    echo LOG: execution run bag downloaded >> ${repRID}.outputBag.log
+    echo LOG: execution run bag downloaded >> ${repRID}.uploadProcessedFile.log
 
     echo -e "### Run Details" >> runDetails.md
     echo -e "**Workflow URL:** https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq" >> runDetails.md
@@ -2236,7 +2259,7 @@ process uploadProcessedFile {
     echo -e "**Genome Assembly Version:** \${genome} patch \${patch}" >> runDetails.md
     echo -e "**Annotation Version:** GENCODE release \${annotation}" >> runDetails.md
     echo -e "**Run ID:** ${repRID}" >> runDetails.md
-    echo LOG: runDetails.md created >> ${repRID}.outputBag.log
+    echo LOG: runDetails.md created >> ${repRID}.uploadProcessedFile.log
 
     unzip Execution_Run_${executionRunRID}.zip
     yr=\$(date +'%Y')
@@ -2250,7 +2273,7 @@ process uploadProcessedFile {
     cp ${multiqcJSON} \${loc}
 
     bdbag ./${repRID}_Output_Bag/ --update --archiver zip --debug
-    echo LOG: output bag created >> ${repRID}.outputBag.log
+    echo LOG: output bag created >> ${repRID}.uploadProcessedFile.log
     """
 }
 
@@ -2287,6 +2310,12 @@ process uploadOutputBag {
     """
     hostname > ${repRID}.uploadOutputBag.log
     ulimit -a >> ${repRID}.uploadOutputBag.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadOutputBag.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadOutputBag.log
 
     yr=\$(date +'%Y')
     mn=\$(date +'%m')
@@ -2605,6 +2634,12 @@ process uploadQC_fail {
     """
     hostname > ${repRID}.uploadQC.log
     ulimit -a >> ${repRID}.uploadQC.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.uploadQC.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.uploadQC.log
 
     cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
     cookie=\${cookie:11:-1}

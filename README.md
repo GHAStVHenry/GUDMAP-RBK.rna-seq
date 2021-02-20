@@ -75,7 +75,8 @@ nextflow run workflow/rna-seq.nf --repRID Q-Y5JA --source production --deriva ./
 
 Cloud Compatibility:
 --------------------
-This pipeline is also capable of being run on AWS. To do so:
+This pipeline is also capable of being run on AWS and DNAnexus. To do so:
+### [AWS](https://aws.amazon.com/)
 * Build a AWS batch queue and environment either manually or with [aws-cloudformantion](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Nextflow&templateURL=https://s3.amazonaws.com/aws-genomics-workflows/templates/nextflow/nextflow-aio.template.yaml)
 * Edit one of the aws configs in workflow/config/
   * Replace workDir with the S3 bucket generated
@@ -83,6 +84,14 @@ This pipeline is also capable of being run on AWS. To do so:
   * Change queue to the aws batch queue generated
 * The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow will be run
 * Add `-profile` with the name aws config which was customized
+### DNAnexus (utilizes the [DNAnexus extension package for Nextflow (XPACK-DNANEXUS)](https://github.com/seqeralabs/xpack-dnanexus))
+* Follow the istructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about installing and authenticating (a valid license must be available for the extension package from Seqera Labs, as well as a subsription with DNAnexus)
+* Follow the instructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about launching runs. A template *json* file has been included ([dnanexusExample.json](docs/dnanexusExample.json))
+  * `[version]` should be replaced with the pipeline version required (eg: `v2.0.0`)
+  * `[credential.json]` should be replaced with the location of the credential file outpted by authentification with Deriva
+  * `[cookies.txt]` should be replaced with the location of the cookies file outpted by authentification with Deriva for BDBag
+  * `[repRID]` should be replaced with the replicate RID to be analized (eg: `Q-Y5F6`)
+  * `[outDir]` should be replaced with the location to save local outputs of the pipeline
 
 To generate you own references or new references:
 ------------------------------------------

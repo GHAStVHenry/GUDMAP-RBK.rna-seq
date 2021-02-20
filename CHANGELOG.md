@@ -4,6 +4,7 @@
 * Strandedness metadata "yes"/"no" changed to boolean "t"/"f" in data-hub, pipeline updated to handle (#70) ("yes"/"no" still acceptable for backwards compatibility)
 * Upload empty mRNA_QC entry if data error (#111)
 * Allow forcing of strandedness and spike (#100)
+* Modify repository structure to allow for use with XPACK-DNANEXUS
 
 **Background**
 * Add memory limit (75%) per thread for samtools sort (#108)
@@ -25,6 +26,7 @@
 * Change uploadOutputBag logic to change reuse hatrac file if alread exists (re-uses Output_Bag entry by reassigning Execution_Run RID) (#112)
 * Add new CI py tests for override and integration
 * Fix fastq file and species error status detail bub (#118)
+* Make compatible with XPACK-DNANEXUS
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
