@@ -152,9 +152,8 @@ seqwho:
     - schedules
   script:
   - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
-  - mkdir SeqWho_call_plots
   - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -h | grep -o Version.* > version_seqwho.txt
-  - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -f ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
+  - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -f test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
   - pytest -m seqwho
   artifacts:
     name: "$CI_JOB_NAME"
