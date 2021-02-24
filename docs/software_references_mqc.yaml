@@ -80,12 +80,18 @@
                 <li>FastQC <a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/" class="uri">https://www.bioinformatics.babraham.ac.uk/projects/fastqc/</a></li>
                 </ul>
                 <ol start="13" style="list-style-type: decimal">
+                <li><strong>SeqWho</strong></li>
+                </ol>
+                <ul>
+                <li>SeqWho <a href="https://git.biohpc.swmed.edu/s181649/seqwho" class="uri">https://git.biohpc.swmed.edu/s181649/seqwho/</a></li>
+                </ul>
+                <ol start="14" style="list-style-type: decimal">
                 <li><strong>MultiQC</strong>:</li>
                 </ol>
                 <ul>
                 <li>Ewels P., Magnusson M., Lundin S. and Käller M. 2016. MultiQC: Summarize analysis results for multiple tools and samples in a single report. Bioinformatics 32(19): 3047–3048. doi:<a href="https://dx.doi.org/10.1093/bioinformatics/btw354">10.1093/bioinformatics/btw354</a></li>
                 </ul>
-                <ol start="14" style="list-style-type: decimal">
+                <ol start="15" style="list-style-type: decimal">
                 <li><strong>Nextflow</strong>:</li>
                 </ol>
                 <ul>

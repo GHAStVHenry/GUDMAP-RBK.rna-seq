@@ -34,6 +34,7 @@ SOFTWARE_REGEX = {
     'Python': ['version_python.txt', r"Python (\S+)"],
     'DERIVA': ['version_deriva.txt', r"(\S+)"],
     'BDBag': ['version_bdbag.txt', r"BDBag (\S+) \(Bagit \S+\)"],
+    'SeqWho': ['version_seqwho.txt', r"Version: (\S+)"],
     'RSeQC': ['version_rseqc.txt', r"infer_experiment.py (\S+)"],
     'Trim Galore!': ['version_trimgalore.txt', r"version (\S+)"],
     'HISAT2': ['version_hisat2.txt', r"version (\S+)"],
@@ -93,6 +94,7 @@ def main():
     results['Python'] = '<span style="color:#999999;\">Not Run</span>'
     results['DERIVA'] = '<span style="color:#999999;\">Not Run</span>'
     results['BDBag'] = '<span style="color:#999999;\">Not Run</span>'
+    results['SeqWho'] = '<span style="color:#999999;\">Not Run</span>'
     results['RSeQC'] = '<span style="color:#999999;\">Not Run</span>'
     results['Trim Galore!'] = '<span style="color:#999999;\">Not Run</span>'
     results['HISAT2'] = '<span style="color:#999999;\">Not Run</span>'

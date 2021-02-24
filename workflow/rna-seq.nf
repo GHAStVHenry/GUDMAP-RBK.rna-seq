@@ -22,7 +22,6 @@ params.upload = false
 params.email = ""
 params.track = false
 
-
 // Define override input variable
 params.refSource = "biohpc"
 params.inputBagForce = ""
@@ -35,14 +34,13 @@ params.spikeForce = ""
 params.ci = false
 params.dev = true
 
-
 // Parse input variables
 deriva = Channel
   .fromPath(params.deriva)
   .ifEmpty { exit 1, "deriva credential file not found: ${params.deriva}" }
 deriva.into {
   deriva_getBag
-  deriva_getRefInfer
+  deriva_getRefERCC
   deriva_getRef
   deriva_uploadInputBag
   deriva_uploadExecutionRun
@@ -220,7 +218,7 @@ process getBag {
     """
 }
 
-// Set inputBag to downloaded or forced input
+// Set inputBag to downloaded or forced input and replicate them for multiple process inputs 
 if (inputBagForce != "") {
   inputBag = Channel
     .fromPath(inputBagForce)
@@ -234,7 +232,7 @@ inputBag.into {
 }
 
 /*
- * getData: fetch replicate files from consortium with downloaded bdbag.zip
+ * getData: fetch replicate files from consortium with downloaded input bag
  */
 process getData {
   tag "${repRID}"
@@ -297,11 +295,15 @@ if (fastqsForce != "") {
     .fromPath(fastqsForce)
     .ifEmpty { exit 1, "override inputBag file not found: ${fastqsForce}" }
     .collect().into {
+      fastqs_seqwho
+      fastqs_trimData
       fastqs_parseMetadata
       fastqs_fastqc
     }
 } else {
   fastqs.collect().into {
+    fastqs_seqwho
+    fastqs_trimData
     fastqs_parseMetadata
     fastqs_fastqc
   }
@@ -309,7 +311,7 @@ if (fastqsForce != "") {
 
 /*
  * parseMetadata: parses metadata to extract experiment parameters
-*/
+ */
 process parseMetadata {
   tag "${repRID}"
 
@@ -464,7 +466,7 @@ process parseMetadata {
     """
 }
 
-// Split metadata into separate channels
+// Split metadata into separate channels and replicate them for multiple process inputs
 endsMeta = Channel.create()
 endsRaw = Channel.create()
 endsManual = Channel.create()
@@ -485,8 +487,6 @@ metadata_fl.splitCsv(sep: ",", header: false).separate(
   expRID,
   studyRID
 )
-
-// Replicate metadata for multiple process inputs
 endsMeta.into {
   endsMeta_checkMetadata
   endsMeta_aggrQC
@@ -496,6 +496,7 @@ endsManual.into {
   endsManual_seqwho
   endsManual_trimData
   endsManual_downsampleData
+  endsManual_alignSampleDataERCC
   endsManual_alignSampleData
   endsManual_aggrQC
 }
@@ -511,6 +512,7 @@ spikeMeta.into {
   spikeMeta_failExecutionRun
 }
 speciesMeta.into {
+  speciesMeta_seqwho
   speciesMeta_checkMetadata
   speciesMeta_aggrQC
   speciesMeta_failPreExecutionRun
@@ -527,7 +529,7 @@ expRID.into {
   expRID_uploadProcessedFile
 }
 
-// Split fastq count error into separate channel
+// Split fastq count error into separate channel and replicate them for multiple process inputs
 fastqCountError = Channel.create()
 fastqCountError_details = Channel.create()
 fastqReadError = Channel.create()
@@ -538,74 +540,74 @@ fastqError_fl.splitCsv(sep: ",", header: false).separate(
   fastqReadError,
   fastqReadError_details
 )
-
-//  Replicate errors for multiple process inputs
 fastqCountError.into {
   fastqCountError_fastqc
   fastqCountError_seqwho
+  fastqCountError_getRefERCC
+  fastqCountError_getRef
   fastqCountError_trimData
-  fastqCountError_getRefInfer
   fastqCountError_downsampleData
+  fastqCountError_alignSampleDataERCC
   fastqCountError_alignSampleData
   fastqCountError_inferMetadata
   fastqCountError_checkMetadata
-  fastqCountError_uploadExecutionRun
-  fastqCountError_getRef
   fastqCountError_alignData
   fastqCountError_dedupData
   fastqCountError_makeBigWig
   fastqCountError_countData
   fastqCountError_dataQC
   fastqCountError_aggrQC
+  fastqCountError_uploadExecutionRun
   fastqCountError_uploadQC
-  fastqCountError_uploadQC_fail
   fastqCountError_uploadProcessedFile
   fastqCountError_uploadOutputBag
-  fastqCountError_failPreExecutionRun_fastq
+  fastqCountError_finalizeExecutionRun
+  fastqCountError_uploadQC_fail
 }
 fastqReadError.into {
   fastqReadError_fastqc
   fastqReadError_seqwho
+  fastqReadError_getRefERCC
+  fastqReadError_getRef
   fastqReadError_trimData
-  fastqReadError_getRefInfer
   fastqReadError_downsampleData
+  fastqReadError_alignSampleDataERCC
   fastqReadError_alignSampleData
   fastqReadError_inferMetadata
   fastqReadError_checkMetadata
-  fastqReadError_uploadExecutionRun
-  fastqReadError_getRef
   fastqReadError_alignData
   fastqReadError_dedupData
   fastqReadError_makeBigWig
   fastqReadError_countData
   fastqReadError_dataQC
   fastqReadError_aggrQC
+  fastqReadError_uploadExecutionRun
   fastqReadError_uploadQC
-  fastqReadError_uploadQC_fail
   fastqReadError_uploadProcessedFile
   fastqReadError_uploadOutputBag
-  fastqReadError_failPreExecutionRun_fastq
+  fastqReadError_finalizeExecutionRun
+  fastqReadError_uploadQC_fail
 }
 
 /*
- *fastqc: run fastqc on untrimmed fastq's
-*/
+ * fastqc: run fastqc on untrimmed fastq's
+ */
 process fastqc {
   tag "${repRID}"
 
   input:
-    path (fastq) from fastqs_fastqc.collect()
-    val fastqCountError_fastqc
-    val fastqReadError_fastqc
+    path (fastq) from fastqs_fastqc
+    val fastqCountError from fastqCountError_fastqc
+    val fastqReadError from fastqReadError_fastqc
 
   output:
-    path ("*.R{1,2}.fastq.gz", includeInputs:true) into fastqs_out
     path ("*_fastqc.zip") into fastqc
     path ("rawReads.csv") into rawReadsInfer_fl
     path "fastqFileError.csv" into fastqFileError_fl
 
   when:
-    fastqCountError_fastqc == 'false' && fastqReadError_fastqc == 'false'
+    fastqCountError == 'false'
+    fastqReadError == 'false'
 
   script:
     """
@@ -636,76 +638,65 @@ process fastqc {
     """
 }
 
-// Replicate fastqs for downstream process inputs
-fastqs_out.into {
-  fastqs_seqwho
-  fastqs_trimData
-}
-
-// Extract number of raw reads metadata into channel
+// Extract number of raw reads metadata into channel and replicate them for multiple process inputs
 rawReadsInfer = Channel.create()
 rawReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   rawReadsInfer
 )
-
-// Replicate inferred raw reads for multiple process inputs
 rawReadsInfer.into {
   rawReadsInfer_aggrQC
   rawReadsInfer_uploadQC
 }
 
-// Split fastq count error into separate channel
+// Split fastq file error into separate channel and replicate them for multiple process inputs
 fastqFileError = Channel.create()
 fastqFileError_details = Channel.create()
 fastqFileError_fl.splitCsv(sep: ",", header: false).separate(
   fastqFileError,
   fastqFileError_details
 )
-
-//  Replicate errors for multiple process inputs
 fastqFileError.into {
-  fastqFileError_seqwho
   fastqFileError_trimData
-  fastqFileError_getRefInfer
+  fastqFileError_getRef
   fastqFileError_downsampleData
+  fastqFileError_alignSampleDataERCC
   fastqFileError_alignSampleData
   fastqFileError_inferMetadata
   fastqFileError_checkMetadata
-  fastqFileError_uploadExecutionRun
-  fastqFileError_getRef
   fastqFileError_alignData
   fastqFileError_dedupData
   fastqFileError_makeBigWig
   fastqFileError_countData
   fastqFileError_dataQC
   fastqFileError_aggrQC
+  fastqFileError_uploadExecutionRun
   fastqFileError_uploadQC
-  fastqFileError_uploadQC_fail
   fastqFileError_uploadProcessedFile
   fastqFileError_uploadOutputBag
-  fastqFileError_failPreExecutionRun_fastqFile
+  fastqFileError_finalizeExecutionRun
+  fastqFileError_uploadQC_fail
 }
 
 /*
- * seqwho: use seqwho to infer species and seq type
-*/
+ * seqwho: run seqwho to infer species and seq type
+ */
 process seqwho {
   tag "${repRID}"
 
   input:
     path (fastq) from fastqs_seqwho
     val ends from endsManual_seqwho
-    val fastqCountError_seqwho
-    val fastqReadError_seqwho
-    val fastqFileError_seqwho
+    val speciesMeta from speciesMeta_seqwho
+    val fastqCountError from fastqCountError_seqwho
+    val fastqReadError from fastqReadError_seqwho
 
   output:
+    path "inferSpecies.csv" into inferSpecies_fl
     path "inferError.csv" into inferError_fl
 
   when:
-    fastqCountError_seqwho == "false"
-    fastqReadError_seqwho == "false"
-    fastqFileError_seqwho == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
 
   script:
     """
@@ -785,21 +776,28 @@ process seqwho {
     echo -e "LOG: confidence converted to string" >> ${repRID}.seqwho.log
 
     # detect errors
-    speciesInferError=false
-    speciesInferError_details=""
-    seqtypeInferError=false
-    seqtypeInferError_details=""
+    speciesErrorSeqwho=false
+    speciesErrorSeqwho_details=""
+    seqtypeError=false
+    seqtypeError_details=""
     if [ "\${confidenceR1}" == "high" ] && [ "\${confidenceR2}" == "high" ]
     then
       echo -e "LOG: high confidence inference detected" >> ${repRID}.seqwho.log
       if [ "\${speciesR1}" == "\${speciesR2}" ]
       then
         speciesInfer=\${speciesR1}
+        if [ "\${speciesInfer}" == "human" ]
+        then
+          speciesInfer="Homo sapiens"
+        elif [ "\${speciesInfer}" == "mouse" ]
+        then
+          speciesInfer="Mus musculus"
+        fi
         echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
       else
-        speciesInferError=true
-        speciesInferError_details="**Infered species does not match for R1 and R2:** Infered R1 = \${speciesR1} and infered R2 = \${speciesR2}"
-        echo -e "LOG: inference error: \${speciesInferError_details}" >> ${repRID}.seqwho.log
+        speciesErrorSeqwho=true
+        speciesErrorSeqwho_details="**Infered species does not match for R1 and R2:** Infered R1 = \${speciesR1} and infered R2 = \${speciesR2}"
+        echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
       fi
       if [ "\${seqtypeR1}" == "\${seqtypeR2}" ]
       then
@@ -808,76 +806,191 @@ process seqwho {
           seqtpeInfer="rnaseq"
           echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
         else
-          seqtypeInferError=true
-          seqtypeInferError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
-          echo -e "LOG: inference error: \${seqtypeInferError_details}" >> ${repRID}.seqwho.log
+          seqtypeError=true
+          seqtypeError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
+          echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
         fi
       else
-        seqtypeInferError=true
-        seqtypeInferError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
-        echo -e "LOG: inference error: \${seqtypeInferError_details}" >> ${repRID}.seqwho.log
+        seqtypeError=true
+        seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
+        echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
     else
-      speciesInferError=true
-      speciesInferError_details=\$(echo "**Infered species and or sequencing type confidence is low:**\\n")
-      speciesInferError_details=\$(echo \${speciesInferError_details}|fastq|Infered species confidence|Infered sequencing type confidence|\\n)
-      speciesInferError_details=\$(echo \${speciesInferError_details}|:--|:--:|:--:|\\n)
-      speciesInferError_details=\$(echo \${speciesInferError_details}|Read 1|\${speciesConfidenceR1}|\${seqtypeConfidenceR1}|\\n)
+      speciesErrorSeqwho=true
+      speciesErrorSeqwho_details=\$(echo "**Infered species and or sequencing type confidence is low:**\\n")
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}|fastq|Infered species confidence|Infered sequencing type confidence|\\n)
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}|:--|:--:|:--:|\\n)
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}|Read 1|\${speciesConfidenceR1}|\${seqtypeConfidenceR1}|\\n)
       if [ "${ends}" == "pe" ]
       then
-        speciesInferError_details=\$(echo \${speciesInferError_details}|Read 2|\${speciesConfidenceR2}|\${seqtypeConfidenceR2}|\\n)
+        speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}|Read 2|\${speciesConfidenceR2}|\${seqtypeConfidenceR2}|\\n)
       fi
-      echo -e "LOG: inference error: \${speciesInferError_details}" >> ${repRID}.seqwho.log
+      echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
     fi
 
+    if [ "${speciesMeta}" != "\${speciesInfer}" ]
+    then
+      if [ "${params.speciesForce}" != "" ]
+      then
+        speciesError=false
+        echo -e "LOG: species forced: Submitted=${speciesMeta}; Inferred=\${speciesInfer}; Forced=${params.speciesForce}" >> ${repRID}.seqwho.log
+      else
+        speciesError=true
+        echo -e "LOG: species does not match: Submitted=${speciesMeta}; Inferred=\${speciesInfer}" >> ${repRID}.seqwho.log
+      fi
+    else
+      speciesError=false
+      echo -e "LOG: species matches: Submitted=${speciesMeta}; Inferred=\${speciesInfer}" >> ${repRID}.seqwho.log
+    fi
+    
+    # save species file
+    echo "\${speciesInfer}" > inferSpecies.csv
+
     # save error file
-    echo "\${seqtypeInferError},\${seqtypeInferError_details}" > inferError.csv
+    echo "\${seqtypeError},\${seqtypeError_details},\${speciesErrorSeqwho},\${speciesErrorSeqwho_details},\${speciesError}" > inferError.csv
     """
 }
 
-// Split species error into separate channel
-seqtypeInferError = Channel.create()
-seqtypeInferError_details = Channel.create()
-inferError_fl.splitCsv(sep: ",", header: false).separate(
-  seqtypeInferError,
-  seqtypeInferError_details
+// Extract infered sepecies metadata into channel and replicate them for multiple process inputs
+speciesInfer = Channel.create()
+inferSpecies_fl.splitCsv(sep: ",", header: false).separate(
+  speciesInfer
 )
+speciesInfer.into {
+  speciesInfer_getRef
+  speciesInfer_alignSampleData
+  speciesInfer_checkMetadata
+  speciesInfer_aggrQC
+  speciesInfer_uploadExecutionRun
+  speciesInfer_uploadProcessedFile
+  speciesInfer_failExecutionRun
+}
 
-// Replicate errors for multiple process inputs
-seqtypeInferError.into {
-  seqtypeInferError_trimData
-  seqtypeInferError_getRefInfer
-  seqtypeInferError_downsampleData
-  seqtypeInferError_alignSampleData
-  seqtypeInferError_inferMetadata
-  seqtypeInferError_checkMetadata
-  seqtypeInferError_uploadExecutionRun
-  seqtypeInferError_getRef
-  seqtypeInferError_alignData
-  seqtypeInferError_dedupData
-  seqtypeInferError_makeBigWig
-  seqtypeInferError_countData
-  seqtypeInferError_dataQC
-  seqtypeInferError_aggrQC
-  seqtypeInferError_uploadQC
-  seqtypeInferError_uploadQC_fail
-  seqtypeInferError_uploadProcessedFile
-  seqtypeInferError_uploadOutputBag
+// extract seq type and species error into separate channel and replicate them for multiple process inputs
+seqtypeError = Channel.create()
+seqtypeError_details = Channel.create()
+speciesErrorSeqwho = Channel.create()
+speciesErrorSeqwho_details = Channel.create()
+speciesError = Channel.create()
+inferError_fl.splitCsv(sep: ",", header: false).separate(
+  seqtypeError,
+  seqtypeError_details,
+  speciesErrorSeqwho,
+  speciesErrorSeqwho_details,
+  speciesError
+)
+seqtypeError.into {
+  seqtypeError_getRef
+  seqtypeError_downsampleData
+  seqtypeError_alignSampleDataERCC
+  seqtypeError_alignSampleData
+  seqtypeError_inferMetadata
+  seqtypeError_checkMetadata
+  seqtypeError_alignData
+  seqtypeError_dedupData
+  seqtypeError_makeBigWig
+  seqtypeError_countData
+  seqtypeError_dataQC
+  seqtypeError_aggrQC
+  seqtypeError_uploadExecutionRun
+  seqtypeError_uploadQC
+  seqtypeError_uploadProcessedFile
+  seqtypeError_uploadOutputBag
+  seqtypeError_finalizeExecutionRun
+  seqtypeError_uploadQC_fail
+}
+speciesError.into {
+  speciesError_checkMetadata
+  speciesError_uploadExecutionRun
+  speciesError_getRef
+  speciesError_alignSampleData
+  speciesError_inferMetadata
+  speciesError_alignData
+  speciesError_dedupData
+  speciesError_makeBigWig
+  speciesError_countData
+  speciesError_fastqc
+  speciesError_dataQC
+  speciesError_aggrQC
+  speciesError_uploadQC
+  speciesError_uploadQC_fail
+  speciesError_uploadProcessedFile
+  speciesError_uploadOutputBag
+  speciesError_finalizeExecutionRun
+  speciesError_failPreExecutionRun_species
+}
+
+/*
+ * getRefERCC: downloads ERCC reference for spike metadata inference
+ */
+process getRefERCC {
+  tag "${repRID}"
+
+  input:
+    path (credential, stageAs: "credential.json") from deriva_getRefERCC
+    path script_refDataInfer
+    val fastqCountError from fastqCountError_getRefERCC
+    val fastqReadError from fastqReadError_getRefERCC
+
+  output:
+    tuple path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refERCC
+
+  when:
+    fastqCountError == "false"
+    fastqReadError == "false"
+
+  script:
+    """
+    hostname > ${repRID}.getRefERCC.log
+    ulimit -a >> ${repRID}.getRefERCC.log
+
+    # link credential file for authentication
+    echo -e "LOG: linking deriva credentials" >> ${repRID}.getRefERCC.log
+    mkdir -p ~/.deriva
+    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
+    echo -e "LOG: linked" >> ${repRID}.getRefERCC.log
+
+    # set the reference name
+    references=\$(echo ${referenceBase}/ERCC${refERCCVersion})
+
+    # retreive appropriate reference appropriate location
+    echo -e "LOG: fetching ERCC reference files from ${referenceBase}" >> ${repRID}.getRefERCC.log
+    if [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references/new" ]
+    then
+      unzip \${references}.zip
+      mv \$(basename \${references})/data/* .
+    elif [ params.refSource == "datahub" ]
+    then
+      query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
+      curl --request GET \${query} > refQuery.json
+      refURL=\$(python ${script_refDataInfer} --returnParam URL)
+      loc=\$(dirname \${refURL})
+      fName=\$(python ${script_refDataInfer} --returnParam fName)
+      fName=\${fName%.*}
+      if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
+      filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
+      deriva-hatrac-cli --host ${referenceBase} get \${refURL}
+      unzip \$(basename \${refURL})
+      mv \${fName}/data/* .
+    fi
+    mv ./annotation/genome.gtf .
+    mv ./sequence/genome.fna .
+    echo -e "LOG: fetched" >> ${repRID}.getRefERCC.log
+    """
 }
 
 /*
  * trimData: trims any adapter or non-host sequences from the data
-*/
+ */
 process trimData {
   tag "${repRID}"
 
   input:
     path (fastq) from fastqs_trimData
     val ends from endsManual_trimData
-    val fastqCountError_trimData
-    val fastqReadError_trimData
-    val fastqFileError_trimData
-    val seqtypeInferError_trimData
+    val fastqCountError from fastqCountError_trimData
+    val fastqReadError from fastqReadError_trimData
+    val fastqFileError from fastqFileError_trimData
 
   output:
     path ("*.fq.gz") into fastqsTrim
@@ -885,10 +998,9 @@ process trimData {
     path ("readLength.csv") into readLengthInfer_fl
 
   when:
-    fastqCountError_trimData == "false"
-    fastqReadError_trimData == "false"
-    fastqFileError_trimData == "false"
-    seqtypeInferError_trimData == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
 
   script:
     """
@@ -914,108 +1026,19 @@ process trimData {
     """
 }
 
-// Extract calculated read length metadata into channel
+// Extract calculated read length metadata into channel and replicate them for multiple process inputs
 readLengthInfer = Channel.create()
 readLengthInfer_fl.splitCsv(sep: ",", header: false).separate(
   readLengthInfer
 )
-
-// Replicate inferred read length for multiple process inputs
 readLengthInfer.into {
   readLengthInfer_aggrQC
   readLengthInfer_uploadQC
 }
 // Replicate trimmed fastq's for multiple process inputs
 fastqsTrim.into {
-  fastqsTrim_alignData
   fastqsTrim_downsampleData
-}
-
-// Combine inputs of getRefInfer
-getRefInferInput = referenceInfer.combine(deriva_getRefInfer.combine(script_refDataInfer.combine(fastqCountError_getRefInfer.combine(fastqReadError_getRefInfer.combine(fastqFileError_getRefInfer.combine(seqtypeInferError_getRefInfer))))))
-
-/*
-  * getRefInfer: dowloads appropriate reference for metadata inference
-*/
-process getRefInfer {
-  tag "${refName}"
-
-  input:
-    tuple val (refName), path (credential, stageAs: "credential.json"), path (script_refDataInfer), val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeInferError) from getRefInferInput
-
-  output:
-    tuple val (refName), path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refInfer
-    path ("${refName}", type: 'dir') into bedInfer
-
-  when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeInferError == "false"
-
-  script:
-    """
-    hostname > ${repRID}.${refName}.getRefInfer.log
-    ulimit -a >> ${repRID}.${refName}.getRefInfer.log
-
-    # link credential file for authentication
-    echo -e "LOG: linking deriva credentials" >> ${repRID}.${refName}.getRefInfer.log
-    mkdir -p ~/.deriva
-    ln -sf `readlink -e credential.json` ~/.deriva/credential.json
-    echo -e "LOG: linked" >> ${repRID}.${refName}.getRefInfer.log
-
-    # set the reference name
-    if [ "${refName}" == "ERCC" ]
-    then
-      references=\$(echo ${referenceBase}/ERCC${refERCCVersion})
-    elif [ "${refName}" == "GRCm" ]
-    then
-      references=\$(echo ${referenceBase}/GRCm${refMoVersion})
-    elif [ '${refName}' == "GRCh" ]
-    then
-      references=\$(echo ${referenceBase}/GRCh${refHuVersion})
-    else
-      echo -e "LOG: ERROR - References could not be set!\nReference found: ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
-      exit 1
-    fi
-
-    # retreive appropriate reference appropriate location
-    echo -e "LOG: fetching ${refName} reference files from ${referenceBase}" >> ${repRID}.${refName}.getRefInfer.log
-    if [ ${referenceBase} == "/project/BICF/BICF_Core/shared/gudmap/references/new" ]
-    then
-      unzip \${references}.zip
-      mv \$(basename \${references})/data/* .
-    elif [ params.refSource == "datahub" ]
-    then
-      GRCv=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f1)
-      GRCp=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f2)
-      GENCODE=\$(echo \${references} | grep -o ${refName}.* | cut -d '.' -f3)
-      if [ "${refName}" != "ERCC" ]
-      then
-        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='\${GRCv}'.'\${GRCp}'/Annotation_Version=GENCODE%20'\${GENCODE})
-      else
-        query=\$(echo 'https://${referenceBase}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version=${refName}${refERCCVersion}/Annotation_Version=${refName}${refERCCVersion}')
-      fi
-      curl --request GET \${query} > refQuery.json
-      refURL=\$(python ${script_refDataInfer} --returnParam URL)
-      loc=\$(dirname \${refURL})
-      fName=\$(python ${script_refDataInfer} --returnParam fName)
-      fName=\${fName%.*}
-      if [ "\${loc}" = "/hatrac/*" ]; then echo "LOG: Reference not present in hatrac"; exit 1; fi
-      filename=\$(echo \$(basename \${refURL}) | grep -oP '.*(?=:)')
-      deriva-hatrac-cli --host ${referenceBase} get \${refURL}
-      unzip \$(basename \${refURL})
-      mv \${fName}/data/* .
-    fi
-    mv ./annotation/genome.gtf .
-    mv ./sequence/genome.fna .
-    mkdir ${refName}
-    if [ "${refName}" != "ERCC" ]
-    then
-      mv ./annotation/genome.bed ./${refName}
-    fi
-    echo -e "LOG: fetched" >> ${repRID}.${refName}.getRefInfer.log
-    """
+  fastqsTrim_alignData
 }
 
 /*
@@ -1027,20 +1050,19 @@ process downsampleData {
   input:
     path fastq from fastqsTrim_downsampleData
     val ends from endsManual_downsampleData
-    val fastqCountError_downsampleData
-    val fastqReadError_downsampleData
-    val fastqFileError_downsampleData
-    val seqtypeInferError_downsampleData
+    val fastqCountError from fastqCountError_downsampleData
+    val fastqReadError from fastqReadError_downsampleData
+    val fastqFileError from fastqFileError_downsampleData
+    val seqtypeError from seqtypeError_downsampleData
 
   output:
-    path ("sampled.1.fq") into fastqs1Sample
-    path ("sampled.2.fq") into fastqs2Sample
+    path ("sampled.{1,2}.fq") into fastqsSample
 
   when:
-    fastqCountError_downsampleData == "false"
-    fastqReadError_downsampleData == "false"
-    fastqFileError_downsampleData == "false"
-    seqtypeInferError_downsampleData == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
 
   script:
     """
@@ -1063,635 +1085,112 @@ process downsampleData {
     """
 }
 
-// Replicate the dowsampled fastq's and attatched to the references
-inferInput = endsManual_alignSampleData.combine(refInfer.combine(fastqs1Sample.collect().combine(fastqs2Sample.collect().combine(fastqCountError_alignSampleData.combine(fastqReadError_alignSampleData.combine(fastqFileError_alignSampleData.combine(seqtypeInferError_alignSampleData)))))))
+// Replicate sampled fastq's for multiple process inputs
+fastqsSample.into {
+  fastqsSample_alignSampleDataERCC
+  fastqsSample_alignSampleData
+}
 
 /*
- * alignSampleData: aligns the downsampled reads to a reference database
-*/
-process alignSampleData {
-  tag "${ref}"
+ * alignSampleDataERCC: aligns the downsampled reads to the ERCC reference and infers spike in
+ */
+process alignSampleDataERCC {
+  tag "${repRID}"
 
   input:
-    tuple val (ends), val (ref), path (hisat2), path (fna), path (gtf), path (fastq1), path (fastq2), val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeInferError) from inferInput
+    val ends from endsManual_alignSampleDataERCC
+    tuple path (hisat2), path (fna), path (gtf) from refERCC
+    path fastq from fastqsSample_alignSampleDataERCC
+    val spikeForce
+    val fastqCountError from fastqCountError_alignSampleDataERCC
+    val fastqReadError from fastqReadError_alignSampleDataERCC
+    val fastqFileError from fastqFileError_alignSampleDataERCC
+    val seqtypeError from seqtypeError_alignSampleDataERCC
 
   output:
-    path ("${ref}.sampled.sorted.bam") into sampleBam
-    path ("${ref}.sampled.sorted.bam.bai") into sampleBai
-    path ("${ref}.alignSampleSummary.txt") into alignSampleQC
+    path "inferSpike.csv" into inferSpike_fl
+    path ("ERCC.alignSampleSummary.txt") into alignSampleQC_ERCC
 
   when:
     fastqCountError == "false"
     fastqReadError == "false"
     fastqFileError == "false"
-    seqtypeInferError == "false"
+    seqtypeError == "false"
 
   script:
     """
-    hostname > ${repRID}.${ref}.alignSampleData.log
-    ulimit -a >> ${repRID}.${ref}.alignSampleData.log
+    hostname > ${repRID}.alignSampleDataERCC.log
+    ulimit -a >> ${repRID}.alignSampleDataERCC.log
 
     # align the reads with Hisat2
-    echo -e "LOG: aligning ${ends}" >> ${repRID}.${ref}.alignSampleData.log
+    echo -e "LOG: aligning ${ends}" >> ${repRID}.alignSampleDataERCC.log
     if [ "${ends}" == "se" ]
     then
 
-      hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome -U ${fastq1} --summary-file ${ref}.alignSampleSummary.txt --new-summary
+      hisat2 -p `nproc` --add-chrname -S ERCC.sampled.sam -x hisat2/genome -U ${fastq[0]} --summary-file ERCC.alignSampleSummary.txt --new-summary
     elif [ "${ends}" == "pe" ]
     then
-      hisat2 -p `nproc` --add-chrname -S ${ref}.sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq1} -2 ${fastq2} --summary-file ${ref}.alignSampleSummary.txt --new-summary
+      hisat2 -p `nproc` --add-chrname -S ERCC.sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ERCC.alignSampleSummary.txt --new-summary
     fi
-    echo -e "LOG: aliged" >> ${repRID}.${ref}.alignSampleData.log
+    echo -e "LOG: aliged" >> ${repRID}.alignSampleDataERCC.log
 
     # convert the output sam file to a sorted bam file using Samtools
-    echo -e "LOG: converting from sam to bam" >> ${repRID}.${ref}.alignSampleData.log
-    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${ref}.sampled.bam ${ref}.sampled.sam
+    echo -e "LOG: converting from sam to bam" >> ${repRID}.alignSampleDataERCC.log
+    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ERCC.sampled.bam ERCC.sampled.sam
 
     # sort the bam file using Samtools
-    echo -e "LOG: sorting the bam file" >> ${repRID}.${ref}.alignSampleData.log
+    echo -e "LOG: sorting the bam file" >> ${repRID}.alignSampleDataERCC.log
     proc=\$(expr `nproc` - 1)
     mem=\$(vmstat -s -S K | grep 'total memory' | grep -o '[0-9]*')
     mem=\$(expr \${mem} / \${proc} \\* 85 / 100)
-    samtools sort -@ \${proc} -m \${mem}K -O BAM -o ${ref}.sampled.sorted.bam ${ref}.sampled.bam
+    samtools sort -@ \${proc} -m \${mem}K -O BAM -o ERCC.sampled.sorted.bam ERCC.sampled.bam
 
     # index the sorted bam using Samtools
-    echo -e "LOG: indexing sorted bam file" >> ${repRID}.${ref}.alignSampleData.log
-    samtools index -@ `nproc` -b ${ref}.sampled.sorted.bam ${ref}.sampled.sorted.bam.bai
-    """
-}
-
-alignSampleQC.into {
-  alignSampleQC_inferMetadata
-  alignSampleQC_aggrQC
-}
-
-process inferMetadata {
-  tag "${repRID}"
-
-  input:
-    path script_inferMeta
-    path beds from bedInfer.collect()
-    path bam from sampleBam.collect()
-    path bai from sampleBai.collect()
-    path alignSummary from alignSampleQC_inferMetadata.collect()
-    val strandedForce
-    val spikeForce
-    val fastqCountError_inferMetadata
-    val fastqReadError_inferMetadata
-    val fastqFileError_inferMetadata
-    val seqtypeInferError_inferMetadata
-
-  output:
-    path "infer.csv" into inferMetadata_fl
-    path "${repRID}.infer_experiment.txt" into inferExperiment
-    path "speciesError.csv" into speciesError_fl
-
-  when:
-    fastqCountError_inferMetadata == "false"
-    fastqReadError_inferMetadata == "false"
-    fastqFileError_inferMetadata == "false"
-    seqtypeInferError_inferMetadata == "false"
-
-  script:
-    """
-    hostname > ${repRID}.inferMetadata.log
-    ulimit -a >> ${repRID}.inferMetadata.log
+    echo -e "LOG: indexing sorted bam file" >> ${repRID}.alignSampleDataERCC.log
+    samtools index -@ `nproc` -b ERCC.sampled.sorted.bam ERCC.sampled.sorted.bam.bai
 
     # collect alignment rates (round down to integers)
-    align_ercc=\$(echo \$(grep "Overall alignment rate" ERCC.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
-    align_ercc=\$(echo \${align_ercc%.*})
-    echo -e "LOG: alignment rate to ERCC: \${align_ercc}" >> ${repRID}.inferMetadata.log
-    align_hu=\$(echo \$(grep "Overall alignment rate" GRCh.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
-    align_hu=\$(echo \${align_hu%.*})
-    echo -e "LOG: alignment rate to GRCh: \${align_hu}" >> ${repRID}.inferMetadata.log
-    align_mo=\$(echo \$(grep "Overall alignment rate" GRCm.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
-    align_mo=\$(echo \${align_mo%.*})
-    echo -e "LOG: alignment rate to GRCm: \${align_mo}" >> ${repRID}.inferMetadata.log
+    align=\$(echo \$(grep "Overall alignment rate" ERCC.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    align=\$(echo \${align%.*})
+    echo -e "LOG: alignment rate to ERCC: \${align}" >> ${repRID}.alignSampleDataERCC.log
 
     # determine spike-in
-    if [ 1 -eq \$(echo \$(expr \${align_ercc} ">=" 10)) ]
+    if [ 1 -eq \$(echo \$(expr \${align} ">=" 10)) ]
     then
       spike="true"
     else
       spike="false"
     fi
-    echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: inference of strandedness results is: \${spike}" >> ${repRID}.alignSampleDataERCC.log
     if [ "${spikeForce}" != "" ]
     then
       spike=${spikeForce}
-      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.parseMetadata.log
+      echo -e "LOG: spike-in metadata forced: \${spike}" >> ${repRID}.alignSampleDataERCC.log
     fi
 
-    speciesError=false
-    speciesError_details=""
-    # determine species
-    if [ 1 -eq \$(echo \$(expr \${align_hu} ">=" 40)) ] && [ 1 -eq \$(echo \$(expr \${align_mo} "<" 40)) ]
-    then
-      species="Homo sapiens"
-      bam="GRCh.sampled.sorted.bam"
-      bed="./GRCh/genome.bed"
-      echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
-    elif [ 1 -eq \$(echo \$(expr \${align_mo} ">=" 40)) ] && [ 1 -eq \$(echo \$(expr \${align_hu} "<" 40)) ]
-    then
-      species="Mus musculus"
-      bam="GRCm.sampled.sorted.bam"
-      bed="./GRCm/genome.bed"
-      echo -e "LOG: inference of species results in: \${species}" >> ${repRID}.inferMetadata.log
-    else
-      echo -e "LOG: ERROR - inference of species returns an ambiguous result: hu=\${align_hu} mo=\${align_mo}" >> ${repRID}.inferMetadata.log
-      if [ "${speciesForce}" == "" ]
-      then
-        speciesError=true
-        speciesError_details="**Inference of species returns an ambiguous result:** Percent aligned to human = \${align_hu} and percent aligned to mouse = \${align_mo}"
-      fi
-    fi
-    if [ "${speciesForce}" != "" ]
-    then
-      speciesError=false
-      echo -e "LOG: species overridden to: ${speciesForce}"
-      species="${speciesForce}"
-      if [ "${speciesForce}" == "Homo sapiens" ]
-      then
-        bam="GRCh.sampled.sorted.bam"
-        bed="./GRCh/genome.bed"
-      elif [ "${speciesForce}" == "Mus musculus" ]
-      then
-        bam="GRCm.sampled.sorted.bam"
-        bed="./GRCm/genome.bed"
-      fi
-    fi
-
-    if [ "\${speciesError}" == false ]
-    then
-      # infer experimental setting from dedup bam
-      echo -e "LOG: infer experimental setting from dedup bam" >> ${repRID}.inferMetadata.log
-      infer_experiment.py -r "\${bed}" -i "\${bam}" 1>> ${repRID}.infer_experiment.txt
-      echo -e "LOG: inferred" >> ${repRID}.inferMetadata.log
-
-      ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
-      fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
-      if [ \${ended} == "PairEnd" ]
-      then
-        ends="pe"
-        percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
-        percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
-      elif [ \${ended} == "SingleEnd" ]
-      then
-        ends="se"
-        percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
-        percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
-      fi
-      echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
-      echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
-      if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
-      then
-        stranded="forward"
-      elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
-      then
-        stranded="reverse"
-      else
-        stranded="unstranded"
-      fi
-      echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
-      if [ "${strandedForce}" != "" ]
-      then
-        stranded=${strandedForce}
-        echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.inferMetadata.log
-      fi
-    else
-      ends=""
-      stranded=""
-      spike=""
-      species=""
-      percentF=""
-      percentR=""
-      fail=""
-      touch ${repRID}.infer_experiment.txt
-    fi
-
-    # write inferred metadata to file
-    echo "\${ends},\${stranded},\${spike},\${species},\${align_ercc},\${align_hu},\${align_mo},\${percentF},\${percentR},\${fail}" > infer.csv
-
-    # save species error file
-    echo "\${speciesError},\${speciesError_details}" > speciesError.csv
+    # write inferred spike metadata to file
+    echo "\${spike},\${align}" > inferSpike.csv
     """
 }
 
-// Split metadata into separate channels
-endsInfer = Channel.create()
-strandedInfer = Channel.create()
+// Extract spike in metadata and % aligned to ERCC into channel and replicate them for multiple process inputs
 spikeInfer = Channel.create()
-speciesInfer = Channel.create()
-align_erccInfer = Channel.create()
-align_huInfer = Channel.create()
-align_moInfer = Channel.create()
-percentFInfer = Channel.create()
-percentRInfer = Channel.create()
-failInfer = Channel.create()
-inferMetadata_fl.splitCsv(sep: ",", header: false).separate(
-  endsInfer,
-  strandedInfer,
+alignInferERCC = Channel.create()
+inferSpike_fl.splitCsv(sep: ",", header: false).separate(
   spikeInfer,
-  speciesInfer,
-  align_erccInfer,
-  align_huInfer,
-  align_moInfer,
-  percentFInfer,
-  percentRInfer,
-  failInfer
+  alignInferERCC
 )
-
-// Replicate metadata for multiple process inputs
-endsInfer.into {
-  endsInfer_checkMetadata
-  endsInfer_alignData
-  endsInfer_countData
-  endsInfer_dataQC
-  endsInfer_aggrQC
-  endsInfer_uploadQC
-  endsInfer_failExecutionRun
-}
-strandedInfer.into {
-  strandedInfer_checkMetadata
-  strandedInfer_alignData
-  strandedInfer_countData
-  strandedInfer_aggrQC
-  strandedInfer_uploadQC
-  strandedInfer_failExecutionRun
-}
-spikeInfer.into{
-  spikeInfer_checkMetadata
+spikeInfer.into {
   spikeInfer_getRef
+  spikeInfer_checkMetadata
   spikeInfer_aggrQC
   spikeInfer_uploadExecutionRun
   spikeInfer_failExecutionRun
 }
-speciesInfer.into {
-  speciesInfer_checkMetadata
-  speciesInfer_getRef
-  speciesInfer_aggrQC
-  speciesInfer_uploadExecutionRun
-  speciesInfer_uploadProcessedFile
-  speciesInfer_failExecutionRun
-}
-
-// Split species count error into separate channel
-speciesError = Channel.create()
-speciesError_details = Channel.create()
-speciesError_fl.splitCsv(sep: ",", header: false).separate(
-  speciesError,
-  speciesError_details
-)
-
-//  Replicate errors for multiple process inputs
-speciesError.into {
-  speciesError_checkMetadata
-  speciesError_uploadExecutionRun
-  speciesError_getRef
-  speciesError_alignData
-  speciesError_dedupData
-  speciesError_makeBigWig
-  speciesError_countData
-  speciesError_fastqc
-  speciesError_dataQC
-  speciesError_aggrQC
-  speciesError_uploadQC
-  speciesError_uploadQC_fail
-  speciesError_uploadProcessedFile
-  speciesError_uploadOutputBag
-  speciesError_failPreExecutionRun_species
-}
-
-/* 
- * checkMetadata: checks the submitted metada against inferred
-*/
-process checkMetadata {
-  tag "${repRID}"
-
-  input:
-    val endsMeta from endsMeta_checkMetadata
-    val strandedMeta from strandedMeta_checkMetadata
-    val spikeMeta from spikeMeta_checkMetadata
-    val speciesMeta from speciesMeta_checkMetadata
-    val endsInfer from endsInfer_checkMetadata
-    val strandedInfer from strandedInfer_checkMetadata
-    val spikeInfer from spikeInfer_checkMetadata
-    val speciesInfer from speciesInfer_checkMetadata
-    val fastqCountError_checkMetadata
-    val fastqReadError_checkMetadata
-    val seqtypeInferError_checkMetadata
-    val fastqFileError_checkMetadata
-
-    val speciesError_checkMetadata
-
-  output:
-    path ("check.csv") into checkMetadata_fl
-    path ("outputBagRID.csv") optional true into outputBagRID_fl_dummy
-
-  when:
-    fastqCountError_checkMetadata == "false"
-    fastqReadError_checkMetadata == "false"
-    fastqFileError_checkMetadata == "false"
-    seqtypeInferError_checkMetadata == "false"
-    speciesError_checkMetadata == "false"
-
-  script:
-    """
-    hostname > ${repRID}.checkMetadata.log
-    ulimit -a >> ${repRID}.checkMetadata.log
-
-    pipelineError=false
-    pipelineError_ends=false
-    pipelineError_stranded=false
-    pipelineError_spike=false
-    pipelineError_species=false
-    # check if submitted metadata matches inferred
-    if [ "${strandedMeta}" != "${strandedInfer}" ]
-    then
-      if [ "${params.strandedForce}" != "" ]
-      then
-        pipelineError=false
-        pipelineError_stranded=false
-        echo -e "LOG: stranded forced: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-      else
-        pipelineError=true
-        pipelineError_stranded=true
-        if [ "${strandedMeta}" == "stranded" ]
-        then
-          if [[ "${strandedInfer}" == "forward" ]] || [[ "${strandedInfer}" == "reverse" ]]
-          then
-            pipelineError=false
-            pipelineError_stranded=false
-            echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-          else
-            echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-          fi
-        else
-          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-        fi
-      fi
-    else
-      pipelineError=false
-      pipelineError_stranded=false
-      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
-    fi
-    if [ "${endsMeta}" != "${endsInfer}" ]
-    then
-      pipelineError=true
-      pipelineError_ends=true
-      echo -e "LOG: ends do not match: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
-    else
-      pipelineError_ends=false
-      echo -e "LOG: ends matches: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
-    fi
-    if [ "${spikeMeta}" != "${spikeInfer}" ]
-    then
-      if [[ "${params.spikeForce}" != "" ]]
-      then
-        pipelineError_spike=false
-        echo -e "LOG: spike forced: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
-      else
-        pipelineError=true
-        pipelineError_spike=true
-        echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
-      fi
-    else
-      pipelineError_spike=false
-      echo -e "LOG: spike matches: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
-    fi
-    if [ "${speciesMeta}" != "${speciesInfer}" ]
-    then
-    if [[ "${params.speciesForce}" != "" ]]
-      then
-        pipelineError_species=false
-        echo -e "LOG: species forced: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
-      else
-        pipelineError=true
-        pipelineError_species=true
-        echo -e "LOG: species does not match: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
-      fi
-    else
-      pipelineError_species=false
-      echo -e "LOG: species matches: Submitted=${speciesMeta}; Inferred=${speciesInfer}" >> ${repRID}.checkMetadata.log
-    fi
-
-    # create dummy output bag rid if failure
-    if [ \${pipelineError} == true ]
-    then
-      echo "fail" > outputBagRID.csv
-    fi
-
-    # write checks to file
-    echo "\${pipelineError},\${pipelineError_ends},\${pipelineError_stranded},\${pipelineError_spike},\${pipelineError_species}" > check.csv
-    """
-}
-
-// Split errors into separate channels
-pipelineError = Channel.create()
-pipelineError_ends = Channel.create()
-pipelineError_stranded = Channel.create()
-pipelineError_spike = Channel.create()
-pipelineError_species = Channel.create()
-checkMetadata_fl.splitCsv(sep: ",", header: false).separate(
-  pipelineError,
-  pipelineError_ends,
-  pipelineError_stranded,
-  pipelineError_spike,
-  pipelineError_species
-)
-
-// Replicate errors for multiple process inputs
-pipelineError.into {
-  pipelineError_getRef
-  pipelineError_alignData
-  pipelineError_dedupData
-  pipelineError_makeBigWig
-  pipelineError_countData
-  pipelineError_fastqc
-  pipelineError_dataQC
-  pipelineError_aggrQC
-  pipelineError_uploadQC
-  pipelineError_uploadQC_fail
-  pipelineError_uploadProcessedFile
-  pipelineError_uploadOutputBag
-  pipelineError_failExecutionRun
-}
-
-/* 
- * uploadInputBag: uploads the input bag
-*/
-process uploadInputBag {
-  tag "${repRID}"
-
-  input:
-    path script_uploadInputBag
-    path credential, stageAs: "credential.json" from deriva_uploadInputBag
-    path inputBag from inputBag_uploadInputBag
-    val studyRID from studyRID_uploadInputBag
-
-  output:
-    path ("inputBagRID.csv") into inputBagRID_fl
-
-  when:
-    upload
-
-  script:
-    """
-    hostname > ${repRID}.uploadInputBag.log
-    ulimit -a >> ${repRID}.uploadInputBag.log
-
-    yr=\$(date +'%Y')
-    mn=\$(date +'%m')
-    dy=\$(date +'%d')
-
-    file=\$(basename -a ${inputBag})
-    md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
-    echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
-    size=\$(wc -c < ./\${file})
-    echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
-    
-    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
-    if [ "\${exist}" == "[]" ]
-    then
-        cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-        cookie=\${cookie:11:-1}
-
-        loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
-        inputBag_rid=\$(python3 ${script_uploadInputBag} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
-        echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
-        rid=\${inputBag_rid}
-    else
-        exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-        exist=\${exist:7:-6}
-        echo LOG: input bag RID already exists - \${exist} >> ${repRID}.uploadInputBag.log
-        rid=\${exist}
-    fi
-
-    echo "\${rid}" > inputBagRID.csv
-    """
-}
-
-// Extract input bag RID into channel
-inputBagRID = Channel.create()
-inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
-  inputBagRID
-)
-
-// Replicate input bag RID for multiple process inputs
-inputBagRID.into {
-  inputBagRID_uploadExecutionRun
-  inputBagRID_finalizeExecutionRun
-  inputBagRID_failPreExecutionRun
-  inputBagRID_failExecutionRun
-}
-
-/* 
- * uploadExecutionRun: uploads the execution run
-*/
-process uploadExecutionRun {
-  tag "${repRID}"
-
-  input:
-    path script_uploadExecutionRun_uploadExecutionRun
-    path credential, stageAs: "credential.json" from deriva_uploadExecutionRun
-    val spike from spikeInfer_uploadExecutionRun
-    val species from speciesInfer_uploadExecutionRun
-    val inputBagRID from inputBagRID_uploadExecutionRun
-    val fastqCountError_uploadExecutionRun
-    val fastqReadError_uploadExecutionRun
-    val fastqFileError_uploadExecutionRun
-    val seqtypeInferError_uploadExecutionRun
-    val speciesError_uploadExecutionRun
-    
-  output:
-    path ("executionRunRID.csv") into executionRunRID_fl
-
-  when:
-    upload
-    fastqCountError_uploadExecutionRun == "false"
-    fastqReadError_uploadExecutionRun == "false"
-    fastqFileError_uploadExecutionRun == "false"
-    seqtypeInferError_uploadExecutionRun == "false"
-    speciesError_uploadExecutionRun == "false"
-
-  script:
-    """
-    hostname > ${repRID}.uploadExecutionRun.log
-    ulimit -a >> ${repRID}.uploadExecutionRun.log
-
-    echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
-    workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
-    workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-    workflow=\${workflow:7:-6}
-    echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.uploadExecutionRun.log
-
-    if [ "${species}" == "Homo sapiens" ]
-    then
-      genomeName=\$(echo GRCh${refHuVersion})
-    elif [ "${species}" == "Mus musculus" ]
-    then
-      genomeName=\$(echo GRCm${refMoVersion})
-    fi
-    if [ "${spike}" == "true" ]
-    then
-      genomeName=\$(echo \${genomeName}-S)
-    fi
-    echo LOG: searching for genome name - \${genomeName} >> ${repRID}.uploadExecutionRun.log
-    genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
-    genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-    genome=\${genome:7:-6}
-    echo LOG: genome RID extracted - \${genome} >> ${repRID}.uploadExecutionRun.log
-
-    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
-    cookie=\${cookie:11:-1}
-
-    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
-    echo \${exist} >> ${repRID}.uploadExecutionRun.log
-    if [ "\${exist}" == "[]" ]
-    then
-      executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
-      echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
-    else
-      rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
-      rid=\${rid:7:-6}
-      echo \${rid} >> ${repRID}.uploadExecutionRun.log
-      executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
-      echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
-    fi
-
-    echo "\${executionRun_rid}" > executionRunRID.csv
-
-    if [ ${params.track} == true ]
-    then
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${executionRun_rid}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
-    """
-}
-
-// Extract execution run RID into channel
-executionRunRID = Channel.create()
-executionRunRID_fl.splitCsv(sep: ",", header: false).separate(
-  executionRunRID
-)
-
-// Replicate execution run RID for multiple process inputs
-executionRunRID.into {
-  executionRunRID_uploadQC
-  executionRunRID_uploadProcessedFile
-  executionRunRID_uploadOutputBag
-  executionRunRID_finalizeExecutionRun
-  executionRunRID_failExecutionRun
-  executionRunRID_fail
-}
 
 /*
-  * getRef: downloads appropriate reference
-*/
+ * getRef: downloads appropriate reference
+ */
 process getRef {
   tag "${species}"
 
@@ -1700,23 +1199,21 @@ process getRef {
     path credential, stageAs: "credential.json" from deriva_getRef
     val spike from spikeInfer_getRef
     val species from speciesInfer_getRef
-    val fastqCountError_getRef
-    val fastqReadError_getRef
-    val fastqFileError_getRef
-    val seqtypeInferError_getRef
-    val speciesError_getRef
-    val pipelineError_getRef
+    val fastqCountError from fastqCountError_getRef
+    val fastqReadError from fastqReadError_getRef
+    val fastqFileError from fastqFileError_getRef
+    val seqtypeError from seqtypeError_getRef
+    val speciesError from speciesError_getRef
 
   output:
     tuple path ("hisat2", type: 'dir'), path ("*.bed"), path ("*.fna"), path ("*.gtf"), path ("geneID.tsv"), path ("Entrez.tsv")  into reference
 
   when:
-    fastqCountError_getRef == "false"
-    fastqReadError_getRef == "false"
-    fastqFileError_getRef == "false"
-    seqtypeInferError_getRef == "false"
-    speciesError_getRef == "false"
-    pipelineError_getRef == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
 
   script:
     """
@@ -1788,14 +1285,324 @@ process getRef {
 
 // Replicate reference for multiple process inputs
 reference.into {
+  reference_alignSampleData
+  reference_inferMetadata
   reference_alignData
   reference_countData
   reference_dataQC
 }
+/*
+ * alignSampleData: aligns the downsampled reads to the appripriate species reference
+ */
+process alignSampleData {
+  tag "${repRID}"
+
+  input:
+    path fastqSample from fastqsSample_alignSampleData
+    path reference_alignSampleData
+    val endsManual from endsManual_alignSampleData
+    val speciesInfer from speciesInfer_alignSampleData
+    val fastqCountError from fastqCountError_alignSampleData
+    val fastqReadError from fastqReadError_alignSampleData
+    val fastqFileError from fastqFileError_alignSampleData
+    val seqtypeError from seqtypeError_alignSampleData
+    val speciesError from speciesError_alignSampleData
+
+  output:
+    path ("sampled.bam") into sampledBam
+    path "align.csv" into align_fl
+    path ("*.alignSampleSummary.txt") into alignSampleQC
+
+  when:
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+
+  script:
+    """
+    hostname > ${repRID}.alignSampleData.log
+    ulimit -a >> ${repRID}.alignSampleData.log
+
+    # align the sampled reads with Hisat2
+    species="${speciesInfer}"
+    species=\${species// /_}
+    echo -e "LOG: aligning ${endsManual}" >> ${repRID}.alignSampleData.log
+    if [ "${endsManual}" == "se" ]
+    then
+      hisat2 -p `nproc` --add-chrname -S sampled.sam -x hisat2/genome -U ${fastqSample[0]} --summary-file \${species}.alignSampleSummary.txt --new-summary
+    elif [ "${endsManual}" == "pe" ]
+    then
+      hisat2 -p `nproc` --add-chrname -S sampled.sam -x hisat2/genome --no-mixed --no-discordant -1 ${fastqSample[0]} -2 ${fastqSample[1]} --summary-file \${species}.alignSampleSummary.txt --new-summary
+    fi
+    echo -e "LOG: aligned sampled reads" >> ${repRID}.alignSampleData.log
+
+    # collect alignment rates (round down to integers)
+    align=\$(echo \$(grep "Overall alignment rate" \${species}.alignSampleSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%'))
+    align=\$(echo \${align%.*})
+
+    # convert the sampled read output sam file to a sorted bam file using Samtools
+    echo -e "LOG: converting sampled reads from sam to bam" >> ${repRID}.alignSampleData.log
+    samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o sampled.bam sampled.sam
+
+    echo "\${align}" > align.csv
+    """
+}
+
+// Extract % aligned to appropriate reference into channel
+alignInfer = Channel.create()
+align_fl.splitCsv(sep: ",", header: false).separate(
+  alignInfer
+)
 
 /*
- * alignData: aligns the reads to a reference database
-*/
+ * inferMetadata: infers strandedness and endness from the aligned downsampled reads
+ */
+process inferMetadata {
+  tag "${repRID}"
+
+  input:
+    path sampledBam
+    path reference_inferMetadata
+    path script_inferMeta
+    val strandedForce
+    val fastqCountError from fastqCountError_inferMetadata
+    val fastqReadError from fastqReadError_inferMetadata
+    val fastqFileError from fastqFileError_inferMetadata
+    val seqtypeError from seqtypeError_inferMetadata
+    val speciesError from speciesError_inferMetadata
+
+  output:
+    path "infer.csv" into inferMetadata_fl
+    path "${repRID}.infer_experiment.txt" into inferExperiment
+
+  when:
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+
+  script:
+    """
+    hostname > ${repRID}.inferMetadata.log
+    ulimit -a >> ${repRID}.inferMetadata.log
+
+      # infer experimental setting from dedup bam
+      echo -e "LOG: infer experimental setting from bam" >> ${repRID}.inferMetadata.log
+      infer_experiment.py -r ./genome.bed -i ${sampledBam} 1>> ${repRID}.infer_experiment.txt
+      echo -e "LOG: inferred" >> ${repRID}.inferMetadata.log
+
+      ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
+      fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
+      if [ \${ended} == "PairEnd" ]
+      then
+        ends="pe"
+        percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
+        percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
+      elif [ \${ended} == "SingleEnd" ]
+      then
+        ends="se"
+        percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
+        percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
+      fi
+      echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
+      echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
+      if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
+      then
+        stranded="forward"
+      elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
+      then
+        stranded="reverse"
+      else
+        stranded="unstranded"
+      fi
+      echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
+      if [ "${strandedForce}" != "" ]
+      then
+        stranded=${strandedForce}
+        echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.inferMetadata.log
+      fi
+
+    # write inferred metadata to file
+    echo "\${ends},\${stranded},\${percentF},\${percentR},\${fail}" > infer.csv
+    """
+}
+
+// Extract metadata and replicate them for multiple process inputs
+endsInfer = Channel.create()
+strandedInfer = Channel.create()
+percentFInfer = Channel.create()
+percentRInfer = Channel.create()
+failInfer = Channel.create()
+inferMetadata_fl.splitCsv(sep: ",", header: false).separate(
+  endsInfer,
+  strandedInfer,
+  percentFInfer,
+  percentRInfer,
+  failInfer
+)
+endsInfer.into {
+  endsInfer_checkMetadata
+  endsInfer_alignData
+  endsInfer_countData
+  endsInfer_dataQC
+  endsInfer_aggrQC
+  endsInfer_uploadQC
+  endsInfer_failExecutionRun
+}
+strandedInfer.into {
+  strandedInfer_checkMetadata
+  strandedInfer_alignData
+  strandedInfer_countData
+  strandedInfer_aggrQC
+  strandedInfer_uploadQC
+  strandedInfer_failExecutionRun
+}
+
+/* 
+ * checkMetadata: checks the submitted metadata against inferred
+ */
+process checkMetadata {
+  tag "${repRID}"
+
+  input:
+    val endsMeta from endsMeta_checkMetadata
+    val strandedMeta from strandedMeta_checkMetadata
+    val spikeMeta from spikeMeta_checkMetadata
+    val speciesMeta from speciesMeta_checkMetadata
+    val endsInfer from endsInfer_checkMetadata
+    val strandedInfer from strandedInfer_checkMetadata
+    val spikeInfer from spikeInfer_checkMetadata
+    val speciesInfer from speciesInfer_checkMetadata
+    val fastqCountError from fastqCountError_checkMetadata
+    val fastqReadError from fastqReadError_checkMetadata
+    val fastqFileError from fastqFileError_checkMetadata
+    val seqtypeError from seqtypeError_checkMetadata
+    val speciesError from speciesError_checkMetadata
+
+  output:
+    path ("check.csv") into checkMetadata_fl
+    path ("outputBagRID.csv") optional true into outputBagRID_fl_dummy
+
+  when:
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+
+  script:
+    """
+    hostname > ${repRID}.checkMetadata.log
+    ulimit -a >> ${repRID}.checkMetadata.log
+
+    pipelineError=false
+    pipelineError_ends=false
+    pipelineError_stranded=false
+    pipelineError_spike=false
+    pipelineError_species=false
+    # check if submitted metadata matches inferred
+    if [ "${strandedMeta}" != "${strandedInfer}" ]
+    then
+      if [ "${params.strandedForce}" != "" ]
+      then
+        pipelineError=false
+        pipelineError_stranded=false
+        echo -e "LOG: stranded forced: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_stranded=true
+        if [ "${strandedMeta}" == "stranded" ]
+        then
+          if [[ "${strandedInfer}" == "forward" ]] || [[ "${strandedInfer}" == "reverse" ]]
+          then
+            pipelineError=false
+            pipelineError_stranded=false
+            echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          else
+            echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+          fi
+        else
+          echo -e "LOG: stranded does not match: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+        fi
+      fi
+    else
+      pipelineError=false
+      pipelineError_stranded=false
+      echo -e "LOG: stranded matches: Submitted=${strandedMeta}; Inferred=${strandedInfer}" >> ${repRID}.checkMetadata.log
+    fi
+    if [ "${endsMeta}" != "${endsInfer}" ]
+    then
+      pipelineError=true
+      pipelineError_ends=true
+      echo -e "LOG: ends do not match: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
+    else
+      pipelineError_ends=false
+      echo -e "LOG: ends matches: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
+    fi
+    if [ "${spikeMeta}" != "${spikeInfer}" ]
+    then
+      if [[ "${params.spikeForce}" != "" ]]
+      then
+        pipelineError_spike=false
+        echo -e "LOG: spike forced: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_spike=true
+        echo -e "LOG: spike does not match: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+      fi
+    else
+      pipelineError_spike=false
+      echo -e "LOG: spike matches: Submitted=${spikeMeta}; Inferred=${spikeInfer}" >> ${repRID}.checkMetadata.log
+    fi
+
+    # create dummy output bag rid if failure
+    if [ \${pipelineError} == true ]
+    then
+      echo "fail" > outputBagRID.csv
+    fi
+
+    # write checks to file
+    echo "\${pipelineError},\${pipelineError_ends},\${pipelineError_stranded},\${pipelineError_spike},\${pipelineError_species}" > check.csv
+    """
+}
+
+// Split errors into separate channels and replicate them for multiple process inputs
+pipelineError = Channel.create()
+pipelineError_ends = Channel.create()
+pipelineError_stranded = Channel.create()
+pipelineError_spike = Channel.create()
+pipelineError_species = Channel.create()
+checkMetadata_fl.splitCsv(sep: ",", header: false).separate(
+  pipelineError,
+  pipelineError_ends,
+  pipelineError_stranded,
+  pipelineError_spike,
+  pipelineError_species
+)
+pipelineError.into {
+  pipelineError_getRef
+  pipelineError_alignData
+  pipelineError_dedupData
+  pipelineError_makeBigWig
+  pipelineError_countData
+  pipelineError_fastqc
+  pipelineError_dataQC
+  pipelineError_aggrQC
+  pipelineError_uploadQC
+  pipelineError_uploadProcessedFile
+  pipelineError_uploadOutputBag
+  pipelineError_failExecutionRun
+  pipelineError_uploadExecutionRun
+  pipelineError_finalizeExecutionRun
+  pipelineError_uploadQC_fail
+}
+
+/*
+ * alignData: aligns the reads to the appripriate species reference
+ */
 process alignData {
   tag "${repRID}"
 
@@ -1804,29 +1611,27 @@ process alignData {
     path reference_alignData
     val ends from endsInfer_alignData
     val stranded from strandedInfer_alignData
-    val fastqCountError_alignData
-    val fastqReadError_alignData
-    val fastqFileError_alignData
-    val seqtypeInferError_alignData
-    val speciesError_alignData
-    val pipelineError_alignData
+    val fastqCountError from fastqCountError_alignData
+    val fastqReadError from fastqReadError_alignData
+    val fastqFileError from fastqFileError_alignData
+    val seqtypeError from seqtypeError_alignData
+    val speciesError from speciesError_alignData
 
   output:
     tuple path ("${repRID}.sorted.bam"), path ("${repRID}.sorted.bam.bai") into rawBam
     path ("*.alignSummary.txt") into alignQC
 
   when:
-    fastqCountError_alignData == "false"
-    fastqReadError_alignData == "false"
-    fastqFileError_alignData == "false"
-    seqtypeInferError_alignData == "false"
-    speciesError_alignData == "false"
-    pipelineError_alignData == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
 
   script:
     """
-    hostname > ${repRID}.align.log
-    ulimit -a >> ${repRID}.align.log
+    hostname > ${repRID}.alignData.log
+    ulimit -a >> ${repRID}.alignData.log
 
     # set stranded param for hisat2
     if [ "${stranded}"=="unstranded" ]
@@ -1847,7 +1652,7 @@ process alignData {
     fi
 
     # align the reads with Hisat2
-    echo -e "LOG: aligning ${ends}" >> ${repRID}.align.log
+    echo -e "LOG: aligning ${ends}" >> ${repRID}.alignData.log
     if [ "${ends}" == "se" ]
     then
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} -U ${fastq[0]} --summary-file ${repRID}.alignSummary.txt --new-summary
@@ -1855,45 +1660,40 @@ process alignData {
     then
       hisat2 -p `nproc` --add-chrname --un-gz ${repRID}.unal.gz -S ${repRID}.sam -x hisat2/genome \${strandedParam} --no-mixed --no-discordant -1 ${fastq[0]} -2 ${fastq[1]} --summary-file ${repRID}.alignSummary.txt --new-summary
     fi
-    echo -e "LOG: alignined" >> ${repRID}.align.log
+    echo -e "LOG: alignined" >> ${repRID}.alignData.log
 
     # convert the output sam file to a sorted bam file using Samtools
-    echo -e "LOG: converting from sam to bam" >> ${repRID}.align.log
+    echo -e "LOG: converting from sam to bam" >> ${repRID}.alignData.log
     samtools view -1 -@ `nproc` -F 4 -F 8 -F 256 -o ${repRID}.bam ${repRID}.sam
 
     # sort the bam file using Samtools
-    echo -e "LOG: sorting the bam file" >> ${repRID}.align.log
+    echo -e "LOG: sorting the bam file" >> ${repRID}.alignData.log
     proc=\$(expr `nproc` - 1)
     mem=\$(vmstat -s -S K | grep 'total memory' | grep -o '[0-9]*')
     mem=\$(expr \${mem} / \${proc} \\* 75 / 100)
     samtools sort -@ \${proc} -m \${mem}K -O BAM -o ${repRID}.sorted.bam ${repRID}.bam
 
     # index the sorted bam using Samtools
-    echo -e "LOG: indexing sorted bam file" >> ${repRID}.align.log
+    echo -e "LOG: indexing sorted bam file" >> ${repRID}.alignData.log
     samtools index -@ `nproc` -b ${repRID}.sorted.bam ${repRID}.sorted.bam.bai
     """
 }
 
-// Replicate rawBam for multiple process inputs
-rawBam.set {
-  rawBam_dedupData
-}
-
 /*
- *dedupData: mark the duplicate reads, specifically focused on PCR or optical duplicates
-*/
+ * dedupData: mark the duplicate reads, specifically focused on PCR or optical duplicates
+ */
 process dedupData {
   tag "${repRID}"
-  publishDir "${outDir}/bam", mode: 'copy', pattern: "*.deduped.bam"
+  publishDir "${outDir}/bam", mode: 'copy', pattern: "*.deduped.{bam,bai}"
 
   input:
-    tuple path (bam), path (bai) from rawBam_dedupData
-    val fastqCountError_dedupData
-    val fastqReadError_dedupData
-    val fastqFileError_dedupData
-    val seqtypeInferError_dedupData
-    val speciesError_dedupData
-    val pipelineError_dedupData
+    tuple path (bam), path (bai) from rawBam
+    val fastqCountError from fastqCountError_dedupData
+    val fastqReadError from fastqReadError_dedupData
+    val fastqFileError from fastqFileError_dedupData
+    val seqtypeError from seqtypeError_dedupData
+    val speciesError from speciesError_dedupData
+    val pipelineError from pipelineError_dedupData
 
   output:
     tuple path ("${repRID}_sorted.deduped.bam"), path ("${repRID}_sorted.deduped.bam.bai") into dedupBam
@@ -1901,12 +1701,12 @@ process dedupData {
     path ("*.deduped.Metrics.txt") into dedupQC
 
   when:
-    fastqCountError_dedupData == "false"
-    fastqReadError_dedupData == "false"
-    fastqFileError_dedupData == "false"
-    seqtypeInferError_dedupData == "false"
-    speciesError_dedupData == "false"
-    pipelineError_dedupData == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -1943,31 +1743,31 @@ dedupBam.into {
 }
 
 /*
- *makeBigWig: make BigWig files for output
-*/
+ * makeBigWig: make BigWig files for output
+ */
 process makeBigWig {
   tag "${repRID}"
   publishDir "${outDir}/bigwig", mode: 'copy', pattern: "${repRID}.bw"
 
   input:
     tuple path (bam), path (bai) from dedupBam_makeBigWig
-    val fastqCountError_makeBigWig
-    val fastqReadError_makeBigWig
-    val fastqFileError_makeBigWig
-    val seqtypeInferError_makeBigWig
-    val speciesError_makeBigWig
-    val pipelineError_makeBigWig
+    val fastqCountError from fastqCountError_makeBigWig
+    val fastqReadError from fastqReadError_makeBigWig
+    val fastqFileError from fastqFileError_makeBigWig
+    val seqtypeError from seqtypeError_makeBigWig
+    val speciesError from speciesError_makeBigWig
+    val pipelineError from pipelineError_makeBigWig
 
   output:
     path ("${repRID}_sorted.deduped.bw") into bigwig
 
   when:
-    fastqCountError_makeBigWig == "false"
-    fastqReadError_makeBigWig == "false"
-    fastqFileError_makeBigWig == "false"
-    seqtypeInferError_makeBigWig == "false"
-    speciesError_makeBigWig == "false"
-    pipelineError_makeBigWig == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -1982,8 +1782,8 @@ process makeBigWig {
 }
 
 /*
- *countData: count data and calculate tpm
-*/
+ * countData: count data and calculate tpm
+ */
 process countData {
   tag "${repRID}"
   publishDir "${outDir}/count", mode: 'copy', pattern: "${repRID}*_tpmTable.csv"
@@ -1995,12 +1795,12 @@ process countData {
     path ref from reference_countData
     val ends from endsInfer_countData
     val stranded from strandedInfer_countData
-    val fastqCountError_countData
-    val fastqReadError_countData
-    val fastqFileError_countData
-    val seqtypeInferError_countData
-    val speciesError_countData
-    val pipelineError_countData
+    val fastqCountError from fastqCountError_countData
+    val fastqReadError from fastqReadError_countData
+    val fastqFileError from fastqFileError_countData
+    val seqtypeError from seqtypeError_countData
+    val speciesError from speciesError_countData
+    val pipelineError from pipelineError_countData
 
   output:
     path ("*_tpmTable.csv") into counts
@@ -2008,12 +1808,12 @@ process countData {
     path ("assignedReads.csv") into assignedReadsInfer_fl
 
   when:
-    fastqCountError_countData == "false"
-    fastqReadError_countData == "false"
-    fastqFileError_countData == "false"
-    seqtypeInferError_countData == "false"
-    speciesError_countData == "false"
-    pipelineError_countData == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -2060,21 +1860,19 @@ process countData {
     """
 }
 
-// Extract number of assigned reads metadata into channel
+// Extract number of assigned reads metadata into channel and replicate them for multiple process inputs
 assignedReadsInfer = Channel.create()
 assignedReadsInfer_fl.splitCsv(sep: ",", header: false).separate(
   assignedReadsInfer
 )
-
-// Replicate inferred assigned reads for multiple process inputs
 assignedReadsInfer.into {
   assignedReadsInfer_aggrQC
   assignedReadsInfer_uploadQC
 }
 
 /*
- *dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
-*/
+ * dataQC: calculate transcript integrity numbers (TIN) and bin as well as calculate innerdistance of PE replicates
+ */
 process dataQC {
   tag "${repRID}"
 
@@ -2084,12 +1882,12 @@ process dataQC {
     tuple path (bam), path (bai) from dedupBam_dataQC
     tuple path (chrBam), path (chrBai) from dedupChrBam
     val ends from endsInfer_dataQC
-    val fastqCountError_dataQC
-    val fastqReadError_dataQC
-    val fastqFileError_dataQC
-    val seqtypeInferError_dataQC
-    val speciesError_dataQC
-    val pipelineError_dataQC
+    val fastqCountError from fastqCountError_dataQC
+    val fastqReadError from fastqReadError_dataQC
+    val fastqFileError from fastqFileError_dataQC
+    val seqtypeError from seqtypeError_dataQC
+    val speciesError from speciesError_dataQC
+    val pipelineError from pipelineError_dataQC
 
   output:
     path "${repRID}_tin.hist.tsv" into tinHist
@@ -2097,12 +1895,12 @@ process dataQC {
     path "${repRID}_insertSize.inner_distance_freq.txt" into innerDistance
 
   when:
-    fastqCountError_dataQC == "false"
-    fastqReadError_dataQC == "false"
-    fastqFileError_dataQC == "false"
-    seqtypeInferError_dataQC == "false"
-    speciesError_dataQC == "false"
-    pipelineError_dataQC == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -2134,21 +1932,19 @@ process dataQC {
     """
 }
 
-// Extract median TIN metadata into channel
+// Extract median TIN metadata into channel and replicate them for multiple process inputs
 tinMedInfer = Channel.create()
 tinMedInfer_fl.splitCsv(sep: ",", header: false).separate(
   tinMedInfer
 )
-
-// Replicate inferred median TIN for multiple process inputs
 tinMedInfer.into {
   tinMedInfer_aggrQC
   tinMedInfer_uploadQC
 }
 
 /*
- *aggrQC: aggregate QC from processes as well as metadata and run MultiQC
-*/
+ * aggrQC: aggregate QC from processes as well as metadata and run MultiQC
+ */
 process aggrQC {
   tag "${repRID}"
   publishDir "${outDir}/report", mode: 'copy', pattern: "${repRID}.multiqc.html"
@@ -2166,7 +1962,8 @@ process aggrQC {
     path countsQC
     path innerDistance
     path tinHist
-    path alignSampleQCs from alignSampleQC_aggrQC.collect()
+    path alignSampleQC_ERCC from alignSampleQC_ERCC
+    path alignSampleQC from alignSampleQC
     path inferExperiment
     val endsManual from endsManual_aggrQC
     val endsM from endsMeta_aggrQC
@@ -2184,24 +1981,24 @@ process aggrQC {
     val tinMedI from tinMedInfer_aggrQC
     val studyRID from studyRID_aggrQC
     val expRID from expRID_aggrQC
-    val fastqCountError_aggrQC
-    val fastqReadError_aggrQC
-    val fastqFileError_aggrQC
-    val seqtypeInferError_aggrQC
-    val speciesError_aggrQC
-    val pipelineError_aggrQC
+    val fastqCountError from fastqCountError_aggrQC
+    val fastqReadError from fastqReadError_aggrQC
+    val fastqFileError from fastqFileError_aggrQC
+    val seqtypeError from seqtypeError_aggrQC
+    val speciesError from speciesError_aggrQC
+    val pipelineError from pipelineError_aggrQC
 
   output:
     path "${repRID}.multiqc.html" into multiqc
     path "${repRID}.multiqc_data.json" into multiqcJSON
 
   when:
-    fastqCountError_aggrQC == "false"
-    fastqReadError_aggrQC == "false"
-    fastqFileError_aggrQC == "false"
-    seqtypeInferError_aggrQC == "false"
-    speciesError_aggrQC == "false"
-    pipelineError_aggrQC == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -2299,8 +2096,178 @@ process aggrQC {
 }
 
 /* 
+ * uploadInputBag: uploads the input bag
+ */
+process uploadInputBag {
+  tag "${repRID}"
+
+  input:
+    path script_uploadInputBag
+    path credential, stageAs: "credential.json" from deriva_uploadInputBag
+    path inputBag from inputBag_uploadInputBag
+    val studyRID from studyRID_uploadInputBag
+
+  output:
+    path ("inputBagRID.csv") into inputBagRID_fl
+
+  when:
+    upload
+
+  script:
+    """
+    hostname > ${repRID}.uploadInputBag.log
+    ulimit -a >> ${repRID}.uploadInputBag.log
+
+    yr=\$(date +'%Y')
+    mn=\$(date +'%m')
+    dy=\$(date +'%d')
+
+    file=\$(basename -a ${inputBag})
+    md5=\$(md5sum ./\${file} | awk '{ print \$1 }')
+    echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
+    size=\$(wc -c < ./\${file})
+    echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
+    
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
+    if [ "\${exist}" == "[]" ]
+    then
+        cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+        cookie=\${cookie:11:-1}
+
+        loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/input_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
+        inputBag_rid=\$(python3 ${script_uploadInputBag} -f \${file} -l \${loc} -s \${md5} -b \${size} -o ${source} -c \${cookie})
+        echo LOG: input bag RID uploaded - \${inputBag_rid} >> ${repRID}.uploadInputBag.log
+        rid=\${inputBag_rid}
+    else
+        exist=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+        exist=\${exist:7:-6}
+        echo LOG: input bag RID already exists - \${exist} >> ${repRID}.uploadInputBag.log
+        rid=\${exist}
+    fi
+
+    echo "\${rid}" > inputBagRID.csv
+    """
+}
+
+// Extract input bag RID into channel and replicate them for multiple process inputs
+inputBagRID = Channel.create()
+inputBagRID_fl.splitCsv(sep: ",", header: false).separate(
+  inputBagRID
+)
+inputBagRID.into {
+  inputBagRID_uploadExecutionRun
+  inputBagRID_finalizeExecutionRun
+  inputBagRID_failPreExecutionRun
+  inputBagRID_failExecutionRun
+}
+
+/* 
+ * uploadExecutionRun: uploads the execution run
+ */
+process uploadExecutionRun {
+  tag "${repRID}"
+
+  input:
+    path script_uploadExecutionRun_uploadExecutionRun
+    path credential, stageAs: "credential.json" from deriva_uploadExecutionRun
+    val spike from spikeInfer_uploadExecutionRun
+    val species from speciesInfer_uploadExecutionRun
+    val inputBagRID from inputBagRID_uploadExecutionRun
+    val fastqCountError from fastqCountError_uploadExecutionRun
+    val fastqReadError from fastqReadError_uploadExecutionRun
+    val fastqFileError from fastqFileError_uploadExecutionRun
+    val seqtypeError from seqtypeError_uploadExecutionRun
+    val speciesError from speciesError_uploadExecutionRun
+    val pipelineError from pipelineError_uploadExecutionRun
+    
+  output:
+    path ("executionRunRID.csv") into executionRunRID_fl
+
+  when:
+    upload
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
+
+  script:
+    """
+    hostname > ${repRID}.uploadExecutionRun.log
+    ulimit -a >> ${repRID}.uploadExecutionRun.log
+
+    echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.uploadExecutionRun.log
+    workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
+    workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    workflow=\${workflow:7:-6}
+    echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.uploadExecutionRun.log
+
+    if [ "${species}" == "Homo sapiens" ]
+    then
+      genomeName=\$(echo GRCh${refHuVersion})
+    elif [ "${species}" == "Mus musculus" ]
+    then
+      genomeName=\$(echo GRCm${refMoVersion})
+    fi
+    if [ "${spike}" == "true" ]
+    then
+      genomeName=\$(echo \${genomeName}-S)
+    fi
+    echo LOG: searching for genome name - \${genomeName} >> ${repRID}.uploadExecutionRun.log
+    genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
+    genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    genome=\${genome:7:-6}
+    echo LOG: genome RID extracted - \${genome} >> ${repRID}.uploadExecutionRun.log
+
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
+
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
+    echo \${exist} >> ${repRID}.uploadExecutionRun.log
+    if [ "\${exist}" == "[]" ]
+    then
+      executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u F)
+      echo LOG: execution run RID uploaded - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+    else
+      rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      rid=\${rid:7:-6}
+      echo \${rid} >> ${repRID}.uploadExecutionRun.log
+      executionRun_rid=\$(python3 ${script_uploadExecutionRun_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s In-progress -d 'Run in process' -o ${source} -c \${cookie} -u \${rid})
+      echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.uploadExecutionRun.log
+    fi
+
+    echo "\${executionRun_rid}" > executionRunRID.csv
+
+    if [ ${params.track} == true ]
+    then
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "ExecutionRunRID": "'\${executionRun_rid}'" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    fi
+    """
+}
+
+// Extract execution run RID into channel and replicate them for multiple process inputs
+executionRunRID = Channel.create()
+executionRunRID_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID
+)
+executionRunRID.into {
+  executionRunRID_uploadQC
+  executionRunRID_uploadProcessedFile
+  executionRunRID_uploadOutputBag
+  executionRunRID_finalizeExecutionRun
+  executionRunRID_failExecutionRun
+  executionRunRID_fail
+}
+
+/* 
  * uploadQC: uploads the mRNA QC
-*/
+ */
 process uploadQC {
   tag "${repRID}"
 
@@ -2315,24 +2282,24 @@ process uploadQC {
     val rawCount from rawReadsInfer_uploadQC
     val finalCount from assignedReadsInfer_uploadQC
     val tinMed from tinMedInfer_uploadQC
-    val fastqCountError_uploadQC
-    val fastqReadError_uploadQC
-    val fastqFileError_uploadQC
-    val seqtypeInferError_uploadQC
-    val speciesError_uploadQC
-    val pipelineError_uploadQC
+    val fastqCountError from fastqCountError_uploadQC
+    val fastqReadError from fastqReadError_uploadQC
+    val fastqFileError from fastqFileError_uploadQC
+    val seqtypeError from seqtypeError_uploadQC
+    val speciesError from speciesError_uploadQC
+    val pipelineError from pipelineError_uploadQC
 
   output:
     path ("qcRID.csv") into qcRID_fl
 
   when:
     upload
-    fastqCountError_uploadQC == "false"
-    fastqReadError_uploadQC == "false"
-    fastqFileError_uploadQC == "false"
-    seqtypeInferError_uploadQC == "false"
-    speciesError_uploadQC == "false"
-    pipelineError_uploadQC == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -2370,8 +2337,8 @@ process uploadQC {
 }
 
 /*
- *uploadProcessedFile: uploads the processed files
-*/
+ * uploadProcessedFile: uploads the processed files
+ */
 process uploadProcessedFile {
   tag "${repRID}"
   publishDir "${outDir}/outputBag", mode: 'copy', pattern: "Replicate_${repRID}.outputBag.zip"
@@ -2389,24 +2356,24 @@ process uploadProcessedFile {
     val studyRID from studyRID_uploadProcessedFile
     val expRID from expRID_uploadProcessedFile
     val executionRunRID from executionRunRID_uploadProcessedFile
-    val fastqCountError_uploadProcessedFile
-    val fastqReadError_uploadProcessedFile
-    val fastqFileError_uploadProcessedFile
-    val seqtypeInferError_uploadProcessedFile
-    val speciesError_uploadProcessedFile
-    val pipelineError_uploadProcessedFile
+    val fastqCountError from fastqCountError_uploadProcessedFile
+    val fastqReadError from fastqReadError_uploadProcessedFile
+    val fastqFileError from fastqFileError_uploadProcessedFile
+    val seqtypeError from seqtypeError_uploadProcessedFile
+    val speciesError from speciesError_uploadProcessedFile
+    val pipelineError from pipelineError_uploadProcessedFile
 
   output:
     path ("${repRID}_Output_Bag.zip") into outputBag
 
   when:
     upload
-    fastqCountError_uploadProcessedFile == "false"
-    fastqReadError_uploadProcessedFile == "false"
-    fastqFileError_uploadProcessedFile == "false"
-    seqtypeInferError_uploadProcessedFile == "false"
-    speciesError_uploadProcessedFile == "false"
-    pipelineError_uploadProcessedFile == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -2475,7 +2442,7 @@ process uploadProcessedFile {
 
 /* 
  * uploadOutputBag: uploads the output bag
-*/
+ */
 process uploadOutputBag {
   tag "${repRID}"
 
@@ -2485,24 +2452,24 @@ process uploadOutputBag {
     path outputBag
     val studyRID from studyRID_uploadOutputBag
     val executionRunRID from executionRunRID_uploadOutputBag
-    val fastqCountError_uploadOutputBag
-    val fastqReadError_uploadOutputBag
-    val fastqFileError_uploadOutputBag
-    val seqtypeInferError_uploadOutputBag
-    val speciesError_uploadOutputBag
-    val pipelineError_uploadOutputBag
+    val fastqCountError from fastqCountError_uploadOutputBag
+    val fastqReadError from fastqReadError_uploadOutputBag
+    val fastqFileError from fastqFileError_uploadOutputBag
+    val seqtypeError from seqtypeError_uploadOutputBag
+    val speciesError from speciesError_uploadOutputBag
+    val pipelineError from pipelineError_uploadOutputBag
 
   output:
     path ("outputBagRID.csv") into outputBagRID_fl
 
   when:
     upload
-    fastqCountError_uploadOutputBag == "false"
-    fastqReadError_uploadOutputBag == "false"
-    fastqFileError_uploadOutputBag == "false"
-    seqtypeInferError_uploadOutputBag == "false"
-    speciesError_uploadOutputBag == "false"
-    pipelineError_uploadOutputBag == "false"
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -2555,7 +2522,7 @@ outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
 
 /* 
  * finalizeExecutionRun: finalizes the execution run
-*/
+ */
 process finalizeExecutionRun {
   tag "${repRID}"
 
@@ -2565,9 +2532,21 @@ process finalizeExecutionRun {
     val executionRunRID from executionRunRID_finalizeExecutionRun
     val inputBagRID from inputBagRID_finalizeExecutionRun
     val outputBagRID
+    val fastqCountError from fastqCountError_finalizeExecutionRun
+    val fastqReadError from fastqReadError_finalizeExecutionRun
+    val fastqFileError from fastqFileError_finalizeExecutionRun
+    val seqtypeError from seqtypeError_finalizeExecutionRun
+    val speciesError from speciesError_finalizeExecutionRun
+    val pipelineError from pipelineError_finalizeExecutionRun
 
   when:
     upload
+    fastqCountError == "false"
+    fastqReadError == "false"
+    fastqFileError == "false"
+    seqtypeError == "false"
+    speciesError == "false"
+    pipelineError == "false"
 
   script:
     """
@@ -2598,16 +2577,16 @@ process finalizeExecutionRun {
 }
 
 // Combine errors
-error_meta = fastqCountError_uploadQC_fail.ifEmpty(false).combine(fastqReadError_uploadQC_fail.ifEmpty(false).combine(fastqFileError_uploadQC_fail.ifEmpty(false).combine(seqtypeInferError_uploadQC_fail.ifEmpty(false).combine(speciesError_uploadQC_fail.ifEmpty(false).combine(pipelineError_uploadQC_fail.ifEmpty(false))))))
-error_meta. into{
+error_meta = fastqCountError_uploadQC_fail.ifEmpty(false).combine(fastqReadError_uploadQC_fail.ifEmpty(false).combine(fastqFileError_uploadQC_fail.ifEmpty(false).combine(seqtypeError_uploadQC_fail.ifEmpty(false).combine(speciesError_uploadQC_fail.ifEmpty(false).combine(pipelineError_uploadQC_fail.ifEmpty(false))))))
+error_meta. into {
   error_failPreExecutionRun
   error_uploadQC_fail
 }
-errorDetails = fastqCountError_details.ifEmpty("").combine(fastqReadError_details.ifEmpty("").combine(fastqFileError_details.ifEmpty("").combine(seqtypeInferError_details.ifEmpty("").combine(speciesError_details.ifEmpty("")))))
+errorDetails = fastqCountError_details.ifEmpty("").combine(fastqReadError_details.ifEmpty("").combine(fastqFileError_details.ifEmpty("").combine(seqtypeError_details.ifEmpty("").combine(speciesErrorSeqwho_details.ifEmpty("")))))
 
 /* 
- * failPreExecutionRun_fastq: fail the execution run prematurely for fastq errors
-*/
+ * failPreExecutionRun: fail the execution run prematurely for fastq errors
+ */
 process failPreExecutionRun {
   tag "${repRID}"
 
@@ -2617,15 +2596,15 @@ process failPreExecutionRun {
     val spike from spikeMeta_failPreExecutionRun
     val species from speciesMeta_failPreExecutionRun
     val inputBagRID from inputBagRID_failPreExecutionRun
-    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeInferError), val (speciesError), val (pipelineError) from error_failPreExecutionRun
-    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeInferError_details), val (speciesError_details) from errorDetails
+    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesError), val (pipelineError) from error_failPreExecutionRun
+    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeError_details), val (speciesError_details) from errorDetails
 
   output:
     path ("executionRunRID.csv") into executionRunRID_preFail_fl
 
   when:
     upload
-    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeInferError == "true" || speciesError == "true"
+    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true"
 
   script:
     """
@@ -2642,9 +2621,9 @@ process failPreExecutionRun {
     elif [ ${fastqFileError} == true ]
     then
       errorDetails=\$(echo \$(errorDetails)${fastqFileError_details}"\\n")
-    elif [ ${seqtypeInferError} == true ]
+    elif [ ${seqtypeError} == true ]
     then
-      errorDetails=\$(echo \$(errorDetails)${seqtypeInferError_details}"\\n")
+      errorDetails=\$(echo \$(errorDetails)${seqtypeError_details}"\\n")
     elif [ ${speciesError} == true ]
     then
       errorDetails=\$(echo \$(errorDetails)${speciesError_details}"\\n")
@@ -2715,7 +2694,7 @@ failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFa
 
 /* 
  * failExecutionRun: fail the execution run
-*/
+ */
 process failExecutionRun {
   tag "${repRID}"
 
@@ -2810,7 +2789,7 @@ process failExecutionRun {
 
 /* 
  * uploadQC_fail: uploads the mRNA QC on failed execution run
-*/
+ */
 process uploadQC_fail {
   tag "${repRID}"
 
@@ -2819,11 +2798,11 @@ process uploadQC_fail {
     path script_uploadQC_fail
     path credential, stageAs: "credential.json" from deriva_uploadQC_fail
     val executionRunRID from failExecutionRunRID
-    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (speciesError), val (pipelineError) from error_uploadQC_fail
+    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesError), val (pipelineError) from error_uploadQC_fail
 
   when:
     upload
-    fastqCountError == 'true' || fastqReadError == 'true' || fastqFileError == 'true' || speciesError == 'true' || pipelineError == 'true'
+    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true" || pipelineError == 'true'
 
   script:
     """
@@ -2851,7 +2830,6 @@ process uploadQC_fail {
     echo "\${qc_rid}" > qcRID.csv
     """
 }
-
 
 workflow.onError = {
   subject = "$workflow.manifest.name FAILED: $params.repRID"

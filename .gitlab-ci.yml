@@ -123,7 +123,7 @@ parseMetadata:
       - version_python.txt
     expire_in: 7 days
 
-inferMetadata:
+fastqc:
   stage: unit
   only:
     - push
@@ -132,21 +132,36 @@ inferMetadata:
     - merge_requests
     - schedules
   script:
-  - singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py --version > version_rseqc.txt
-  - >
-    align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5F6_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
-    if [[ ${align} == "" ]]; then exit 1; fi
-  - >
-    singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
-    ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
-    if [[ ${ended} == "" ]]; then exit 1; fi
-  - pytest -m inferMetadata
+  - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc --version > version_fastqc.txt
+  - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
+  - pytest -m fastqc
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
     paths:
-      - version_rseqc.txt
+      - version_fastqc.txt
     expire_in: 7 days
+
+seqwho:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+  - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
+  - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py | grep -o Version.* > version_seqwho.txt
+  - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -f ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
+  - pytest -m seqwho
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - version_seqwho.txt
+    expire_in: 7 days
+
 
 trimData:
   stage: unit
@@ -182,6 +197,31 @@ downsampleData:
   - singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz 1000 1> sampled.1.fq
   - pytest -m downsampleData
 
+  inferMetadata:
+    stage: unit
+    only:
+      - push
+      - tags
+    except:
+      - merge_requests
+      - schedules
+    script:
+    - singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py --version > version_rseqc.txt
+    - >
+      align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5F6_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
+      if [[ ${align} == "" ]]; then exit 1; fi
+    - >
+      singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
+      ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
+      if [[ ${ended} == "" ]]; then exit 1; fi
+    - pytest -m inferMetadata
+    artifacts:
+      name: "$CI_JOB_NAME"
+      when: always
+      paths:
+        - version_rseqc.txt
+      expire_in: 7 days
+  
 alignData:
   stage: unit
   only:
@@ -281,26 +321,6 @@ makeBigWig:
     paths:
       - version_deeptools.txt
     expire_in: 7 days
-
-fastqc:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc --version > version_fastqc.txt
-  - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
-  - pytest -m fastqc
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_fastqc.txt
-    expire_in: 7 days
-
 
 dataQC:
   stage: unit
