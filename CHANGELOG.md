@@ -26,6 +26,7 @@
 * Change uploadOutputBag logic to change reuse hatrac file if alread exists (re-uses Output_Bag entry by reassigning Execution_Run RID) (#112)
 * Add new CI py tests for override and integration
 * Fix fastq file and species error status detail bub (#118)
+* Use datahub as source for references for integration_se ci
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity

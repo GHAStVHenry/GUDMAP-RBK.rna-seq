@@ -683,7 +683,7 @@ integration_se:
   script:
   - hostname
   - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./SE_report.html
+  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --refSource datahub --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./SE_report.html
   - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
   - pytest -m completionMultiqc --filename SE_multiqc_data.json
   artifacts:
