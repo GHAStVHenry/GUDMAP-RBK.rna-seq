@@ -741,6 +741,11 @@ process seqwho {
       seqtypeConfidenceR2="1"
     fi
 
+    speciesErrorSeqwho=false
+    speciesErrorSeqwho_details=""
+    seqtypeError=false
+    seqtypeError_details=""
+
     # convert numeric confidence to string
     if [ \${speciesConfidenceR1} == "1" ]
     then
@@ -768,46 +773,46 @@ process seqwho {
     fi
     echo -e "LOG: confidence converted to string" >> ${repRID}.seqwho.log
 
-    # detect errors
-    speciesErrorSeqwho=false
-    speciesErrorSeqwho_details=""
-    seqtypeError=false
-    seqtypeError_details=""
+    # set species
+    if [ "\${speciesR1}" == "\${speciesR2}" ]
+    then
+      speciesInfer=\${speciesR1}
+      if [ "\${speciesInfer}" == "human" ]
+      then
+        speciesInfer="Homo sapiens"
+      elif [ "\${speciesInfer}" == "mouse" ]
+      then
+        speciesInfer="Mus musculus"
+      fi
+      echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
+    else
+      speciesErrorSeqwho=true
+      speciesErrorSeqwho_details="**Infered species does not match for R1 and R2:** Infered R1 = \${speciesR1} and infered R2 = \${speciesR2}"
+      echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
+    fi
+
+    # set seq type
+    if [ "\${seqtypeR1}" == "\${seqtypeR2}" ]
+    then
+      if [ "\${seqtypeR1}" == "rnaseq" ]
+      then
+        seqtpeInfer="rnaseq"
+        echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
+      else
+        seqtypeError=true
+        seqtypeError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
+        echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
+      fi
+    else
+      seqtypeError=true
+      seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
+      echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
+    fi
+
+    # detect confidence errors
     if [ "\${confidenceR1}" == "high" ] && [ "\${confidenceR2}" == "high" ]
     then
       echo -e "LOG: high confidence inference detected" >> ${repRID}.seqwho.log
-      if [ "\${speciesR1}" == "\${speciesR2}" ]
-      then
-        speciesInfer=\${speciesR1}
-        if [ "\${speciesInfer}" == "human" ]
-        then
-          speciesInfer="Homo sapiens"
-        elif [ "\${speciesInfer}" == "mouse" ]
-        then
-          speciesInfer="Mus musculus"
-        fi
-        echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
-      else
-        speciesErrorSeqwho=true
-        speciesErrorSeqwho_details="**Infered species does not match for R1 and R2:** Infered R1 = \${speciesR1} and infered R2 = \${speciesR2}"
-        echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
-      fi
-      if [ "\${seqtypeR1}" == "\${seqtypeR2}" ]
-      then
-        if [ "\${seqtypeR1}" == "rnaseq" ]
-        then
-          seqtpeInfer="rnaseq"
-          echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
-        else
-          seqtypeError=true
-          seqtypeError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
-          echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
-        fi
-      else
-        seqtypeError=true
-        seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
-        echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
-      fi
     else
       speciesErrorSeqwho=true
       speciesErrorSeqwho_details=\$(echo "**Infered species and or sequencing type confidence is low:**\\n")
