@@ -812,7 +812,7 @@ process seqwho {
       speciesErrorSeqwho=true
       speciesErrorSeqwho_details=\$(echo "**Infered species and or sequencing type confidence is low:**\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|Infered species confidence|Infered sequencing type confidence|\\n")
-      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}""|:--|:--:|:--:|\\n)
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|:--|:--:|:--:|\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 1|\${speciesConfidenceR1}|\${seqtypeConfidenceR1}|\\n")
       if [ "${ends}" == "pe" ]
       then
