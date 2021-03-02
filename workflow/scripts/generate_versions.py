@@ -34,16 +34,17 @@ SOFTWARE_REGEX = {
     'Python': ['version_python.txt', r"Python (\S+)"],
     'DERIVA': ['version_deriva.txt', r"(\S+)"],
     'BDBag': ['version_bdbag.txt', r"BDBag (\S+) \(Bagit \S+\)"],
-    'SeqWho': ['version_seqwho.txt', r"Version: (\S+)"],
-    'RSeQC': ['version_rseqc.txt', r"infer_experiment.py (\S+)"],
     'Trim Galore!': ['version_trimgalore.txt', r"version (\S+)"],
     'HISAT2': ['version_hisat2.txt', r"version (\S+)"],
     'Samtools': ['version_samtools.txt', r"samtools (\S+)"],
     'picard (MarkDuplicates)': ['version_markdups.txt', r"Version:(\S+)"],
     'featureCounts': ['version_featurecounts.txt', r"featureCounts v(\S+)"],
-    'R': ['version_r.txt', r"R version (\S+)"],
     'deepTools': ['version_deeptools.txt', r"deeptools (\S+)"],
+    'Seqtk': ['version_seqtk.txt', r"Version: (\S+)"],
+    'R': ['version_r.txt', r"R version (\S+)"],
     'FastQC': ['version_fastqc.txt', r"FastQC v(\S+)"],
+    'SeqWho': ['version_seqwho.txt', r"Version: (\S+)"],
+    'RSeQC': ['version_rseqc.txt', r"infer_experiment.py (\S+)"],
     'MultiQC': ['version_multiqc.txt', r"multiqc, version (\S+)"],
     'Pipeline Version': ['./workflow/nextflow.config', r"version = 'v(\S+)'"]
 }
@@ -94,16 +95,17 @@ def main():
     results['Python'] = '<span style="color:#999999;\">Not Run</span>'
     results['DERIVA'] = '<span style="color:#999999;\">Not Run</span>'
     results['BDBag'] = '<span style="color:#999999;\">Not Run</span>'
-    results['SeqWho'] = '<span style="color:#999999;\">Not Run</span>'
-    results['RSeQC'] = '<span style="color:#999999;\">Not Run</span>'
     results['Trim Galore!'] = '<span style="color:#999999;\">Not Run</span>'
     results['HISAT2'] = '<span style="color:#999999;\">Not Run</span>'
     results['Samtools'] = '<span style="color:#999999;\">Not Run</span>'
     results['picard (MarkDuplicates)'] = '<span style="color:#999999;\">Not Run</span>'
     results['featureCounts'] = '<span style="color:#999999;\">Not Run</span>'
-    results['R'] = '<span style="color:#999999;\">Not Run</span>'
     results['deepTools'] = '<span style="color:#999999;\">Not Run</span>'
+    results['Seqtk'] = '<span style="color:#999999;\">Not Run</span>'
+    results['R'] = '<span style="color:#999999;\">Not Run</span>'
     results['FastQC'] = '<span style="color:#999999;\">Not Run</span>'
+    results['SeqWho'] = '<span style="color:#999999;\">Not Run</span>'
+    results['RSeQC'] = '<span style="color:#999999;\">Not Run</span>'
     results['MultiQC'] = '<span style="color:#999999;\">Not Run</span>'
     results['Pipeline Version'] = '<span style="color:#999999;\">Not Run</span>'
 

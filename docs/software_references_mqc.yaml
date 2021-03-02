@@ -26,52 +26,52 @@
                 <li>D'Arcy, M., Chard, K., Foster, I., Kesselman, C., Madduri, R., Saint, N., &amp; Wagner, R.. 2019. Big Data Bags: A Scalable Packaging Format for Science. Zenodo. doi:<a href="http://doi.org/10.5281/zenodo.3338725">10.5281/zenodo.3338725</a>.</li>
                 </ul>
                 <ol start="4" style="list-style-type: decimal">
-                <li><strong>RSeQC</strong>:</li>
-                </ol>
-                <ul>
-                <li>Wang, L., Wang, S., Li, W. 2012 RSeQC: quality control of RNA-seq experiments. Bioinformatics. Aug 15;28(16):2184-5. doi:<a href="https://doi.org/10.1093/bioinformatics/bts356">10.1093/bioinformatics/bts356</a>.</li>
-                </ul>
-                <ol start="5" style="list-style-type: decimal">
                 <li><strong>trimgalore</strong>:</li>
                 </ol>
                 <ul>
                 <li>trimgalore <a href="https://github.com/FelixKrueger/TrimGalore" class="uri">https://github.com/FelixKrueger/TrimGalore</a></li>
                 </ul>
-                <ol start="6" style="list-style-type: decimal">
+                <ol start="5" style="list-style-type: decimal">
                 <li><strong>hisat2</strong>:</li>
                 </ol>
                 <ul>
                 <li>Kim ,D.,Paggi, J.M., Park, C., Bennett, C., Salzberg, S.L. 2019 Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. Nat Biotechnol. Aug;37(8):907-915. doi:<a href="https://doi.org/10.1038/s41587-019-0201-4">10.1038/s41587-019-0201-4</a>.</li>
                 </ul>
-                <ol start="7" style="list-style-type: decimal">
+                <ol start="6" style="list-style-type: decimal">
                 <li><strong>samtools</strong>:</li>
                 </ol>
                 <ul>
                 <li>Li H., B. Handsaker, A. Wysoker, T. Fennell, J. Ruan, N. Homer, G. Marth, G. Abecasis, R. Durbin, and 1000 Genome Project Data Processing Subgroup. 2009. The Sequence alignment/map (SAM) format and SAMtools. Bioinformatics 25: 2078-9. doi:<a href="http://dx.doi.org/10.1093/bioinformatics/btp352">10.1093/bioinformatics/btp352</a></li>
                 </ul>
-                <ol start="8" style="list-style-type: decimal">
+                <ol start="7" style="list-style-type: decimal">
                 <li><strong>picard</strong>:</li>
                 </ol>
                 <ul>
                 <li>“Picard Toolkit.” 2019. Broad Institute, GitHub Repository. <a href="http://broadinstitute.github.io/picard/" class="uri">http://broadinstitute.github.io/picard/</a>; Broad Institute</li>
                 </ul>
-                <ol start="9" style="list-style-type: decimal">
+                <ol start="8" style="list-style-type: decimal">
                 <li><strong>featureCounts</strong>:</li>
                 </ol>
                 <ul>
                 <li>Liao, Y., Smyth, G.K., Shi, W. 2014 featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. Apr 1;30(7):923-30. doi:<a href="https://doi.org/10.1093/bioinformatics/btt656">10.1093/bioinformatics/btt656</a>.</li>
                 </ul>
-                <ol start="10" style="list-style-type: decimal">
-                <li><strong>R</strong>:</li>
-                </ol>
-                <ul>
-                <li>R Core Team 2014. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL:<a href="http://www.R-project.org/" class="uri">http://www.R-project.org/</a>.</li>
-                </ul>
-                <ol start="11" style="list-style-type: decimal">
+                <ol start="9" style="list-style-type: decimal">
                 <li><strong>deeptools</strong>:</li>
                 </ol>
                 <ul>
                 <li>Ramírez, F., D. P. Ryan, B. Grüning, V. Bhardwaj, F. Kilpert, A. S. Richter, S. Heyne, F. Dündar, and T. Manke. 2016. deepTools2: a next generation web server for deep-sequencing data analysis. Nucleic Acids Research 44: W160-165. doi:<a href="http://dx.doi.org/10.1093/nar/gkw257">10.1093/nar/gkw257</a></li>
+                </ul>
+                <ol start="10" style="list-style-type: decimal">
+                <li><strong>Seqtk</strong>:</li>
+                </ol>
+                <ul>
+                <li>Seqtk URL:<a href="https://github.com/lh3/seqtk" class="uri">https://github.com/lh3/seqtk</a>.</li>
+                </ul>
+                <ol start="11" style="list-style-type: decimal">
+                <li><strong>R</strong>:</li>
+                </ol>
+                <ul>
+                <li>R Core Team 2014. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL:<a href="http://www.R-project.org/" class="uri">http://www.R-project.org/</a>.</li>
                 </ul>
                 <ol start="12" style="list-style-type: decimal">
                 <li><strong>FastQC</strong></li>
@@ -86,12 +86,18 @@
                 <li>SeqWho <a href="https://git.biohpc.swmed.edu/s181649/seqwho" class="uri">https://git.biohpc.swmed.edu/s181649/seqwho/</a></li>
                 </ul>
                 <ol start="14" style="list-style-type: decimal">
+                <li><strong>RSeQC</strong>:</li>
+                </ol>
+                <ul>
+                <li>Wang, L., Wang, S., Li, W. 2012 RSeQC: quality control of RNA-seq experiments. Bioinformatics. Aug 15;28(16):2184-5. doi:<a href="https://doi.org/10.1093/bioinformatics/bts356">10.1093/bioinformatics/bts356</a>.</li>
+                </ul>
+                <ol start="15" style="list-style-type: decimal">
                 <li><strong>MultiQC</strong>:</li>
                 </ol>
                 <ul>
                 <li>Ewels P., Magnusson M., Lundin S. and Käller M. 2016. MultiQC: Summarize analysis results for multiple tools and samples in a single report. Bioinformatics 32(19): 3047–3048. doi:<a href="https://dx.doi.org/10.1093/bioinformatics/btw354">10.1093/bioinformatics/btw354</a></li>
                 </ul>
-                <ol start="15" style="list-style-type: decimal">
+                <ol start="16" style="list-style-type: decimal">
                 <li><strong>Nextflow</strong>:</li>
                 </ol>
                 <ul>

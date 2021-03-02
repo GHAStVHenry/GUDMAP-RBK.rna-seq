@@ -8,6 +8,7 @@
 * Add seqwho results to multiqc report
 * Modify repository structure to allow for use with XPACK-DNANEXUS
 * Add override for endness
+* Add seqtk to references
 
 **Background**
 * Add memory limit (75%) per thread for samtools sort (#108)
