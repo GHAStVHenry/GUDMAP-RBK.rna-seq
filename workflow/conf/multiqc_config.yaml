@@ -27,20 +27,20 @@ top_modules:
   - picard:
       name: 'Dedup'
       info: 'Replicate Alignement Deduplication QC Results'
+  - featureCounts:
+      name: 'Count'
+      info: 'Replicate Feature Count QC Results'
   - rseqc:
       name: 'Inner Distance'
       info: 'Replicate Paired End Inner Distance Distribution Results'
       path_filters:
         - '*insertSize*'
   - custom_content
-  - featureCounts:
-      name: 'Count'
-      info: 'Replicate Feature Count QC Results'
   - hisat2:
       name: 'Inference: Spike-in'
       info: 'Inference Alignment (1M downsampled reads) QC Results'
       path_filters:
-        - 'ERCC.alignSampleSummary*'
+        - '*alignSampleSummary*'
   - rseqc:
       name: 'Inference: Stranded'
       info: '1M Downsampled Reads Strandedness Inference Results'
@@ -131,8 +131,8 @@ custom_data:
 
     ref:
         file_format: 'tsv'
-        section_name: 'Reference'
-        description: 'This is the reference version information'
+        section_name: 'Genome Reference'
+        description: 'This is the genome reference version information'
         plot_type: 'table'
         pconfig:
             id: 'ref'
