@@ -599,8 +599,7 @@ process fastqc {
     path "fastqFileError.csv" into fastqFileError_fl
 
   when:
-    fastqCountError == 'false'
-    fastqReadError == 'false'
+    fastqCountError == "false" && fastqReadError == "false"
 
   script:
     """
@@ -688,8 +687,7 @@ process seqwho {
     path "inferError.csv" into inferError_fl
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
+    fastqCountError == "false" && fastqReadError == "false"
 
   script:
     """
@@ -1019,8 +1017,7 @@ process getRefERCC {
     tuple path ("hisat2", type: 'dir'), path ("*.fna"), path ("*.gtf")  into refERCC
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
+    fastqCountError == "false" && fastqReadError == "false"
 
   script:
     """
@@ -1083,16 +1080,13 @@ process trimData {
     path ("readLength.csv") into readLengthInfer_fl
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false"
 
   script:
     """
     hostname > ${repRID}.trimData.log
     ulimit -a >> ${repRID}.trimData.log
+    echo fastqFileError ${fastqFileError}
 
     # trim fastq's using trim_galore and extract median read length
     echo -e "LOG: trimming ${ends}" >> ${repRID}.trimData.log
@@ -1147,11 +1141,7 @@ process downsampleData {
     path ("sampled.{1,2}.fq") into fastqsSample
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false"
 
   script:
     """
@@ -1202,10 +1192,7 @@ process alignSampleDataERCC {
     path ("ERCC.alignSampleSummary.txt") into alignSampleQC_ERCC
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false"
 
   script:
     """
@@ -1300,12 +1287,7 @@ process getRef {
     tuple path ("hisat2", type: 'dir'), path ("*.bed"), path ("*.fna"), path ("*.gtf"), path ("geneID.tsv"), path ("Entrez.tsv")  into reference
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
@@ -1412,12 +1394,7 @@ process alignSampleData {
     path ("*.alignSampleSummary.txt") into alignSampleQC
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
@@ -1478,12 +1455,7 @@ process inferMetadata {
     path "${repRID}.infer_experiment.txt" into inferExperiment
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
@@ -1589,12 +1561,7 @@ process checkMetadata {
     path ("outputBagRID.csv") optional true into outputBagRID_fl_dummy
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
@@ -1726,12 +1693,7 @@ process alignData {
     path ("*.alignSummary.txt") into alignQC
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
@@ -1807,13 +1769,7 @@ process dedupData {
     path ("*.deduped.Metrics.txt") into dedupQC
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -1870,13 +1826,7 @@ process makeBigWig {
     path ("${repRID}_sorted.deduped.bw") into bigwig
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -1918,13 +1868,7 @@ process countData {
     path ("assignedReads.csv") into assignedReadsInfer_fl
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2007,13 +1951,7 @@ process dataQC {
     path "${repRID}_insertSize.inner_distance_freq.txt" into innerDistance
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2107,13 +2045,7 @@ process aggrQC {
     path "${repRID}.multiqc_data.json" into multiqcJSON
 
   when:
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2306,14 +2238,7 @@ process uploadExecutionRun {
     path ("executionRunRID.csv") into executionRunRID_fl
 
   when:
-    upload
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2423,14 +2348,7 @@ process uploadQC {
     path ("qcRID.csv") into qcRID_fl
 
   when:
-    upload
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2505,14 +2423,7 @@ process uploadProcessedFile {
     path ("${repRID}_Output_Bag.zip") into outputBag
 
   when:
-    upload
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2610,14 +2521,7 @@ process uploadOutputBag {
     path ("outputBagRID.csv") into outputBagRID_fl
 
   when:
-    upload
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2696,13 +2600,7 @@ process finalizeExecutionRun {
 
   when:
     upload
-    fastqCountError == "false"
-    fastqReadError == "false"
-    fastqFileError == "false"
-    seqtypeError == "false"
-    speciesErrorSeqwho == "false"
-    speciesError == "false"
-    pipelineError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2759,8 +2657,7 @@ process failPreExecutionRun {
     path ("executionRunRID.csv") into executionRunRID_preFail_fl
 
   when:
-    upload
-    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true"
+    upload && fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true"
 
   script:
     """
@@ -2875,8 +2772,7 @@ process failExecutionRun {
     val pipelineError_species
 
   when:
-    upload
-    pipelineError == 'true'
+    upload && pipelineError == 'true'
 
   script:
     """
