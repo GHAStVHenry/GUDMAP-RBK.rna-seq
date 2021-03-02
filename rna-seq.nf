@@ -266,7 +266,7 @@ process getData {
     echo -e "LOG: unzipped" >> ${repRID}.getData.log
 
     # bag fetch fastq's only and rename by repRID
-    if [ "${params.fastqsForce}" != "" ]
+    if [ "${params.endsForce}" != "" ]
     then
       echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
       fastqCount=\$(sh ${script_bdbagFetch} \${replicate::-13} ${repRID})
@@ -302,7 +302,7 @@ if (fastqsForce != "") {
       fastqs_parseMetadata
       fastqs_fastqc
     }
-  fastqsForce.count().into{
+  fastqsForce.count().into {
     fastqCount
   }
 } else {
