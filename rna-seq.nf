@@ -906,10 +906,10 @@ process seqwho {
 
     # save seqwho multiqc report
     echo -e "Read\tSeq Type\tSpecies\tConfidence\tSeq Type Confidence\tSeq Type Consensus\tSpecies Confidence" > seqwhoInfer.tsv
-    echo -e "Read 1\y\${seqtypeR1}\t\${speciesR1}\t\${confidenceR1}\${seqtypeConfidenceR1}\t\${consensus}\t\${speciesConfidenceR1}" >> seqwhoInfer.tsv
+    echo -e "Read 1\t\${seqtypeR1}\t\${speciesR1}\t\${confidenceR1}\${seqtypeConfidenceR1}\t\${consensus}\t\${speciesConfidenceR1}" >> seqwhoInfer.tsv
     if [ "${ends}" == "pe" ]
     then
-      echo -e "Read 2\y\${seqtypeR2}\t\${speciesR2}\t\${confidenceR2}\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
+      echo -e "Read 2\t\${seqtypeR2}\t\${speciesR2}\t\${confidenceR2}\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
     fi
     
 
