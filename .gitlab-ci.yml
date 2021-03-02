@@ -6,8 +6,6 @@ before_script:
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
   - mkdir -p ~/.deriva
   - mkdir -p ~/.bdbag
-  - singularity cache clean -a
-  - unset SINGULARITY_CACHEDIR
 
 variables:
   refMoVersion: "38.p6.vM25"
