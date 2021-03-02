@@ -264,9 +264,14 @@ process getData {
     echo -e "LOG: unzipped" >> ${repRID}.getData.log
 
     # bag fetch fastq's only and rename by repRID
-    echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
-    fastqCount=\$(sh ${script_bdbagFetch} \${replicate::-13} ${repRID})
-    echo -e "LOG: fetched" >> ${repRID}.getData.log
+    if [ "${fastqsForce}" != "" ]
+    then
+      echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
+      fastqCount=\$(sh ${script_bdbagFetch} \${replicate::-13} ${repRID})
+      echo -e "LOG: fetched" >> ${repRID}.getData.log
+    else
+      echo -e "LOG: fastq override detected, not fetching fastqs" >> ${repRID}.getData.log
+    fi
 
     if [ "\${fastqCount}" == "0" ]
     then
@@ -277,9 +282,10 @@ process getData {
 }
 
 // Split fastq count into channel
+fastqCountTemp = Channel.create()
 fastqCount = Channel.create()
 fastqCount_fl.splitCsv(sep: ",", header: false).separate(
-  fastqCount
+  fastqCountTemp
 )
 
 // Set raw fastq to downloaded or forced input and replicate them for multiple process inputs
@@ -293,12 +299,18 @@ if (fastqsForce != "") {
       fastqs_parseMetadata
       fastqs_fastqc
     }
+  fastqsForce.count().into{
+    fastqCount
+  }
 } else {
   fastqs.collect().into {
     fastqs_seqwho
     fastqs_trimData
     fastqs_parseMetadata
     fastqs_fastqc
+  }
+  fastqCountTemp.into {
+    fastqCount
   }
 }
 

@@ -29,6 +29,8 @@
 * Add new CI py tests for override and integration
 * Fix fastq file and species error status detail bub (#118)
 * Make compatible with XPACK-DNANEXUS
+* Don't download fastq's if fastq override present
+* Override fastq count to override counts
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
