@@ -182,14 +182,12 @@ custom_data:
                 description: 'Inferred Sequence Type'
             Species:
                 description: 'Inferred Species'
-            Confidence:
-                description: 'Call confidence'
             Seq Type Confidence:
-                description: 'Seqence type call confidence (1=high, 0=low)'
+                description: 'Seqence type call confidence'
             Seq Type Consensus:
                 description: 'Low confidence sequence type call sampling inference consensus'
             Species Confidence:
-                description: 'Species call confidence (1=high, 0=low)'
+                description: 'Species call confidence'
 
 sp:
     run:
