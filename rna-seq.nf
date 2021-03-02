@@ -302,9 +302,11 @@ if (fastqsForce != "") {
       fastqs_parseMetadata
       fastqs_fastqc
     }
-  fastqsForce.count().into {
+  Channel
+    .fromPath(fastqsForce)
+    .count().into {
     fastqCount
-  }
+    }
 } else {
   fastqs.collect().into {
     fastqs_seqwho
