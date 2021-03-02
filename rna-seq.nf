@@ -740,6 +740,7 @@ process seqwho {
       speciesConfidenceR2="1"
       seqtypeConfidenceR2="1"
     fi
+    cp SeqWho_call.tsv SeqWho_call_full.tsv
 
     speciesErrorSeqwho=false
     speciesErrorSeqwho_details=""
@@ -791,41 +792,103 @@ process seqwho {
       echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
     fi
 
-    # set seq type
-    if [ "\${seqtypeR1}" == "\${seqtypeR2}" ]
+    # detect species confidence errors
+    if [ "\${speciesConfidenceR1}" == "high" ] && [ "\${speciesConfidenceR2}" == "high" ]
     then
-      if [ "\${seqtypeR1}" == "rnaseq" ]
-      then
-        seqtpeInfer="rnaseq"
-        echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
-      else
-        seqtypeError=true
-        seqtypeError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
-        echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
-      fi
-    else
-      seqtypeError=true
-      seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
-      echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
-    fi
-
-    # detect confidence errors
-    if [ "\${confidenceR1}" == "high" ] && [ "\${confidenceR2}" == "high" ]
-    then
-      echo -e "LOG: high confidence inference detected" >> ${repRID}.seqwho.log
+      echo -e "LOG: high confidence species inference detected" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details=\$(echo "**Infered species and or sequencing type confidence is low:**\\n")
-      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|Infered species confidence|Infered sequencing type confidence|\\n")
-      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|:--|:--:|:--:|\\n")
-      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 1|\${speciesConfidenceR1}|\${seqtypeConfidenceR1}|\\n")
+      speciesErrorSeqwho_details=\$(echo "**Infered species confidence is low:**\\n")
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|Infered species confidence|\\n")
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|:--|:--:|\\n")
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 1|\${speciesConfidenceR1}|\\n")
       if [ "${ends}" == "pe" ]
       then
-        speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 2|\${speciesConfidenceR2}|\${seqtypeConfidenceR2}|\\n")
+        speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 2|\${speciesConfidenceR2}|\\n")
       fi
       echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
     fi
 
+    # detect seq type errors and set type
+    if [ "\${seqtypeConfidenceR1}" == "high" ] && [ "\${seqtypeConfidenceR2}" == "high" ]
+    then
+      echo -e "LOG: high confidence seq type inference detected" >> ${repRID}.seqwho.log
+      # set seq type
+      if [ "\${seqtypeR1}" == "\${seqtypeR2}" ]
+      then
+        if [ "\${seqtypeR1}" == "rnaseq" ]
+        then
+          seqtpeInfer="rnaseq"
+          echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
+        else
+          seqtypeError=true
+          seqtypeError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
+          echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
+        fi
+      else
+        seqtypeError=true
+        seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
+        echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
+      fi
+    else
+      echo -e "LOG: low confidence seq type inference detected" >> ${repRID}.seqwho.log
+      seqtk sample -s100 ${fastq[0]} 1000000 1> sampled.1.seed100.fastq &
+      seqtk sample -s200 ${fastq[0]} 1000000 1> sampled.1.seed200.fastq &
+      seqtk sample -s300 ${fastq[0]} 1000000 1> sampled.1.seed300.fastq &
+      wait
+      gzip sampled.1.seed100.fastq &
+      gzip sampled.1.seed200.fastq &
+      gzip sampled.1.seed300.fastq &
+      wait
+      seqwho.py -f sampled.1.seed*.fastq.gz -x SeqWho.ix
+      seqtypeR1_1=\$(cat SeqWho_call.tsv | grep sampled.1.seed100.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_2=\$(cat SeqWho_call.tsv | grep sampled.1.seed200.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_3=\$(cat SeqWho_call.tsv | grep sampled.1.seed300.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      cp SeqWho_call.tsv SeqWho_call_sampledR1.tsv
+      if [ "\${seqtypeR1_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_3}" == "\${seqtypeR1}" ]
+      then
+        concensus=true
+      else
+        concensus=false
+      fi
+      if [ "${ends}" == "pe" ]
+      then
+        seqtk sample -s100 ${fastq[1]} 1000000 1> sampled.2.seed100.fastq &
+        seqtk sample -s200 ${fastq[1]} 1000000 1> sampled.2.seed200.fastq &
+        seqtk sample -s300 ${fastq[1]} 1000000 1> sampled.2.seed300.fastq &
+        wait
+        gzip sampled.2.seed100.fastq &
+        gzip sampled.2.seed200.fastq &
+        gzip sampled.2.seed300.fastq &
+        wait
+        seqwho.py -f sampled.2.seed*.fastq.gz -x SeqWho.ix
+        seqtypeR2_1=\$(cat SeqWho_call.tsv | grep sampled.2.seed100.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_2=\$(cat SeqWho_call.tsv | grep sampled.2.seed200.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_3=\$(cat SeqWho_call.tsv | grep sampled.2.seed300.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        cp SeqWho_call.tsv SeqWho_call_sampledR2.tsv
+        if [ "\${seqtypeR2_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_3}" == "\${seqtypeR1}" ]
+        then
+          concensus=\${concensus}
+        else
+          concensus=false
+        fi
+      fi
+      if [ \${concensus} == false ]
+      then
+        seqtypeError=true
+        seqtypeError_details=\$(echo "**Infered species confidence is low:**\\n")
+        seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|Infered seq type|Infered seq type confidence|\\n")
+        seqtypeError_details=\$(echo \${seqtypeError_details}"|:--|:--:|:--:|\\n")
+        seqtypeError_details=\$(echo \${seqtypeError_details}"|Read 1|\${seqtypeR1}|\${seqtypeConfidenceR1}|\\n")
+        if [ "${ends}" == "pe" ]
+        then
+          seqtypeError_details=\$(echo \${seqtypeError_details}"|Read 2|\${seqtypeR2}|\${seqtypeConfidenceR2}|\\n")
+        fi
+        echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
+      fi
+    fi
+
+    # check for species match error
     if [ "${speciesMeta}" != "\${speciesInfer}" ]
     then
       if [ "${params.speciesForce}" != "" ]
@@ -878,6 +941,7 @@ inferError_fl.splitCsv(sep: ",", header: false).separate(
   speciesError
 )
 seqtypeError.into {
+  seqtypeError_trimData
   seqtypeError_getRef
   seqtypeError_downsampleData
   seqtypeError_alignSampleDataERCC
@@ -896,6 +960,27 @@ seqtypeError.into {
   seqtypeError_uploadOutputBag
   seqtypeError_finalizeExecutionRun
   seqtypeError_uploadQC_fail
+}
+speciesErrorSeqwho.into {
+  speciesErrorSeqwho_trimData
+  speciesErrorSeqwho_getRef
+  speciesErrorSeqwho_downsampleData
+  speciesErrorSeqwho_alignSampleDataERCC
+  speciesErrorSeqwho_alignSampleData
+  speciesErrorSeqwho_inferMetadata
+  speciesErrorSeqwho_checkMetadata
+  speciesErrorSeqwho_alignData
+  speciesErrorSeqwho_dedupData
+  speciesErrorSeqwho_makeBigWig
+  speciesErrorSeqwho_countData
+  speciesErrorSeqwho_dataQC
+  speciesErrorSeqwho_aggrQC
+  speciesErrorSeqwho_uploadExecutionRun
+  speciesErrorSeqwho_uploadQC
+  speciesErrorSeqwho_uploadProcessedFile
+  speciesErrorSeqwho_uploadOutputBag
+  speciesErrorSeqwho_finalizeExecutionRun
+  speciesErrorSeqwho_uploadQC_fail
 }
 speciesError.into {
   speciesError_checkMetadata
@@ -989,6 +1074,8 @@ process trimData {
     val fastqCountError from fastqCountError_trimData
     val fastqReadError from fastqReadError_trimData
     val fastqFileError from fastqFileError_trimData
+    val seqtypeError from seqtypeError_trimData
+    val speciesErrorSeqwho from speciesErrorSeqwho_trimData
 
   output:
     path ("*.fq.gz") into fastqsTrim
@@ -999,6 +1086,8 @@ process trimData {
     fastqCountError == "false"
     fastqReadError == "false"
     fastqFileError == "false"
+    seqtypeError == "false"
+    speciesErrorSeqwho == "false"
 
   script:
     """
@@ -1052,6 +1141,7 @@ process downsampleData {
     val fastqReadError from fastqReadError_downsampleData
     val fastqFileError from fastqFileError_downsampleData
     val seqtypeError from seqtypeError_downsampleData
+    val speciesErrorSeqwho from speciesErrorSeqwho_downsampleData
 
   output:
     path ("sampled.{1,2}.fq") into fastqsSample
@@ -1061,6 +1151,7 @@ process downsampleData {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
 
   script:
     """
@@ -1104,6 +1195,7 @@ process alignSampleDataERCC {
     val fastqReadError from fastqReadError_alignSampleDataERCC
     val fastqFileError from fastqFileError_alignSampleDataERCC
     val seqtypeError from seqtypeError_alignSampleDataERCC
+    val speciesErrorSeqwho from speciesErrorSeqwho_alignSampleDataERCC
 
   output:
     path "inferSpike.csv" into inferSpike_fl
@@ -1201,6 +1293,7 @@ process getRef {
     val fastqReadError from fastqReadError_getRef
     val fastqFileError from fastqFileError_getRef
     val seqtypeError from seqtypeError_getRef
+    val speciesErrorSeqwho from speciesErrorSeqwho_getRef
     val speciesError from speciesError_getRef
 
   output:
@@ -1211,6 +1304,7 @@ process getRef {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
 
   script:
@@ -1309,6 +1403,7 @@ process alignSampleData {
     val fastqReadError from fastqReadError_alignSampleData
     val fastqFileError from fastqFileError_alignSampleData
     val seqtypeError from seqtypeError_alignSampleData
+    val speciesErrorSeqwho from speciesErrorSeqwho_alignSampleData
     val speciesError from speciesError_alignSampleData
 
   output:
@@ -1321,6 +1416,7 @@ process alignSampleData {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
 
   script:
@@ -1374,6 +1470,7 @@ process inferMetadata {
     val fastqReadError from fastqReadError_inferMetadata
     val fastqFileError from fastqFileError_inferMetadata
     val seqtypeError from seqtypeError_inferMetadata
+    val speciesErrorSeqwho from speciesErrorSeqwho_inferMetadata
     val speciesError from speciesError_inferMetadata
 
   output:
@@ -1385,6 +1482,7 @@ process inferMetadata {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
 
   script:
@@ -1483,6 +1581,7 @@ process checkMetadata {
     val fastqReadError from fastqReadError_checkMetadata
     val fastqFileError from fastqFileError_checkMetadata
     val seqtypeError from seqtypeError_checkMetadata
+    val speciesErrorSeqwho from speciesErrorSeqwho_checkMetadata
     val speciesError from speciesError_checkMetadata
 
   output:
@@ -1494,6 +1593,7 @@ process checkMetadata {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
 
   script:
@@ -1618,6 +1718,7 @@ process alignData {
     val fastqReadError from fastqReadError_alignData
     val fastqFileError from fastqFileError_alignData
     val seqtypeError from seqtypeError_alignData
+    val speciesErrorSeqwho from speciesErrorSeqwho_alignData
     val speciesError from speciesError_alignData
 
   output:
@@ -1629,6 +1730,7 @@ process alignData {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
 
   script:
@@ -1695,6 +1797,7 @@ process dedupData {
     val fastqReadError from fastqReadError_dedupData
     val fastqFileError from fastqFileError_dedupData
     val seqtypeError from seqtypeError_dedupData
+    val speciesErrorSeqwho from speciesErrorSeqwho_dedupData
     val speciesError from speciesError_dedupData
     val pipelineError from pipelineError_dedupData
 
@@ -1708,6 +1811,7 @@ process dedupData {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -1758,6 +1862,7 @@ process makeBigWig {
     val fastqReadError from fastqReadError_makeBigWig
     val fastqFileError from fastqFileError_makeBigWig
     val seqtypeError from seqtypeError_makeBigWig
+    val speciesErrorSeqwho from speciesErrorSeqwho_makeBigWig
     val speciesError from speciesError_makeBigWig
     val pipelineError from pipelineError_makeBigWig
 
@@ -1769,6 +1874,7 @@ process makeBigWig {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -1802,6 +1908,7 @@ process countData {
     val fastqReadError from fastqReadError_countData
     val fastqFileError from fastqFileError_countData
     val seqtypeError from seqtypeError_countData
+    val speciesErrorSeqwho from speciesErrorSeqwho_countData
     val speciesError from speciesError_countData
     val pipelineError from pipelineError_countData
 
@@ -1815,6 +1922,7 @@ process countData {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -1889,6 +1997,7 @@ process dataQC {
     val fastqReadError from fastqReadError_dataQC
     val fastqFileError from fastqFileError_dataQC
     val seqtypeError from seqtypeError_dataQC
+    val speciesErrorSeqwho from speciesErrorSeqwho_dataQC
     val speciesError from speciesError_dataQC
     val pipelineError from pipelineError_dataQC
 
@@ -1902,6 +2011,7 @@ process dataQC {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -1988,6 +2098,7 @@ process aggrQC {
     val fastqReadError from fastqReadError_aggrQC
     val fastqFileError from fastqFileError_aggrQC
     val seqtypeError from seqtypeError_aggrQC
+    val speciesErrorSeqwho from speciesErrorSeqwho_aggrQC
     val speciesError from speciesError_aggrQC
     val pipelineError from pipelineError_aggrQC
 
@@ -2000,6 +2111,7 @@ process aggrQC {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -2186,6 +2298,7 @@ process uploadExecutionRun {
     val fastqReadError from fastqReadError_uploadExecutionRun
     val fastqFileError from fastqFileError_uploadExecutionRun
     val seqtypeError from seqtypeError_uploadExecutionRun
+    val speciesErrorSeqwho from speciesErrorSeqwho_uploadExecutionRun
     val speciesError from speciesError_uploadExecutionRun
     val pipelineError from pipelineError_uploadExecutionRun
     
@@ -2198,6 +2311,7 @@ process uploadExecutionRun {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -2301,6 +2415,7 @@ process uploadQC {
     val fastqReadError from fastqReadError_uploadQC
     val fastqFileError from fastqFileError_uploadQC
     val seqtypeError from seqtypeError_uploadQC
+    val speciesErrorSeqwho from speciesErrorSeqwho_uploadQC
     val speciesError from speciesError_uploadQC
     val pipelineError from pipelineError_uploadQC
 
@@ -2313,6 +2428,7 @@ process uploadQC {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -2381,6 +2497,7 @@ process uploadProcessedFile {
     val fastqReadError from fastqReadError_uploadProcessedFile
     val fastqFileError from fastqFileError_uploadProcessedFile
     val seqtypeError from seqtypeError_uploadProcessedFile
+    val speciesErrorSeqwho from speciesErrorSeqwho_uploadProcessedFile
     val speciesError from speciesError_uploadProcessedFile
     val pipelineError from pipelineError_uploadProcessedFile
 
@@ -2393,6 +2510,7 @@ process uploadProcessedFile {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -2484,6 +2602,7 @@ process uploadOutputBag {
     val fastqReadError from fastqReadError_uploadOutputBag
     val fastqFileError from fastqFileError_uploadOutputBag
     val seqtypeError from seqtypeError_uploadOutputBag
+    val speciesErrorSeqwho from speciesErrorSeqwho_uploadOutputBag
     val speciesError from speciesError_uploadOutputBag
     val pipelineError from pipelineError_uploadOutputBag
 
@@ -2496,6 +2615,7 @@ process uploadOutputBag {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -2570,6 +2690,7 @@ process finalizeExecutionRun {
     val fastqReadError from fastqReadError_finalizeExecutionRun
     val fastqFileError from fastqFileError_finalizeExecutionRun
     val seqtypeError from seqtypeError_finalizeExecutionRun
+    val speciesErrorSeqwho from speciesErrorSeqwho_finalizeExecutionRun
     val speciesError from speciesError_finalizeExecutionRun
     val pipelineError from pipelineError_finalizeExecutionRun
 
@@ -2579,6 +2700,7 @@ process finalizeExecutionRun {
     fastqReadError == "false"
     fastqFileError == "false"
     seqtypeError == "false"
+    speciesErrorSeqwho == "false"
     speciesError == "false"
     pipelineError == "false"
 
@@ -2611,7 +2733,7 @@ process finalizeExecutionRun {
 }
 
 // Combine errors
-error_meta = fastqCountError_uploadQC_fail.ifEmpty(false).combine(fastqReadError_uploadQC_fail.ifEmpty(false).combine(fastqFileError_uploadQC_fail.ifEmpty(false).combine(seqtypeError_uploadQC_fail.ifEmpty(false).combine(speciesError_uploadQC_fail.ifEmpty(false).combine(pipelineError_uploadQC_fail.ifEmpty(false))))))
+error_meta = fastqCountError_uploadQC_fail.ifEmpty(false).combine(fastqReadError_uploadQC_fail.ifEmpty(false).combine(fastqFileError_uploadQC_fail.ifEmpty(false).combine(seqtypeError_uploadQC_fail.ifEmpty(false).combine(speciesErrorSeqwho_uploadQC_fail.ifEmpty(false).combine(speciesError_uploadQC_fail.ifEmpty(false).combine(pipelineError_uploadQC_fail.ifEmpty(false)))))))
 error_meta. into {
   error_failPreExecutionRun
   error_uploadQC_fail
@@ -2630,7 +2752,7 @@ process failPreExecutionRun {
     val spike from spikeMeta_failPreExecutionRun
     val species from speciesMeta_failPreExecutionRun
     val inputBagRID from inputBagRID_failPreExecutionRun
-    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesError), val (pipelineError) from error_failPreExecutionRun
+    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesErrorSeqwho), val (speciesError), val (pipelineError) from error_failPreExecutionRun
     tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeError_details), val (speciesError_details) from errorDetails
 
   output:
