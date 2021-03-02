@@ -129,7 +129,7 @@ def main():
         '''
         id: 'software_versions'
         section_name: 'Software Versions'
-        section_href: 'https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/78-tool_version/docs/RNA-Seq%20Pipeline%20Design%20Process%20Table.pdf'
+        section_href: 'https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/wikis/Pipeline/Tool-Versions'
         plot_type: 'html'
         description: 'are collected for pipeline version.'
         data: |
