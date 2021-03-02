@@ -929,7 +929,6 @@ process seqwho {
       echo -e "Read 2\t\${seqtypeR2}\t\${speciesR2}\t\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
     fi
     
-
     # save species file
     echo "\${speciesInfer}" > inferSpecies.csv
 

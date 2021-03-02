@@ -201,4 +201,4 @@ sp:
     tin:
         fn: '*_tin.hist.tsv'
     seqwho:
-	fn: 'seqwhoInfer.tsv'
+        fn: 'seqwhoInfer.tsv'
