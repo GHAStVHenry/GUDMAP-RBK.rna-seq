@@ -37,10 +37,10 @@ top_modules:
       name: 'Count'
       info: 'Replicate Feature Count QC Results'
   - hisat2:
-      name: 'Inference: Align'
+      name: 'Inference: Spike-in'
       info: 'Inference Alignment (1M downsampled reads) QC Results'
       path_filters:
-        - '*alignSampleSummary*'
+        - 'ERCC.alignSampleSummary*'
   - rseqc:
       name: 'Inference: Stranded'
       info: '1M Downsampled Reads Strandedness Inference Results'
@@ -166,6 +166,30 @@ custom_data:
             71 - 80
             81 - 90
             91 - 100
+    seqwho:
+        file_format: 'tsv'
+        section_name: 'Inference: Sequencing Type & Species'
+        description: 'This is the inference results from the SeqWho tool'
+        plot_type: 'table'
+        pconfig:
+            id: 'ref'
+            scale: false
+            format: '{}'
+        headers:
+            Read:
+                description: 'Sequencing read (R1/R2)'
+            Seq Type:
+                description: 'Inferred Sequence Type'
+            Species:
+                description: 'Inferred Species'
+            Confidence:
+                description: 'Call confidence'
+            Seq Type Confidence:
+                description: 'Seqence type call confidence (1=high, 0=low)'
+            Seq Type Consensus:
+                description: 'Low confidence sequence type call sampling inference consensus'
+            Species Confidence:
+                description: 'Species call confidence (1=high, 0=low)'
 
 sp:
     run:
@@ -178,3 +202,5 @@ sp:
         fn: 'reference.tsv'
     tin:
         fn: '*_tin.hist.tsv'
+    seqwho:
+	fn: 'seqwhoInfer.tsv'

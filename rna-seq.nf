@@ -683,6 +683,7 @@ process seqwho {
     val fastqReadError from fastqReadError_seqwho
 
   output:
+    path "seqwhoInfer.tsv" into seqwhoInfer
     path "inferSpecies.csv" into inferSpecies_fl
     path "inferError.csv" into inferError_fl
 
@@ -828,6 +829,7 @@ process seqwho {
         seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
         echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
+      consensus="-"
     else
       echo -e "LOG: low confidence seq type inference detected" >> ${repRID}.seqwho.log
       seqtk sample -s100 ${fastq[0]} 1000000 1> sampled.1.seed100.fastq &
@@ -845,9 +847,9 @@ process seqwho {
       cp SeqWho_call.tsv SeqWho_call_sampledR1.tsv
       if [ "\${seqtypeR1_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_3}" == "\${seqtypeR1}" ]
       then
-        concensus=true
+        consensus=true
       else
-        concensus=false
+        consensus=false
       fi
       if [ "${ends}" == "pe" ]
       then
@@ -866,12 +868,12 @@ process seqwho {
         cp SeqWho_call.tsv SeqWho_call_sampledR2.tsv
         if [ "\${seqtypeR2_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_3}" == "\${seqtypeR1}" ]
         then
-          concensus=\${concensus}
+          consensus=\${consensus}
         else
-          concensus=false
+          consensus=false
         fi
       fi
-      if [ \${concensus} == false ]
+      if [ \${consensus} == false ]
       then
         seqtypeError=true
         seqtypeError_details=\$(echo "**Infered species confidence is low:**\\n")
@@ -901,7 +903,16 @@ process seqwho {
       speciesError=false
       echo -e "LOG: species matches: Submitted=${speciesMeta}; Inferred=\${speciesInfer}" >> ${repRID}.seqwho.log
     fi
+
+    # save seqwho multiqc report
+    echo -e "Read\tSeq Type\tSpecies\tConfidence\tSeq Type Confidence\tSeq Type Consensus\tSpecies Confidence" > seqwhoInfer.tsv
+    echo -e "Read 1\y\${seqtypeR1}\t\${speciesR1}\t\${confidenceR1}\${seqtypeConfidenceR1}\t\${consensus}\t\${speciesConfidenceR1}" >> seqwhoInfer.tsv
+    if [ "${ends}" == "pe" ]
+    then
+      echo -e "Read 2\y\${seqtypeR2}\t\${speciesR2}\t\${confidenceR2}\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
+    fi
     
+
     # save species file
     echo "\${speciesInfer}" > inferSpecies.csv
 
@@ -2008,6 +2019,7 @@ process aggrQC {
   input:
     path multiqcConfig
     path bicfLogo
+    path seqwhoInfer
     path softwareReferences
     path softwareVersions
     path fastqc
