@@ -273,6 +273,7 @@ process getData {
       echo -e "LOG: fetched" >> ${repRID}.getData.log
     else
       echo -e "LOG: fastq override detected, not fetching fastqs" >> ${repRID}.getData.log
+      fastqCount="0"
     fi
 
     if [ "\${fastqCount}" == "0" ]
