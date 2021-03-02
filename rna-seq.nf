@@ -926,7 +926,7 @@ process seqwho {
     echo -e "Read 1\t\${seqtypeR1}\t\${speciesR1}\t\${seqtypeConfidenceR1}\t\${consensus}\t\${speciesConfidenceR1}" >> seqwhoInfer.tsv
     if [ "${ends}" == "pe" ]
     then
-      echo -e "Read 2\t\${seqtypeR2}\t\${speciesR2}\t\t\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
+      echo -e "Read 2\t\${seqtypeR2}\t\${speciesR2}\t\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
     fi
     
 
