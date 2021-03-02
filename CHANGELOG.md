@@ -4,11 +4,9 @@
 * Strandedness metadata "yes"/"no" changed to boolean "t"/"f" in data-hub, pipeline updated to handle (#70) ("yes"/"no" still acceptable for backwards compatibility)
 * Upload empty mRNA_QC entry if data error (#111)
 * Allow forcing of strandedness and spike (#100)
-<<<<<<< HEAD
 * Add seqwho
-=======
+* Add seqwho results to multiqc report
 * Modify repository structure to allow for use with XPACK-DNANEXUS
->>>>>>> develop
 
 **Background**
 * Add memory limit (75%) per thread for samtools sort (#108)
