@@ -981,24 +981,25 @@ speciesErrorSeqwho.into {
   speciesErrorSeqwho_uploadQC_fail
 }
 speciesError.into {
-  speciesError_checkMetadata
-  speciesError_uploadExecutionRun
+  speciesError_trimData
   speciesError_getRef
+  speciesError_downsampleData
+  speciesError_alignSampleDataERCC
   speciesError_alignSampleData
   speciesError_inferMetadata
+  speciesError_checkMetadata
   speciesError_alignData
   speciesError_dedupData
   speciesError_makeBigWig
   speciesError_countData
-  speciesError_fastqc
   speciesError_dataQC
   speciesError_aggrQC
+  speciesError_uploadExecutionRun
   speciesError_uploadQC
-  speciesError_uploadQC_fail
   speciesError_uploadProcessedFile
   speciesError_uploadOutputBag
   speciesError_finalizeExecutionRun
-  speciesError_failPreExecutionRun_species
+  speciesError_uploadQC_fail
 }
 
 /*
@@ -1073,6 +1074,7 @@ process trimData {
     val fastqFileError from fastqFileError_trimData
     val seqtypeError from seqtypeError_trimData
     val speciesErrorSeqwho from speciesErrorSeqwho_trimData
+    val speciesError from speciesError_trimData
 
   output:
     path ("*.fq.gz") into fastqsTrim
@@ -1080,7 +1082,7 @@ process trimData {
     path ("readLength.csv") into readLengthInfer_fl
 
   when:
-    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
@@ -1136,12 +1138,13 @@ process downsampleData {
     val fastqFileError from fastqFileError_downsampleData
     val seqtypeError from seqtypeError_downsampleData
     val speciesErrorSeqwho from speciesErrorSeqwho_downsampleData
+    val speciesError from speciesError_downsampleData
 
   output:
     path ("sampled.{1,2}.fq") into fastqsSample
 
   when:
-    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
@@ -1186,13 +1189,14 @@ process alignSampleDataERCC {
     val fastqFileError from fastqFileError_alignSampleDataERCC
     val seqtypeError from seqtypeError_alignSampleDataERCC
     val speciesErrorSeqwho from speciesErrorSeqwho_alignSampleDataERCC
+    val speciesError from speciesError_alignSampleDataERCC
 
   output:
     path "inferSpike.csv" into inferSpike_fl
     path ("ERCC.alignSampleSummary.txt") into alignSampleQC_ERCC
 
   when:
-    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesError == "false"
 
   script:
     """
