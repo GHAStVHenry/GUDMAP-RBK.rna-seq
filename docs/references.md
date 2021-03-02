@@ -9,9 +9,6 @@
 3. **BDBag**:  
   * D'Arcy, M., Chard, K., Foster, I., Kesselman, C., Madduri, R., Saint, N., & Wagner, R.. 2019. Big Data Bags: A Scalable Packaging Format for Science. Zenodo. doi:[10.5281/zenodo.3338725](http://doi.org/10.5281/zenodo.3338725).
 
-4. **RSeQC**:
-  * Wang, L., Wang, S., Li, W. 2012 RSeQC: quality control of RNA-seq experiments. Bioinformatics. Aug 15;28(16):2184-5. doi:[10.1093/bioinformatics/bts356](https://doi.org/10.1093/bioinformatics/bts356).
-
 5. **trimgalore**:
   * trimgalore [https://github.com/FelixKrueger/TrimGalore](https://github.com/FelixKrueger/TrimGalore)
 
@@ -27,14 +24,23 @@
 9. **featureCounts**:
   * Liao, Y., Smyth, G.K., Shi, W. 2014 featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. Apr 1;30(7):923-30. doi:[10.1093/bioinformatics/btt656](https://doi.org/10.1093/bioinformatics/btt656).
 
-10. **R**:
-  * R Core Team 2014. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL:[http://www.R-project.org/](http://www.R-project.org/).
-
 11. **deeptools**:
   * Ramírez, F., D. P. Ryan, B. Grüning, V. Bhardwaj, F. Kilpert, A. S. Richter, S. Heyne, F. Dündar, and T. Manke. 2016. deepTools2: a next generation web server for deep-sequencing data analysis. Nucleic Acids Research 44: W160-165. doi:[10.1093/nar/gkw257](http://dx.doi.org/10.1093/nar/gkw257)
 
+11. **Seqtk**:
+  * Seqtk [https://github.com/lh3/seqtk](https://github.com/lh3/seqtk)
+
+10. **R**:
+  * R Core Team 2014. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL:[http://www.R-project.org/](http://www.R-project.org/).
+
 12. **FastQC**
   * FastQC [https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+
+12. **SeqWho**
+  * SeqWho [https://git.biohpc.swmed.edu/s181649/seqwho](https://git.biohpc.swmed.edu/s181649/seqwho)
+
+4. **RSeQC**:
+  * Wang, L., Wang, S., Li, W. 2012 RSeQC: quality control of RNA-seq experiments. Bioinformatics. Aug 15;28(16):2184-5. doi:[10.1093/bioinformatics/bts356](https://doi.org/10.1093/bioinformatics/bts356).
 
 13. **MultiQC**:
   * Ewels P., Magnusson M., Lundin S. and Käller M. 2016. MultiQC: Summarize analysis results for multiple tools and samples in a single report. Bioinformatics 32(19): 3047–3048. doi:[10.1093/bioinformatics/btw354](https://dx.doi.org/10.1093/bioinformatics/btw354)
