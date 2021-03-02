@@ -26,6 +26,7 @@ params.track = false
 params.refSource = "biohpc"
 params.inputBagForce = ""
 params.fastqsForce = ""
+params.endsForce = ""
 params.speciesForce = ""
 params.strandedForce = ""
 params.spikeForce = ""
@@ -64,6 +65,7 @@ logsDir = "${outDir}/Logs"
 upload = params.upload
 inputBagForce = params.inputBagForce
 fastqsForce = params.fastqsForce
+endsForce = params.endsForce
 speciesForce = params.speciesForce
 strandedForce = params.strandedForce
 spikeForce = params.spikeForce
@@ -1469,6 +1471,7 @@ process inferMetadata {
     path sampledBam
     path reference_inferMetadata
     path script_inferMeta
+    val endsForce
     val strandedForce
     val fastqCountError from fastqCountError_inferMetadata
     val fastqReadError from fastqReadError_inferMetadata
@@ -1489,41 +1492,47 @@ process inferMetadata {
     hostname > ${repRID}.inferMetadata.log
     ulimit -a >> ${repRID}.inferMetadata.log
 
-      # infer experimental setting from dedup bam
-      echo -e "LOG: infer experimental setting from bam" >> ${repRID}.inferMetadata.log
-      infer_experiment.py -r ./genome.bed -i ${sampledBam} 1>> ${repRID}.infer_experiment.txt
-      echo -e "LOG: inferred" >> ${repRID}.inferMetadata.log
+    # infer experimental setting from dedup bam
+    echo -e "LOG: infer experimental setting from bam" >> ${repRID}.inferMetadata.log
+    infer_experiment.py -r ./genome.bed -i ${sampledBam} 1>> ${repRID}.infer_experiment.txt
+    echo -e "LOG: inferred" >> ${repRID}.inferMetadata.log
 
-      ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
-      fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
-      if [ \${ended} == "PairEnd" ]
-      then
-        ends="pe"
-        percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
-        percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
-      elif [ \${ended} == "SingleEnd" ]
-      then
-        ends="se"
-        percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
-        percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
-      fi
-      echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
-      echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
-      if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
-      then
-        stranded="forward"
-      elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
-      then
-        stranded="reverse"
-      else
-        stranded="unstranded"
-      fi
-      echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
-      if [ "${strandedForce}" != "" ]
-      then
-        stranded=${strandedForce}
-        echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.inferMetadata.log
-      fi
+    ended=`bash ${script_inferMeta} endness ${repRID}.infer_experiment.txt`
+    fail=`bash ${script_inferMeta} fail ${repRID}.infer_experiment.txt`
+    if [ \${ended} == "PairEnd" ]
+    then
+      ends="pe"
+      percentF=`bash ${script_inferMeta} pef ${repRID}.infer_experiment.txt`
+      percentR=`bash ${script_inferMeta} per ${repRID}.infer_experiment.txt`
+    elif [ \${ended} == "SingleEnd" ]
+    then
+      ends="se"
+      percentF=`bash ${script_inferMeta} sef ${repRID}.infer_experiment.txt`
+      percentR=`bash ${script_inferMeta} ser ${repRID}.infer_experiment.txt`
+    fi
+    echo -e "LOG: percentage reads in the same direction as gene: \${percentF}" >> ${repRID}.inferMetadata.log
+    echo -e "LOG: percentage reads in the opposite direction as gene: \${percentR}" >> ${repRID}.inferMetadata.log
+    if [ 1 -eq \$(echo \$(expr \${percentF#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentR#*.} "<" 2500)) ]
+    then
+      stranded="forward"
+    elif [ 1 -eq \$(echo \$(expr \${percentR#*.} ">" 2500)) ] && [ 1 -eq \$(echo \$(expr \${percentF#*.} "<" 2500)) ]
+    then
+      stranded="reverse"
+    else
+      stranded="unstranded"
+    fi
+    echo -e "LOG: ends set to: \${ends}" >> ${repRID}.inferMetadata.log
+    if [ "${endsForce}" != "" ]
+    then
+      ends=${endsForce}
+      echo -e "LOG: ends metadata forced: \${ends}" >> ${repRID}.inferMetadata.log
+    fi
+    echo -e "LOG: stradedness set to: \${stranded}" >> ${repRID}.inferMetadata.log
+    if [ "${strandedForce}" != "" ]
+    then
+      stranded=${strandedForce}
+      echo -e "LOG: spike-in metadata forced: \${stranded}" >> ${repRID}.inferMetadata.log
+    fi
 
     # write inferred metadata to file
     echo "\${ends},\${stranded},\${percentF},\${percentR},\${fail}" > infer.csv
@@ -1632,9 +1641,16 @@ process checkMetadata {
     fi
     if [ "${endsMeta}" != "${endsInfer}" ]
     then
-      pipelineError=true
-      pipelineError_ends=true
-      echo -e "LOG: ends do not match: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
+      if [ "${params.endsForce}" != "" ]
+      then
+        pipelineError=false
+        pipelineError_ends=false
+        echo -e "LOG: ends forced: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
+      else
+        pipelineError=true
+        pipelineError_ends=true
+        echo -e "LOG: ends do not match: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
+      fi
     else
       pipelineError_ends=false
       echo -e "LOG: ends matches: Submitted=${endsMeta}; Inferred=${endsInfer}" >> ${repRID}.checkMetadata.log
