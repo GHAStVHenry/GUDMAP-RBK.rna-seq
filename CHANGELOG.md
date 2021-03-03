@@ -38,6 +38,8 @@
 * Override params (inputBag, fastq, species) aren't checked for integrity
 * Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
 * Check for outputBag in hatrac doesn't check for any uploaded by chaise
+* CI container cache will fail if cache folder is not owned by CI runner user
+* CI container cache will not error if container failed to pull
 
 <hr>
 
