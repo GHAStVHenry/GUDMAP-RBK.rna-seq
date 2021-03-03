@@ -34,6 +34,8 @@ img_cache:
   script:
     - mkdir -p ${dir}cache/
     - cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | xargs -P 3 -I {} singularity pull --dir ${dir} 'docker://'{} || true
+    - wait
+    - echo images cached
 
 collect:
   stage: versions
