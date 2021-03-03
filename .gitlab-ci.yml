@@ -410,7 +410,8 @@ dataQC:
     - rseqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f2)
     - echo ${dir}${rseqcImg}_${rseqcVar}.sif
     - echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > Q-Y5F6_1M.se.sorted.deduped.tin.xls
-    - for i in {"chr8","chr4","chrY"}; do
+    - >
+      for i in {"chr8","chr4","chrY"}; do
         echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
       done | singularity run ${dir}${rseqcImg}_${rseqcVar}.sif parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
     - pytest -m dataQC
@@ -516,7 +517,7 @@ uploadProcessedFile:
     - mkdir -p ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/
     - mv 17-BTFJ_test.csv ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/17-BTFJ_test.csv
     - >
-      exist=$(singularity run '${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" != "[]" ]; then
@@ -526,8 +527,8 @@ uploadProcessedFile:
         done
         echo all old processed file RIDs deleted
       fi
-    - singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-upload-cli --catalog 2 --token ${cookie:9} staging.gudmap.org ./deriva
-    - echo test processed file uploaded
+        singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-upload-cli --catalog 2 --token ${cookie:9} staging.gudmap.org ./deriva
+        echo test processed file uploaded
     - mkdir test
     - singularity run ${dir}${derivaImg}_${derivaVar}.sif bdbag test --archiver zip
     - echo test output bag created
