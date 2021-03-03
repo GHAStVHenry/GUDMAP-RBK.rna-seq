@@ -807,7 +807,7 @@ integration_pe:
       - always
 
 
-failAmbiguousSpecies:
+failSpecies:
   stage: integration
   only: [merge_requests]
   except:
@@ -816,7 +816,7 @@ failAmbiguousSpecies:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failAmbiguousSpecies_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F4 --source staging --inputBagForce ./test_data/bag/wrongSpecies/Q-Y5F6_inputBag_xxxxxxxx.zip --upload true -with-dag dag.png --dev false --ci true --track false -with-report ./failSpecies_report.html
   retry:
     max: 0
     when:
