@@ -2,7 +2,7 @@ before_script:
   - module load python/3.6.4-anaconda
   - pip install --user attrs==20.3.0 pytest==6.2.2 pytest-pythonpath==0.7.3 pytest-cov==2.11.1
   - module load singularity/3.5.3
-  - export SINGULARITY_CACHEDIR=${dir}
+  - export SINGULARITY_CACHEDIR=${dir}/cache/
   - module load nextflow/20.01.0
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
   - mkdir -p ~/.deriva
@@ -15,7 +15,7 @@ variables:
   refMoVersion: "38.p6.vM25"
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
-  dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/cache"
+  dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
 
 stages:
   - singularity
