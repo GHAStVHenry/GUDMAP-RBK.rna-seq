@@ -2,7 +2,7 @@ before_script:
   - module load python/3.6.4-anaconda
   - pip install --user attrs==20.3.0 pytest==6.2.2 pytest-pythonpath==0.7.3 pytest-cov==2.11.1
   - module load singularity/3.5.3
-  - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/
+  - export SINGULARITY_CACHEDIR=${dir}
   - module load nextflow/20.01.0
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
   - mkdir -p ~/.deriva
@@ -15,6 +15,7 @@ variables:
   refMoVersion: "38.p6.vM25"
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
+  dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
 
 stages:
   - singularity
@@ -32,26 +33,62 @@ img_cache:
   stage: singularity
   script:
     - export -p | grep SINGULARITY_CACHEDIR
-    - cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | xargs -P 10 -I {} singularity pull 'docker://'{}
+    - cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | xargs -P 10 -I {} singularity pull --dir ${dir} 'docker://'{}
 
 collect:
   stage: versions
   script:
-    - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli --version > version_deriva.txt
-    - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag --version > version_bdbag.txt
-    - singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
-    - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc --version > version_fastqc.txt
-    - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -h | grep -o Version.* > version_seqwho.txt
-    - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --version > version_trimgalore.txt
-    - singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk 2>&1 | grep -o Version.* > version_seqtk.txt&
-    - singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py --version > version_rseqc.txt
-    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 --version > version_hisat2.txt
-    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools --version > version_samtools.txt
-    - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates --version 2> version_markdups.txt&
-    - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -v &> version_featurecounts.txt
-    - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' R --version > version_r.txt
-    - singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' deeptools --version > version_deeptools.txt
-    - singularity run 'docker://gudmaprbk/multiqc1.9:1.0.0' multiqc --version > version_multiqc.txt
+    - >
+      derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+      derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${derivaImg}-${derivaVar}.sif deriva-download-cli --version > version_deriva.txt
+      singularity run ${dir}${derivaImg}-${derivaVar}.sif bdbag --version > version_bdbag.txt
+    - >
+      pythonImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep python | cut -d"/" -f2 | cut -d":" -f1)
+      pythonVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep python | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${pythonImg}-${pythonVar}.sif python3 --version > version_python.txt
+    - >
+      fastqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep fastqc | cut -d"/" -f2 | cut -d":" -f1)
+      fastqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep fastqc | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${fastqcImg}-${fastqcVar}.sif fastqc --version > version_fastqc.txt
+    - >
+      seqwhoImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f1)
+      seqwhoVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${seqwhoImg}-${seqwhoVar}.sif seqwho.py -h | grep -o Version.* > version_seqwho.txt
+    - >
+      trimgaloreImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f1)
+      trimgaloreVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${trimgaloreImg}-${trimgaloreVar}.sif trim_galore --version > version_trimgalore.txt
+    - >
+      seqtkImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqtk | cut -d"/" -f2 | cut -d":" -f1)
+      seqtkVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqtk | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${seqtkImg}-${seqtkVar}.sif seqtk 2>&1 | grep -o Version.* > version_seqtk.txt&
+    - >
+      rseqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f1)
+      rseqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${rseqcImg}-${rseqcVar}.sif infer_experiment.py --version > version_rseqc.txt
+    - >
+      hisatImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep hisat | cut -d"/" -f2 | cut -d":" -f1)
+      hisatVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep hisat | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${hisatImg}-${hisatVar}.sif hisat2 --version > version_hisat2.txt
+      singularity run ${dir}${hisatImg}-${hisatVar}.sif samtools --version > version_samtools.txt
+    - >
+      picardImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep picard | cut -d"/" -f2 | cut -d":" -f1)
+      picardVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep picard | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${picardImg}-${picardVar}.sif java -jar /picard/build/libs/picard.jar MarkDuplicates --version 2> version_markdups.txt&
+    - >
+      subreadImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep subread | cut -d"/" -f2 | cut -d":" -f1)
+      subreadVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep subread | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${subreadImg}-${subreadVar}.sif featureCounts -v &> version_featurecounts.txt
+      singularity run ${dir}${subreadImg}-${subreadVar}.sif R --version > version_r.txt
+    - >
+      deeptoolsImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deeptools | cut -d"/" -f2 | cut -d":" -f1)
+      deeptoolsVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deeptools | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${deeptoolsImg}-${deeptoolsVar}.sif deeptools --version > version_deeptools.txt
+    - >
+      multiqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep multiqc | cut -d"/" -f2 | cut -d":" -f1)
+      multiqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep multiqc | cut -d"/" -f2 | cut -d":" -f2)
+      singularity run ${dir}${multiqcImg}-${multiqcVar}.sif multiqc --version > version_multiqc.txt
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
