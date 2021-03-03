@@ -2895,11 +2895,11 @@ process uploadQC_fail {
     path script_uploadQC_fail
     path credential, stageAs: "credential.json" from deriva_uploadQC_fail
     val executionRunRID from failExecutionRunRID
-    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesError), val (pipelineError) from error_uploadQC_fail
+    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesErrorSeqwho), val (speciesError), val (pipelineError) from error_uploadQC_fail
 
   when:
     upload
-    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true" || pipelineError == 'true'
+    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesErrorSeqwho == "true" || speciesError == "true" || pipelineError == 'true'
 
   script:
     """
