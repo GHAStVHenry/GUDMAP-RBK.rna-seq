@@ -27,16 +27,17 @@ stages:
   - consistency
 
 
-cache:
+img_cache:
   stage: singularity
   script:
     - >
-    for container in `cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq`; do
-      singularity pull 'docker://'${container}
-    done
+      for container in `cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq`; do
+        singularity pull 'docker://'${container}
+      done
 
 versions:
   stage: singularity
+  script:
     - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli --version > version_deriva.txt
     - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag --version > version_bdbag.txt
     - singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
