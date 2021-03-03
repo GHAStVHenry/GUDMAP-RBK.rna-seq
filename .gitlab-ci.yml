@@ -41,6 +41,7 @@ collect:
     - >
       derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
       derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+      echo ${dir}${derivaImg}-${derivaVar}.sif
       singularity run ${dir}${derivaImg}-${derivaVar}.sif deriva-download-cli --version > version_deriva.txt
       singularity run ${dir}${derivaImg}-${derivaVar}.sif bdbag --version > version_bdbag.txt
     - >
