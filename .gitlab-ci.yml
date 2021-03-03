@@ -17,13 +17,80 @@ variables:
   refERCCVersion: "92"
 
 stages:
+  - singularity
+  - aggregation
   - badges
   - deploy
   - unit
-  - aggregation
   - reference
   - integration
   - consistency
+
+
+cache:
+  stage: singularity
+  script:
+    - >
+    for container in `cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq`; do
+      singularity pull 'docker://'${container}
+    done
+
+versions:
+  stage: singularity
+    - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli --version > version_deriva.txt
+    - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag --version > version_bdbag.txt
+    - singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
+    - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc --version > version_fastqc.txt
+    - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -h | grep -o Version.* > version_seqwho.txt
+    - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --version > version_trimgalore.txt
+    - singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk 2>&1 | grep -o Version.* > version_seqtk.txt&
+    - singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py --version > version_rseqc.txt
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 --version > version_hisat2.txt
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools --version > version_samtools.txt
+    - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates --version 2> version_markdups.txt&
+    - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -v &> version_featurecounts.txt
+    - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' R --version > version_r.txt
+    - singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' deeptools --version > version_deeptools.txt
+    - singularity run 'docker://gudmaprbk/multiqc1.9:1.0.0' multiqc --version > version_multiqc.txt
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - version_deriva.txt
+      - version_bdbag.txt
+      - version_python.txt
+      - version_fastqc.txt
+      - version_seqwho.txt
+      - version_trimgalore.txt
+      - version_seqtk.txt
+      - version_rseqc.txt
+      - version_hisat2.txt
+      - version_samtools.txt
+      - version_markdups.txt
+      - version_featurecounts.txt
+      - version_r.txt
+      - version_deeptools.txt
+    expire_in: 7 days
+
+generateVersions:
+  stage: aggregation
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - python ./workflow/scripts/generate_versions.py -o software_versions
+    - python ./workflow/scripts/generate_references.py -r ./docs/references.md -o software_references
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - software_references_mqc.yaml
+      - software_versions_mqc.yaml
+    expire_in: 7 days
+
 
 build_badges:
   stage: badges
@@ -36,8 +103,8 @@ build_badges:
     - chmod +x ./workflow/scripts/get_updated_badge_info.sh
   script:
     - echo "Building badges"
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_badge_info.sh
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_rep_count.sh
+    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_badge_info.sh
+    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_rep_count.sh
   artifacts:
     paths:
       - badges/
@@ -67,15 +134,8 @@ getBag:
     - schedules
   script:
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli --version > version_deriva.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
+    - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
     - pytest -m getBag
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_deriva.txt
-    expire_in: 7 days
 
 getData:
   stage: unit
@@ -86,17 +146,10 @@ getData:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag --version > version_bdbag.txt
     - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
     - unzip ./test_data/bag/Q-Y5F6_inputBag_xxxxtest.zip
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
+    - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
     - pytest -m getData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_bdbag.txt
-    expire_in: 7 days
 
 parseMetadata:
   stage: unit
@@ -107,25 +160,18 @@ parseMetadata:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
-    - rep=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
-    - exp=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
-    - study=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
-    - endsRaw=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
+    - rep=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
+    - exp=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
+    - study=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
+    - endsRaw=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
     - endsMeta="uk"
     - endsManual="se"
-    - stranded=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
-    - spike=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
-    - species=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
-    - readLength=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p readLength)
+    - stranded=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
+    - spike=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
+    - species=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
+    - readLength=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p readLength)
     - echo -e "${endsMeta},${endsRaw},${endsManual},${stranded},${spike},${species},${readLength},${exp},${study},${rep}" > design.csv
     - pytest -m parseMetadata
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_python.txt
-    expire_in: 7 days
 
 fastqc:
   stage: unit
@@ -136,15 +182,8 @@ fastqc:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc --version > version_fastqc.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
+    - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
     - pytest -m fastqc
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_fastqc.txt
-    expire_in: 7 days
 
 seqwho:
   stage: unit
@@ -157,15 +196,8 @@ seqwho:
   script:
     - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
     - mkdir -p SeqWho_call_plots/test_data/fastq/small/
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -h | grep -o Version.* > version_seqwho.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -f test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
+    - singularity run 'docker://gudmaprbk/seqwho0.0.1:1.0.0' seqwho.py -f test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
     - pytest -m seqwho
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_seqwho.txt
-    expire_in: 7 days
 
 trimData:
   stage: unit
@@ -176,18 +208,11 @@ trimData:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --version > version_trimgalore.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --length 35 --basename Q-Y5F6_1M.se ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --length 35 --paired --basename Q-Y5F6_1M.pe ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
+    - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --length 35 --basename Q-Y5F6_1M.se ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
+    - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --length 35 --paired --basename Q-Y5F6_1M.pe ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
     - readLengthSE=$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     - readLengthPE=$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
     - pytest -m trimData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_trimgalore.txt
-    expire_in: 7 days
 
 downsampleData:
   stage: unit
@@ -198,15 +223,8 @@ downsampleData:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk 2>&1 | grep -o Version.* > version_seqtk.txt&
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz 1000 1> sampled.1.fq
+    - singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz 1000 1> sampled.1.fq
     - pytest -m downsampleData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_seqtk.txt
-    expire_in: 7 days
 
 inferMetadata:
   stage: unit
@@ -217,21 +235,14 @@ inferMetadata:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py --version > version_rseqc.txt
     - >
       align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5F6_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
       if [[ ${align} == "" ]]; then exit 1; fi
     - >
-      export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
-      ended=`export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
+      singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
+      ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
       if [[ ${ended} == "" ]]; then exit 1; fi
     - pytest -m inferMetadata
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_rseqc.txt
-    expire_in: 7 days
   
 alignData:
   stage: unit
@@ -242,24 +253,15 @@ alignData:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 --version > version_hisat2.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools --version > version_samtools.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.se.unal.gz -S Q-Y5F6_1M.se.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness F -U ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz --summary-file Q-Y5F6_1M.se.alignSummary.txt --new-summary
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.se.bam Q-Y5F6_1M.se.sam
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.bam
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.sorted.bam.bai
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.pe.unal.gz -S Q-Y5F6_1M.pe.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness FR --no-mixed --no-discordant -1 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_1.fq.gz -2 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_2.fq.gz --summary-file Q-Y5F6_1M.pe.alignSummary.txt --new-summary
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.pe.bam Q-Y5F6_1M.pe.sam
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.bam
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.sorted.bam.bai
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.se.unal.gz -S Q-Y5F6_1M.se.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness F -U ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz --summary-file Q-Y5F6_1M.se.alignSummary.txt --new-summary
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.se.bam Q-Y5F6_1M.se.sam
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.bam
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.sorted.bam.bai
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.pe.unal.gz -S Q-Y5F6_1M.pe.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness FR --no-mixed --no-discordant -1 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_1.fq.gz -2 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_2.fq.gz --summary-file Q-Y5F6_1M.pe.alignSummary.txt --new-summary
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.pe.bam Q-Y5F6_1M.pe.sam
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.bam
+    - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.sorted.bam.bai
     - pytest -m alignData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_hisat2.txt
-      - version_samtools.txt
-    expire_in: 7 days
 
 dedupData:
   stage: unit
@@ -270,23 +272,14 @@ dedupData:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools --version > version_samtools.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates --version 2> version_markdups.txt&
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=./test_data/bam/small/Q-Y5F6_1M.se.sorted.bam O=Q-Y5F6_1M.se.deduped.bam M=Q-Y5F6_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.deduped.bam ./test_data/bam/small/Q-Y5F6_1M.se.deduped.bam
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools index -@ 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.sorted.deduped.bam.bai
+    - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=./test_data/bam/small/Q-Y5F6_1M.se.sorted.bam O=Q-Y5F6_1M.se.deduped.bam M=Q-Y5F6_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
+    - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.deduped.bam ./test_data/bam/small/Q-Y5F6_1M.se.deduped.bam
+    - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools index -@ 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.sorted.deduped.bam.bai
     - >
       for i in {"chr8","chr4","chrY"}; do
         echo "samtools view -b Q-Y5F6_1M.se.sorted.deduped.bam ${i} > Q-Y5F6_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.${i}.bam Q-Y5F6_1M.se.sorted.deduped.${i}.bam.bai;";
-      done | export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' parallel -j 20 -k
+      done | singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' parallel -j 20 -k
     - pytest -m dedupData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_markdups.txt
-      - version_samtools.txt
-    expire_in: 7 days
 
 countData:
   stage: unit
@@ -299,20 +292,11 @@ countData:
   script:
     - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/geneID.tsv
     - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/Entrez.tsv
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/sequence/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se_countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/calculateTPM.R --count ./test_data/counts/small/Q-Y5F6_1M.se_countData
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
+    - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/sequence/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se_countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
+    - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/calculateTPM.R --count ./test_data/counts/small/Q-Y5F6_1M.se_countData
+    - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
     - assignedReads=$(grep -m 1 'Assigned' *.summary | grep -oe '\([0-9.]*\)')
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -v &> version_featurecounts.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' R --version > version_r.txt
     - pytest -m makeFeatureCounts
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_featurecounts.txt
-      - version_r.txt
-    expire_in: 7 days
 
 makeBigWig:
   stage: unit
@@ -323,15 +307,8 @@ makeBigWig:
     - merge_requests
     - schedules
   script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' deeptools --version > version_deeptools.txt
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' bamCoverage -p 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam -o Q-Y5F6_1M.se.bw
+    - singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' bamCoverage -p 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam -o Q-Y5F6_1M.se.bw
     - pytest -m makeBigWig
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_deeptools.txt
-    expire_in: 7 days
 
 dataQC:
   stage: unit
@@ -345,7 +322,7 @@ dataQC:
     - >
       for i in {"chr8","chr4","chrY"}; do
         echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
-      done | export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
+      done | singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
     - pytest -m dataQC
 
 uploadInputBag:
@@ -362,12 +339,12 @@ uploadInputBag:
     - >
       md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
       size=$(wc -c < ./test.txt) &&
-      exist=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5}) &&
+      exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5}) &&
       if [ "${exist}" == "[]" ]; then
         cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
         cookie=${cookie:11:-1} &&
-        loc=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt --parents) &&
-        rid=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_input_bag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test input bag' -o staging.gudmap.org -c ${cookie}) &&
+        loc=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt --parents) &&
+        rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_input_bag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test input bag' -o staging.gudmap.org -c ${cookie}) &&
         echo ${rid} test input bag created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
@@ -386,16 +363,16 @@ uploadExecutionRun:
   script:
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
     - >
-      exist=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Replicate=17-BTFJ) &&
+      exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Replicate=17-BTFJ) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" == "[]" ]; then
-        rid=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
+        rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
         echo ${rid} test execution run created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
         rid=${rid:7:-6} &&
-        rid=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
+        rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
         echo ${rid} test execution run already exists
       fi
 
@@ -410,17 +387,17 @@ uploadQC:
   script:
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
     - >
-      exist=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=17-BTFJ) &&
+      exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=17-BTFJ) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" != "[]" ]; then
         rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
         for rid in ${rids}; do
-          export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t mRNA_QC -o staging.gudmap.org -c ${cookie}
+          singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t mRNA_QC -o staging.gudmap.org -c ${cookie}
         done
         echo all old mRNA QC RIDs deleted
       fi
-        rid=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_qc.py -r 17-BTFJ -e 17-BVDJ -p "Single End" -s forward -l 35 -w 5 -f 1 -t 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
+        rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_qc.py -r 17-BTFJ -e 17-BVDJ -p "Single End" -s forward -l 35 -w 5 -f 1 -t 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
         echo ${rid} test mRNA QC created
 
 uploadProcessedFile:
@@ -437,20 +414,20 @@ uploadProcessedFile:
     - mkdir -p ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/
     - mv 17-BTFJ_test.csv ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/17-BTFJ_test.csv
     - >
-      exist=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
+      exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" != "[]" ]; then
         rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
         for rid in ${rids}; do
-          export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie}
+          singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie}
         done
         echo all old processed file RIDs deleted
       fi
-      export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-upload-cli --catalog 2 --token ${cookie:9} staging.gudmap.org ./deriva
+      singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-upload-cli --catalog 2 --token ${cookie:9} staging.gudmap.org ./deriva
       echo test processed file uploaded
     - mkdir test
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag test --archiver zip
+    - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag test --archiver zip
     - echo test output bag created
     - pytest -m outputBag
 
@@ -468,39 +445,18 @@ uploadOutputBag:
     - >
       md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
       size=$(wc -c < ./test.txt) &&
-      exist=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=${md5}) &&
+      exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=${md5}) &&
       if [ "${exist}" == "[]" ]; then
         cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
         cookie=${cookie:11:-1} &&
-        loc=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
-        rid=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_output_bag.py -e 17-BVDJ -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
+        loc=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
+        rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_output_bag.py -e 17-BVDJ -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
         echo ${rid} test output bag created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
         rid=${rid:8:-6} &&
         echo ${rid} test output bag already exists
       fi
-
-
-generateVersions:
-  stage: aggregation
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/multiqc1.9:1.0.0' multiqc --version > version_multiqc.txt
-    - python ./workflow/scripts/generate_versions.py -o software_versions
-    - python ./workflow/scripts/generate_references.py -r ./docs/references.md -o software_references
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - software_references_mqc.yaml
-      - software_versions_mqc.yaml
-    expire_in: 7 days
 
 
 human_BioHPC:
@@ -549,7 +505,7 @@ human_dev:
     - loc=$(dirname ${refURL})
     - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-    - test=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
     - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
@@ -575,7 +531,7 @@ mouse_dev:
     - loc=$(dirname ${refURL})
     - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-    - test=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
     - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
@@ -601,7 +557,7 @@ human_staging:
     - loc=$(dirname ${refURL})
     - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-    - test=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
     - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
@@ -628,7 +584,7 @@ mouse_staging:
     - loc=$(dirname ${refURL})
     - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-    - test=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
     - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
@@ -654,7 +610,7 @@ human_prod:
     - loc=$(dirname ${refURL})
     - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-    - test=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
     - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
@@ -681,7 +637,7 @@ mouse_prod:
     - loc=$(dirname ${refURL})
     - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-    - test=$(export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
     - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
@@ -695,7 +651,7 @@ integration_se:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --refSource datahub --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./SE_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --refSource datahub --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./SE_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
     - pytest -m completionMultiqc --filename SE_multiqc_data.json
   artifacts:
@@ -720,7 +676,7 @@ integration_pe:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./PE_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./PE_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
     - pytest -m completionMultiqc --filename PE_multiqc_data.json
   artifacts:
@@ -747,7 +703,7 @@ failAmbiguousSpecies:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failAmbiguousSpecies_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failAmbiguousSpecies_report.html
   retry:
     max: 0
     when:
@@ -762,7 +718,7 @@ failTrunkation:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failTrunkation_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failTrunkation_report.html
   retry:
     max: 0
     when:
@@ -777,7 +733,7 @@ failMismatchR1R2:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-CWH4 --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failMismatchR1R2_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-CWH4 --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failMismatchR1R2_report.html
   retry:
     max: 0
     when:
@@ -792,7 +748,7 @@ failUnexpectedMeta:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 14-3R4R --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failUnexpectedMeta_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 14-3R4R --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failUnexpectedMeta_report.html
   retry:
     max: 0
     when:
@@ -807,7 +763,7 @@ failFileStructure:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5HT --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failFileStructure_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5HT --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failFileStructure_report.html
   retry:
     max: 0
     when:
@@ -822,7 +778,7 @@ failSeqType:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-DNDJ --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failSeqType_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-DNDJ --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failSeqType_report.html
   retry:
     max: 0
     when:
@@ -837,7 +793,7 @@ override_inputBag:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --dev false --ci true --track false -with-report ./inputBagOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --dev false --ci true --track false -with-report ./inputBagOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./inputBagOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename inputBagOverride_multiqc_data.json
@@ -862,7 +818,7 @@ override_fastq:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6    --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6    --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./fastqOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename fastqOverride_multiqc_data.json
@@ -887,7 +843,7 @@ override_species:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./speciesOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename speciesOverride_multiqc_data.json
@@ -912,7 +868,7 @@ override_stranded:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EY --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EY --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./strandedOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./strandedOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename strandedOverride_multiqc_data.json
@@ -937,7 +893,7 @@ override_spike:
   script:
     - hostname
     - ulimit -a
-    - export SINGULARITY_CACHEDIR=/project/BICF/BICF_Core/shared/gudmap/singularity_cache/ && nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce true --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce true --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./spikeOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./spikeOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename spikeOverride_multiqc_data.json
