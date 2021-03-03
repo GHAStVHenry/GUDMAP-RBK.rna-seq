@@ -807,21 +807,6 @@ integration_pe:
       - always
 
 
-failSpecies:
-  stage: integration
-  only: [merge_requests]
-  except:
-    variables:
-      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
-  script:
-    - hostname
-    - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F4 --source staging --inputBagForce ./test_data/bag/wrongSpecies/Q-Y5F6_inputBag_xxxxxxxx.zip --upload true -with-dag dag.png --dev false --ci true --track false -with-report ./failSpecies_report.html
-  retry:
-    max: 0
-    when:
-      - always
-
 failTrunkation:
   stage: integration
   only: [merge_requests]
@@ -941,6 +926,31 @@ override_fastq:
     paths:
       - fastqOverride_multiqc_data.json
       - fastqOverride_multiqc.html
+    expire_in: 7 days
+  retry:
+    max: 0
+    when:
+      - always
+
+override_species:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_multiqc_data.json \;
+    - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./speciesOverride_multiqc.html \;
+    - pytest -m completionMultiqc --filename speciesOverride_multiqc_data.json
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - speciesOverride_multiqc_data.json
+      - speciesOverride_multiqc.html
     expire_in: 7 days
   retry:
     max: 0
