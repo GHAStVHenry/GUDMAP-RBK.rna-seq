@@ -109,6 +109,7 @@ collect:
       - version_featurecounts.txt
       - version_r.txt
       - version_deeptools.txt
+      - version_multiqc.txt
     expire_in: 7 days
 
 generateVersions:

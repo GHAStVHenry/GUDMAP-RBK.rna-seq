@@ -43,10 +43,10 @@ SOFTWARE_REGEX = {
     'Seqtk': ['version_seqtk.txt', r"Version: (\S+)"],
     'R': ['version_r.txt', r"R version (\S+)"],
     'FastQC': ['version_fastqc.txt', r"FastQC v(\S+)"],
-    'SeqWho': ['version_seqwho.txt', r"Version: (\S+)"],
+    'SeqWho': ['version_seqwho.txt', r"Version (\S+)"],
     'RSeQC': ['version_rseqc.txt', r"infer_experiment.py (\S+)"],
     'MultiQC': ['version_multiqc.txt', r"multiqc, version (\S+)"],
-    'Pipeline Version': ['./workflow/nextflow.config', r"version = 'v(\S+)'"]
+    'Pipeline Version': ['./nextflow.config', r"version = 'v(\S+)'"]
 }
 
 
