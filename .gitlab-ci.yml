@@ -32,10 +32,7 @@ img_cache:
   stage: singularity
   script:
     - export -p | grep SINGULARITY_CACHEDIR
-    - >
-      for container in `cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq`; do
-        singularity pull 'docker://'${container}
-      done
+    - cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | xargs -P 10 -I {} singularity pull 'docker://'{}
 
 collect:
   stage: versions
