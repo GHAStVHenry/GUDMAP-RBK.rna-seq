@@ -15,7 +15,7 @@ variables:
   refMoVersion: "38.p6.vM25"
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
-  dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
+  dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/cache"
 
 stages:
   - singularity
@@ -34,7 +34,6 @@ img_cache:
   script:
     - chmod 0700 ${dir}
     - cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | xargs -P 10 -I {} singularity pull --dir ${dir} 'docker://'{} || true
-    - chmod 775 ${dir}
     - chmod 775 ${dir}*.sif
 
 collect:
