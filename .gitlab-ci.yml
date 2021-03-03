@@ -55,11 +55,6 @@ collect:
       echo ${dir}${fastqcImg}_${fastqcVar}.sif
       singularity run ${dir}${fastqcImg}_${fastqcVar}.sif fastqc --version > version_fastqc.txt
     - >
-      seqwhoImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f1)
-      seqwhoVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f2)
-      echo ${dir}${seqwhoImg}_${seqwhoVar}.sif
-      singularity run ${dir}${seqwhoImg}_${seqwhoVar}.sif seqwho.py -h | grep -o Version.* > version_seqwho.txt
-    - >
       trimgaloreImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f1)
       trimgaloreVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f2)
       echo ${dir}${trimgaloreImg}_${trimgaloreVar}.sif
