@@ -7,20 +7,20 @@
         data: |
             <dl class="dl-horizontal">
         
-            <dt>Python</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>DERIVA</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>BDBag</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>Trim Galore!</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>HISAT2</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>Samtools</dt><dd>v--version</dd>
-            <dt>picard (MarkDuplicates)</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>featureCounts</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>deepTools</dt><dd>v--version</dd>
-            <dt>Seqtk</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>R</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>FastQC</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>SeqWho</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>RSeQC</dt><dd>v--version</dd>
-            <dt>MultiQC</dt><dd><span style="color:#999999;">Not Run</span></dd>
-            <dt>Pipeline Version</dt><dd><span style="color:#999999;">Not Run</span></dd>
+            <dt>Python</dt><dd>v3.8.3</dd>
+            <dt>DERIVA</dt><dd>v1.4.3</dd>
+            <dt>BDBag</dt><dd>v1.5.6</dd>
+            <dt>Trim Galore!</dt><dd>v0.6.4_dev</dd>
+            <dt>HISAT2</dt><dd>v2.2.1</dd>
+            <dt>Samtools</dt><dd>v1.11</dd>
+            <dt>picard (MarkDuplicates)</dt><dd>v2.23.9</dd>
+            <dt>featureCounts</dt><dd>v2.0.1</dd>
+            <dt>deepTools</dt><dd>v3.5.0</dd>
+            <dt>Seqtk</dt><dd>v1.3-r106</dd>
+            <dt>R</dt><dd>v4.0.3</dd>
+            <dt>FastQC</dt><dd>v0.11.9</dd>
+            <dt>SeqWho</dt><dd>vBeta-1.0.0</dd>
+            <dt>RSeQC</dt><dd>v4.0.0</dd>
+            <dt>MultiQC</dt><dd>v1.9</dd>
+            <dt>Pipeline Version</dt><dd>v2.0.0rc01</dd>
             </dl>
