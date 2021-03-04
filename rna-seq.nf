@@ -1706,7 +1706,6 @@ pipelineError.into {
   pipelineError_uploadProcessedFile
   pipelineError_uploadOutputBag
   pipelineError_failExecutionRun
-  pipelineError_uploadExecutionRun
   pipelineError_finalizeExecutionRun
   pipelineError_uploadQC_fail
 }
@@ -2274,14 +2273,13 @@ process uploadExecutionRun {
     val seqtypeError from seqtypeError_uploadExecutionRun
     val speciesErrorSeqwho from speciesErrorSeqwho_uploadExecutionRun
     val speciesError from speciesError_uploadExecutionRun
-    val pipelineError from pipelineError_uploadExecutionRun
     
   output:
     path ("executionRunRID.csv") into executionRunRID_fl
 
   when:
     upload
-    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false"
 
   script:
     """
