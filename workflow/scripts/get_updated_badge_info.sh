@@ -2,12 +2,12 @@
 
 echo "collecting stats for badges"
 latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
-current_pipeline_version=$(git show ${latest_release_tag}:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
-current_nextflow_version=$(git show ${latest_release_tag}:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
-master_pipeline_version=$(git show origin/master:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
-master_nextflow_version=$(git show origin/master:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
-develop_pipeline_version=$(git show origin/develop:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
-develop_nextflow_version=$(git show origin/develop:workflow/nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
+current_pipeline_version=$(git show ${latest_release_tag}:nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
+current_nextflow_version=$(git show ${latest_release_tag}:nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
+master_pipeline_version=$(git show origin/master:nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
+master_nextflow_version=$(git show origin/master:nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
+develop_pipeline_version=$(git show origin/develop:nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
+develop_nextflow_version=$(git show origin/develop:nextflow.config | grep -o nextflowVersion.* | grep -oP "(?<=').*(?=')")
 
 echo "collecting tool version for badges"
 python_version=$(git show ${latest_release_tag}:docs/software_versions_mqc.yaml | grep -o Python.* | grep -oP "(?<=d>).*(?=\<)")
