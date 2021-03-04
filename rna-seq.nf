@@ -303,7 +303,7 @@ if (fastqsForce != "") {
     }
   Channel
     .fromPath(fastqsForce)
-    .count().into {
+    .count().set {
     fastqCount
     }
 } else {
@@ -313,7 +313,7 @@ if (fastqsForce != "") {
     fastqs_parseMetadata
     fastqs_fastqc
   }
-  fastqCountTemp.into {
+  fastqCountTemp.set {
     fastqCount
   }
 }
@@ -1697,12 +1697,9 @@ checkMetadata_fl.splitCsv(sep: ",", header: false).separate(
   pipelineError_species
 )
 pipelineError.into {
-  pipelineError_getRef
-  pipelineError_alignData
   pipelineError_dedupData
   pipelineError_makeBigWig
   pipelineError_countData
-  pipelineError_fastqc
   pipelineError_dataQC
   pipelineError_aggrQC
   pipelineError_uploadQC
@@ -2283,7 +2280,8 @@ process uploadExecutionRun {
     path ("executionRunRID.csv") into executionRunRID_fl
 
   when:
-    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
+    upload
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2393,7 +2391,8 @@ process uploadQC {
     path ("qcRID.csv") into qcRID_fl
 
   when:
-    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
+    upload
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2468,7 +2467,8 @@ process uploadProcessedFile {
     path ("${repRID}_Output_Bag.zip") into outputBag
 
   when:
-    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
+    upload
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2566,7 +2566,8 @@ process uploadOutputBag {
     path ("outputBagRID.csv") into outputBagRID_fl
 
   when:
-    upload && fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
+    upload
+    fastqCountError == "false" && fastqReadError == "false" && fastqFileError == "false" && seqtypeError == "false" && speciesErrorSeqwho == "false" && speciesError == "false" && pipelineError == "false"
 
   script:
     """
@@ -2702,7 +2703,8 @@ process failPreExecutionRun {
     path ("executionRunRID.csv") into executionRunRID_preFail_fl
 
   when:
-    upload && fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true"
+    upload
+    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true"
 
   script:
     """
@@ -2817,7 +2819,8 @@ process failExecutionRun {
     val pipelineError_species
 
   when:
-    upload && pipelineError == 'true'
+    upload
+    pipelineError == "true"
 
   script:
     """
@@ -2899,7 +2902,7 @@ process uploadQC_fail {
 
   when:
     upload
-    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesErrorSeqwho == "true" || speciesError == "true" || pipelineError == 'true'
+    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesErrorSeqwho == "true" || speciesError == "true" || pipelineError == "true"
 
   script:
     """
