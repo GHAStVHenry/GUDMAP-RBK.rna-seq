@@ -56,12 +56,14 @@ To Run:
   * `--inputBagForce` utilizes a local replicate inputBag instead of downloading from the data-hub (still requires accurate repRID input)
     * eg: `--inputBagForce test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip` (must be the expected bag structure, this example will not work because it is a test bag)
   * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)
-    * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order)
+    * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order, also consider using `endsForce` if the endness doesn't match submitted value)
   * `--speciesForce` forces the species to be "Mus musculus" or "Homo sapiens", it bypasses a metadata mismatch or an ambiguous species error
     * eg: `--speciesForce 'Mus musculus'`
+  * `--endsForce` forces the endness to be "se", or "pe", it bypasses a metadata mismatch error
+    * eg: `--endsForce 'pe'`
   * `--strandedForce` forces the strandedness to be "forward", "reverse" or "unstranded", it bypasses a metadata mismatch error
     * eg: `--strandedForce 'unstranded'`
-  * `--spikeForce` forces the spike-in to be "false" or "true", it bypasses a metadata mismatch error
+  * `--spikeForce` forces the spike-in to be "false", or "true", it bypasses a metadata mismatch error
     * eg: `--spikeForce 'true'`
 * Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
   * `--ci` boolean (default = false)
@@ -86,6 +88,15 @@ This pipeline is also capable of being run on AWS and DNAnexus. To do so:
 * Add `-profile` with the name aws config which was customized
 ### DNAnexus (utilizes the [DNAnexus extension package for Nextflow (XPACK-DNANEXUS)](https://github.com/seqeralabs/xpack-dnanexus))
 * Follow the istructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about installing and authenticating (a valid license must be available for the extension package from Seqera Labs, as well as a subsription with DNAnexus)
+* The nf-dxapp needs to be built with a custom scm config to allow nextflow to pull the pipeline from the UTSW self-hosted GitLab server (git.biohpc.swmed.edu)
+```
+providers {
+    bicf {
+        server = 'https://git.biohpc.swmed.edu'
+        platform = 'gitlab'
+    }
+}
+```
 * Follow the instructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about launching runs. A template *json* file has been included ([dnanexusExample.json](docs/dnanexusExample.json))
   * `[version]` should be replaced with the pipeline version required (eg: `v2.0.0`)
   * `[credential.json]` should be replaced with the location of the credential file outpted by authentification with Deriva
@@ -110,7 +121,11 @@ Error reported back to the data-hub are (they aren't thrown on the command line 
 |**Number of fastqs detected does not match submitted endness**|Single-end sequenced replicates can only have one fastq, while paried\-end can only have two (see above).|
 |**Number of reads do not match for R1 and R2**|For paired\-end sequenced studies the number of reads in read\-1 fastq must match that of read\-2. This error is usually indicative of uploading of currupted, trunkated, or wrong fastq files.|
 |**There is an error with the structure of the fastq**|The fastq's fail a test of their structure. This error is usually indicative of uploading of currupted, trunkated, or wrong fastq files.|
-|**Inference of species returns an ambiguous result**|Species of the replicate is done by aligning a random subset of 1 million reads from the data to both the human and mouse reference genomes. If there isn't a clear difference between the alignment rates (`>=40%` of one species, but `<40%` of the other), then this error is detected.|
+|**Infered species does not match for R1 and R2**|The species inferred from each read does not match. This error is usually indicative of uploading of wrong fastq files.|
+|**Infered species confidence is low**|The confidence of the species inferrence call is low. This is usually indicative of very low quality samples.|
+|**Infered sequencing type is not mRNA-seq**|The sequence type inferred is not mRNA-seq. This is usually indicative of uploading wrong fastq files.|
+|**Infered sequencing type does not match for R1 and R2**|The sequencing type inferred from each read does not match. This error is usually indicative of uploading of wrong fastq files.|
+|**Infered species confidence is low**|The confidence of the species inferrence call is low AND 3 sets of a random sampling of the fastq's do not match. This is usually indicative of very low quality samples.|
 |**Submitted metadata does not match inferred**|All required metadata for analysis of the data is internally inferred by the pipeline, if any of those do not match the submitted metadata, this error is detected to notify of a potential error. The mismatched metadata will be listed.|
 
 <hr>

@@ -25,12 +25,6 @@
                 <ul>
                 <li>D'Arcy, M., Chard, K., Foster, I., Kesselman, C., Madduri, R., Saint, N., &amp; Wagner, R.. 2019. Big Data Bags: A Scalable Packaging Format for Science. Zenodo. doi:<a href="http://doi.org/10.5281/zenodo.3338725">10.5281/zenodo.3338725</a>.</li>
                 </ul>
-                <ol start="4" style="list-style-type: decimal">
-                <li><strong>RSeQC</strong>:</li>
-                </ol>
-                <ul>
-                <li>Wang, L., Wang, S., Li, W. 2012 RSeQC: quality control of RNA-seq experiments. Bioinformatics. Aug 15;28(16):2184-5. doi:<a href="https://doi.org/10.1093/bioinformatics/bts356">10.1093/bioinformatics/bts356</a>.</li>
-                </ul>
                 <ol start="5" style="list-style-type: decimal">
                 <li><strong>trimgalore</strong>:</li>
                 </ol>
@@ -61,23 +55,41 @@
                 <ul>
                 <li>Liao, Y., Smyth, G.K., Shi, W. 2014 featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. Apr 1;30(7):923-30. doi:<a href="https://doi.org/10.1093/bioinformatics/btt656">10.1093/bioinformatics/btt656</a>.</li>
                 </ul>
-                <ol start="10" style="list-style-type: decimal">
-                <li><strong>R</strong>:</li>
-                </ol>
-                <ul>
-                <li>R Core Team 2014. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL:<a href="http://www.R-project.org/" class="uri">http://www.R-project.org/</a>.</li>
-                </ul>
                 <ol start="11" style="list-style-type: decimal">
                 <li><strong>deeptools</strong>:</li>
                 </ol>
                 <ul>
                 <li>Ramírez, F., D. P. Ryan, B. Grüning, V. Bhardwaj, F. Kilpert, A. S. Richter, S. Heyne, F. Dündar, and T. Manke. 2016. deepTools2: a next generation web server for deep-sequencing data analysis. Nucleic Acids Research 44: W160-165. doi:<a href="http://dx.doi.org/10.1093/nar/gkw257">10.1093/nar/gkw257</a></li>
                 </ul>
+                <ol start="11" style="list-style-type: decimal">
+                <li><strong>Seqtk</strong>:</li>
+                </ol>
+                <ul>
+                <li>Seqtk <a href="https://github.com/lh3/seqtk" class="uri">https://github.com/lh3/seqtk</a></li>
+                </ul>
+                <ol start="10" style="list-style-type: decimal">
+                <li><strong>R</strong>:</li>
+                </ol>
+                <ul>
+                <li>R Core Team 2014. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL:<a href="http://www.R-project.org/" class="uri">http://www.R-project.org/</a>.</li>
+                </ul>
                 <ol start="12" style="list-style-type: decimal">
                 <li><strong>FastQC</strong></li>
                 </ol>
                 <ul>
                 <li>FastQC <a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/" class="uri">https://www.bioinformatics.babraham.ac.uk/projects/fastqc/</a></li>
+                </ul>
+                <ol start="12" style="list-style-type: decimal">
+                <li><strong>SeqWho</strong></li>
+                </ol>
+                <ul>
+                <li>SeqWho <a href="https://git.biohpc.swmed.edu/s181649/seqwho" class="uri">https://git.biohpc.swmed.edu/s181649/seqwho</a></li>
+                </ul>
+                <ol start="4" style="list-style-type: decimal">
+                <li><strong>RSeQC</strong>:</li>
+                </ol>
+                <ul>
+                <li>Wang, L., Wang, S., Li, W. 2012 RSeQC: quality control of RNA-seq experiments. Bioinformatics. Aug 15;28(16):2184-5. doi:<a href="https://doi.org/10.1093/bioinformatics/bts356">10.1093/bioinformatics/bts356</a>.</li>
                 </ul>
                 <ol start="13" style="list-style-type: decimal">
                 <li><strong>MultiQC</strong>:</li>

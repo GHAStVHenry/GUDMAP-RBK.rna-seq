@@ -1,7 +1,7 @@
 
         id: 'software_versions'
         section_name: 'Software Versions'
-        section_href: 'https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/78-tool_version/docs/RNA-Seq%20Pipeline%20Design%20Process%20Table.pdf'
+        section_href: 'https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/wikis/Pipeline/Tool-Versions'
         plot_type: 'html'
         description: 'are collected for pipeline version.'
         data: |
@@ -10,15 +10,17 @@
             <dt>Python</dt><dd>v3.8.3</dd>
             <dt>DERIVA</dt><dd>v1.4.3</dd>
             <dt>BDBag</dt><dd>v1.5.6</dd>
-            <dt>RSeQC</dt><dd>v4.0.0</dd>
             <dt>Trim Galore!</dt><dd>v0.6.4_dev</dd>
             <dt>HISAT2</dt><dd>v2.2.1</dd>
             <dt>Samtools</dt><dd>v1.11</dd>
             <dt>picard (MarkDuplicates)</dt><dd>v2.23.9</dd>
             <dt>featureCounts</dt><dd>v2.0.1</dd>
-            <dt>R</dt><dd>v4.0.3</dd>
             <dt>deepTools</dt><dd>v3.5.0</dd>
+            <dt>Seqtk</dt><dd>v1.3-r106</dd>
+            <dt>R</dt><dd>v4.0.3</dd>
             <dt>FastQC</dt><dd>v0.11.9</dd>
+            <dt>SeqWho</dt><dd>vBeta-1.0.0</dd>
+            <dt>RSeQC</dt><dd>v4.0.0</dd>
             <dt>MultiQC</dt><dd>v1.9</dd>
-            <dt>Pipeline Version</dt><dd>v1.0.2</dd>
+            <dt>Pipeline Version</dt><dd>v2.0.0rc01</dd>
             </dl>

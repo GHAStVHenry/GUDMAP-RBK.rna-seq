@@ -27,17 +27,17 @@ top_modules:
   - picard:
       name: 'Dedup'
       info: 'Replicate Alignement Deduplication QC Results'
+  - featureCounts:
+      name: 'Count'
+      info: 'Replicate Feature Count QC Results'
   - rseqc:
       name: 'Inner Distance'
       info: 'Replicate Paired End Inner Distance Distribution Results'
       path_filters:
         - '*insertSize*'
   - custom_content
-  - featureCounts:
-      name: 'Count'
-      info: 'Replicate Feature Count QC Results'
   - hisat2:
-      name: 'Inference: Align'
+      name: 'Inference: Spike-in'
       info: 'Inference Alignment (1M downsampled reads) QC Results'
       path_filters:
         - '*alignSampleSummary*'
@@ -131,8 +131,8 @@ custom_data:
 
     ref:
         file_format: 'tsv'
-        section_name: 'Reference'
-        description: 'This is the reference version information'
+        section_name: 'Genome Reference'
+        description: 'This is the genome reference version information'
         plot_type: 'table'
         pconfig:
             id: 'ref'
@@ -166,6 +166,28 @@ custom_data:
             71 - 80
             81 - 90
             91 - 100
+    seqwho:
+        file_format: 'tsv'
+        section_name: 'Inference: Sequencing Type & Species'
+        description: 'This is the inference results from the SeqWho tool'
+        plot_type: 'table'
+        pconfig:
+            id: 'ref'
+            scale: false
+            format: '{}'
+        headers:
+            Read:
+                description: 'Sequencing read (R1/R2)'
+            Seq Type:
+                description: 'Inferred Sequence Type'
+            Species:
+                description: 'Inferred Species'
+            Seq Type Confidence:
+                description: 'Seqence type call confidence'
+            Seq Type Consensus:
+                description: 'Low confidence sequence type call sampling inference consensus'
+            Species Confidence:
+                description: 'Species call confidence'
 
 sp:
     run:
@@ -178,3 +200,5 @@ sp:
         fn: 'reference.tsv'
     tin:
         fn: '*_tin.hist.tsv'
+    seqwho:
+        fn: 'seqwhoInfer.tsv'
