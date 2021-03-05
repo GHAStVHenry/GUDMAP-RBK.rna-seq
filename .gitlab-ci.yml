@@ -16,10 +16,10 @@ variables:
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
   dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
-  dnanexusEnv: true
-  awsEnv: false
-  azureEnv: false
-  gcpEnv: false
+  dnanexusEnv: "true"
+  awsEnv: "false"
+  azureEnv: "false"
+  gcpEnv: "false"
 
 stages:
   - environment
@@ -1015,12 +1015,14 @@ override_spike:
 
 dnanexus:
   stage: environment
+  only:
+    - push
   except:
     variables:
-      - $dnanexusEnv == false
+      - $dnanexusEnv == "false"
   script:
     - hostname
     - ulimit -a
     - module load dxtoolkit/python27/0.294.0
-    - export NXF_XPACK_LICENSE=${nxf_license}
-    - dx upload ./test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --workspace-id ${dnanexus_workspace}
+    - export NXF_XPACK_LICENSE=$nxf_license
+    - dx upload ./test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token $dnanexus_authToken --workspace-id $dnanexus_workspace
