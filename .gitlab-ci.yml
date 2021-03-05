@@ -1025,7 +1025,7 @@ dnanexus:
     - ulimit -a
     - module load dxtoolkit/python27/0.294.0
     - export NXF_XPACK_LICENSE=${nxf_license}
-    - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id${dnanexus_workspace}
+    - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - dx upload ./test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - >
       dx run --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} nf-dxapp-bicf \
@@ -1035,5 +1035,5 @@ dnanexus:
         --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)"
   after_script:
     - module load dxtoolkit/python27/0.294.0
-    - dx rm /ci-env/auth/c* --all --project-context-id ${dnanexus_workspace}
-    - dx rm /ci-env/input/Q-Y5F6_1M.R{1,2}.fastq.gz --all --project-context-id ${dnanexus_workspace}
+    - dx rm /ci-env/auth/c* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx rm /ci-env/input/Q-Y5F6_1M.R{1,2}.fastq.gz --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
