@@ -16,8 +16,13 @@ variables:
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
   dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
+  dnanexusEnv: true
+  awsEnv: false
+  azureEnv: false
+  gcpEnv: false
 
 stages:
+  - environment
   - singularity
   - versions
   - aggregation
@@ -916,7 +921,7 @@ override_fastq:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6    --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./fastqOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename fastqOverride_multiqc_data.json
@@ -1008,19 +1013,14 @@ override_spike:
       - always
 
 
-consistency:
-  stage: consistency
-  only: [merge_requests]
+dnanexus:
+  stage: environment
   except:
     variables:
-        - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+      - $dnanexusEnv == false
   script:
-    - pytest -m consistencySE
-    - pytest -m consistencyPE
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - SE_multiqc_data.json
-      - PE_multiqc_data.json
-    expire_in: 7 days
+    - hostname
+    - ulimit -a
+    - module load dxtoolkit/python27/0.294.0
+    - export NXF_XPACK_LICENSE=${nxf_license}
+    - dx upload ./test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --workspace-id ${dnanexus_workspace}
