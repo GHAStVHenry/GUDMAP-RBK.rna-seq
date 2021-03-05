@@ -1028,7 +1028,7 @@ dnanexus:
     - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - dx upload ./test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - >
-      dx run --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} nf-dxapp-bicf \
+      dx run nf-dxapp-bicf --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} \
         --watch \
         --delay-workspace-destruction \
         --instance-type mem1_ssd1_v2_x16 \
