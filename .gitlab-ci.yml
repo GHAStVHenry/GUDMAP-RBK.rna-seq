@@ -1025,4 +1025,13 @@ dnanexus:
     - ulimit -a
     - module load dxtoolkit/python27/0.294.0
     - export NXF_XPACK_LICENSE=${nxf_license}
+    - dx upload ./test_data/auth/c* --path ${dnanexus_workspace}:/ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --workspace-id $dnanexus_workspace}
     - dx upload ./test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz --path ${dnanexus_workspace}:/ci-env/input/ --parents --auth-token ${dnanexus_authToken} --workspace-id $dnanexus_workspace}
+    - >
+      dx run nf-dxapp-bicf \
+        --watch \
+        --delay-workspace-destruction \
+        --instance-type mem1_ssd1_v2_x16 \
+        --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)"
+    - dx rm ${dnanexus_workspace}:/ci-env/auth/c* --all
+    - dx rm ${dnanexus_workspace}:/ci-env/input/Q-Y5F6_1M.R{1,2}.fastq.gz --all
