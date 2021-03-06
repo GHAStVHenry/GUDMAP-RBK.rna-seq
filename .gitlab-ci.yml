@@ -1043,3 +1043,4 @@ dnanexus:
   artifacts:
     paths:
       - badges/
+  allow_failure: true
