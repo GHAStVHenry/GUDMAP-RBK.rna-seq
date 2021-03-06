@@ -16,10 +16,6 @@ variables:
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
   dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
-  dnanexusEnv: "false"
-  awsEnv: "false"
-  azureEnv: "false"
-  gcpEnv: "false"
 
 stages:
   - environment
@@ -1016,10 +1012,9 @@ override_spike:
 dnanexus:
   stage: environment
   only:
-    - master
-  except:
+    - schedules
     variables:
-      - $dnanexusEnv == "false"
+      - $dnanexusEnv == "true"
   before_script:
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
