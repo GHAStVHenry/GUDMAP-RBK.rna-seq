@@ -139,6 +139,7 @@ build_badges:
     - master
     - develop
     - tags
+    - push
   before_script:
     - module load singularity/3.5.3
     - chmod +x ./workflow/scripts/get_updated_badge_info.sh
@@ -159,6 +160,7 @@ pages:
     - master
     - develop
     - tags
+    - push
   dependencies:
     - build_badges
   script:
