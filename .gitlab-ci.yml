@@ -16,7 +16,7 @@ variables:
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
   dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
-  dnanexusEnv: "true"
+  dnanexusEnv: "false"
   awsEnv: "false"
   azureEnv: "false"
   gcpEnv: "false"
@@ -1016,10 +1016,13 @@ override_spike:
 dnanexus:
   stage: environment
   only:
-    - push
+    - master
   except:
     variables:
       - $dnanexusEnv == "false"
+  before_script:
+    - mkdir -p ./badges/env
+    - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
   script:
     - hostname
     - ulimit -a
@@ -1033,7 +1036,11 @@ dnanexus:
         --delay-workspace-destruction \
         --instance-type mem1_ssd1_v2_x16 \
         --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)"
+    - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-active-success?style=flat > ./badges/env/dnanexus.svg
   after_script:
     - module load dxtoolkit/python27/0.294.0
     - dx rm /ci-env/auth/c* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - dx rm /ci-env/input/Q-Y5F6_1M.R{1,2}.fastq.gz --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+  artifacts:
+    paths:
+      - badges/
