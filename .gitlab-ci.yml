@@ -1012,9 +1012,12 @@ override_spike:
 dnanexus:
   stage: environment
   only:
-    - schedules
     variables:
       - $dnanexusEnv == "true"
+  except:
+    - push
+    - tags
+    - merge_requests
   before_script:
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
