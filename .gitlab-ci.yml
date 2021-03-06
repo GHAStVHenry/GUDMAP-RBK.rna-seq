@@ -1018,12 +1018,11 @@ dnanexus:
     - push
     - tags
     - merge_requests
-  before_script:
-    - mkdir -p ./badges/env
-    - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
   script:
     - hostname
     - ulimit -a
+    - mkdir -p ./badges/env
+    - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
     - module load dxtoolkit/python27/0.294.0
     - export NXF_XPACK_LICENSE=${nxf_license}
     - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
