@@ -1031,7 +1031,6 @@ dnanexus:
     - dx upload ./test_data/fastq/xsmall/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - >
       dx run nf-dxapp-bicf --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} \
-        --watch \
         --delay-workspace-destruction \
         --instance-type mem1_ssd1_v2_x16 \
         --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)" \

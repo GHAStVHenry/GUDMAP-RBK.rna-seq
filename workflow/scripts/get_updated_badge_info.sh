@@ -53,6 +53,7 @@ curl --request GET https://img.shields.io/badge/RSeQC%20Version-${rseqc_version}
 curl --request GET https://img.shields.io/badge/MultiQC%20Version-${multiqc_version}-blueviolet?style=flat > ./badges/tools/multiqc.svg
 
 echo "creating blank env badges if not tested"
+mkdir -p ./badges/env
 if [ ! -f ./badges/env/dnanexus.svg ]
 then
 curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-not_tested-important?style=flat > ./badges/env/dnanexus.svg
