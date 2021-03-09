@@ -1037,7 +1037,7 @@ dnanexus:
         > dx.log
     - >
       jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
-    - dx watch ${jobID} -auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx watch ${jobID} --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - status=$(dx find executions --id ${jobID} --state failed --brief -auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace})
     - >
       if [ ${status} == "" ]
@@ -1049,7 +1049,7 @@ dnanexus:
   after_script:
     - module load dxtoolkit/python27/0.294.0
     - dx rm /ci-env/auth/c* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
-    - dx rm /ci-env/input/Q-Y5F6_1M.R{1,2}.fastq.gz --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx rm /ci-env/input/Q-Y5F6_1K.R{1,2}.fastq.gz --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
   artifacts:
     paths:
       - badges/
