@@ -1036,7 +1036,8 @@ dnanexus:
         --instance-type mem1_ssd1_v2_x16 \
         --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)" \
         > dx.log
-    - jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
+    - >
+      jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
     - dx watch ${jobID}
     - status=$(dx find executions --id ${jobID} --state failed --brief)
     - >
