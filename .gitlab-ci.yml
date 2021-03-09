@@ -1037,8 +1037,8 @@ dnanexus:
         > dx.log
     - >
       jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
-    - dx watch ${jobID}
-    - status=$(dx find executions --id ${jobID} --state failed --brief-auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace})
+    - dx watch ${jobID} -auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - status=$(dx find executions --id ${jobID} --state failed --brief -auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace})
     - >
       if [ ${status} == "" ]
       then
