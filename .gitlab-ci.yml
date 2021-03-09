@@ -1042,9 +1042,9 @@ dnanexus:
     - >
       if [ ${status} == "" ]
       then
-        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-success-success?style=flat > ./badges/env/dnanexus.svg
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20succesful-success?style=flat > ./badges/env/dnanexus.svg
       else
-        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-failed-critical?style=flat > ./badges/env/dnanexus.svg
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20failed-critical?style=flat > ./badges/env/dnanexus.svg
       fi
   after_script:
     - module load dxtoolkit/python27/0.294.0
