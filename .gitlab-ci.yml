@@ -1028,14 +1028,24 @@ dnanexus:
     - module load dxtoolkit/python27/0.294.0
     - export NXF_XPACK_LICENSE=${nxf_license}
     - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
-    - dx upload ./test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx upload ./test_data/fastq/xsmall/Q-Y5F6_1M.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - >
       dx run nf-dxapp-bicf --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} \
         --watch \
         --delay-workspace-destruction \
         --instance-type mem1_ssd1_v2_x16 \
-        --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)"
-    - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-active-success?style=flat > ./badges/env/dnanexus.svg
+        --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)" \
+        > dx.log
+    - jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
+    - dx watch ${jobID}
+    - status=$(dx find executions --id ${jobID} --state failed --brief)
+    - >
+      if [ ${status} == "" ]
+      then
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-success-success?style=flat > ./badges/env/dnanexus.svg
+      else
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-failed-critical?style=flat > ./badges/env/dnanexus.svg
+      fi
   after_script:
     - module load dxtoolkit/python27/0.294.0
     - dx rm /ci-env/auth/c* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}

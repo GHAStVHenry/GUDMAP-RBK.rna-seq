@@ -31,6 +31,14 @@ pigz Q-Y5F6_1M.R2.fastq
 cp Q-Y5F6_1M.R1.fastq.gz ./NEW_test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
 cp Q-Y5F6_1M.R2.fastq.gz ./NEW_test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
 
+mkdir -p ./NEW_test_data/fastq/xsmall
+singularity exec 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk sample -s100 ./NEW_test_data/fastq/Q-Y5F6.R1.fastq.gz 1000 1> Q-Y5F6_1M.R1.fastq
+singularity exec 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk sample -s100 ./NEW_test_data/fastq/Q-Y5F6.R2.fastq.gz 1000 1> Q-Y5F6_1M.R2.fastq
+pigz Q-Y5F6_1M.R1.fastq
+pigz Q-Y5F6_1M.R2.fastq
+cp Q-Y5F6_1M.R1.fastq.gz ./NEW_test_data/fastq/xsmall/Q-Y5F6_1M.R1.fastq.gz
+cp Q-Y5F6_1M.R2.fastq.gz ./NEW_test_data/fastq/xsmall/Q-Y5F6_1M.R2.fastq.gz
+
 mkdir -p ./NEW_test_data/meta
 singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --illumina --length 35 --basename Q-Y5F6_1M.se -j 20 ./NEW_test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
 singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --illumina --length 35 --paired --basename Q-Y5F6_1M.pe -j 20 ./NEW_test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz ./NEW_test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
