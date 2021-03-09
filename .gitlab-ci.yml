@@ -604,7 +604,7 @@ human_dev:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -633,7 +633,7 @@ mouse_dev:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -662,7 +662,7 @@ human_staging:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -692,7 +692,7 @@ mouse_staging:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -721,7 +721,7 @@ human_prod:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -751,7 +751,7 @@ mouse_prod:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -1039,13 +1039,7 @@ dnanexus:
       jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
     - dx watch ${jobID} --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - status=$(dx find executions --id ${jobID} --state failed --brief --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace})
-    - >
-      if [ ${status} == "" ]
-      then
-        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20succesful-success?style=flat > ./badges/env/dnanexus.svg
-      else
-        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20failed-critical?style=flat > ./badges/env/dnanexus.svg
-      fi
+    - if [ ${status} == "" ]; then curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20succesful-success?style=flat > ./badges/env/dnanexus.svg; else curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20failed-critical?style=flat > ./badges/env/dnanexus.svg; fi
   after_script:
     - module load dxtoolkit/python27/0.294.0
     - dx rm /ci-env/auth/* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
