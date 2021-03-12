@@ -720,13 +720,13 @@ process seqwho {
     echo -e "LOG: seqwho ran" >> ${repRID}.seqwho.log
 
     # parse inference from R1
-    speciesR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-    seqtypeR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-    confidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    speciesR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    seqtypeR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    confidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
     if [ "\${confidenceR1}" == "low" ]
     then
-      speciesConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f3 -d":" | tr -d " ")
-      seqtypeConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f4 -d":" | tr -d " ")
+      speciesConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f3 -d":" | tr -d " ")
+      seqtypeConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f4 -d":" | tr -d " ")
     else
       speciesConfidenceR1="1"
       seqtypeConfidenceR1="1"
@@ -736,13 +736,13 @@ process seqwho {
     # parse inference from R2
     if [ "${ends}" == "pe" ]
     then
-      speciesR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      seqtypeR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      confidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      speciesR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      confidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
       if [ "\${confidenceR2}" == "low" ]
       then
-        speciesConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f3 -d":" | tr -d " ")
-        seqtypeConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f4 -d":" | tr -d " ")
+        speciesConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f3 -d":" | tr -d " ")
+        seqtypeConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f4 -d":" | tr -d " ")
       else
         speciesConfidenceR2="1"
         seqtypeConfidenceR2="1"
