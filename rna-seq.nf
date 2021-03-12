@@ -857,9 +857,9 @@ process seqwho {
       gzip sampled.1.seed300.fastq &
       wait
       seqwho.py -f sampled.1.seed*.fastq.gz -x SeqWho.ix
-      seqtypeR1_1=\$(cat SeqWho_call.tsv | grep sampled.1.seed100.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      seqtypeR1_2=\$(cat SeqWho_call.tsv | grep sampled.1.seed200.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      seqtypeR1_3=\$(cat SeqWho_call.tsv | grep sampled.1.seed300.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_1=\$(cat SeqWho_call.tsv | grep sampled.1.seed100.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_2=\$(cat SeqWho_call.tsv | grep sampled.1.seed200.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_3=\$(cat SeqWho_call.tsv | grep sampled.1.seed300.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
       cp SeqWho_call.tsv SeqWho_call_sampledR1.tsv
       if [ "\${seqtypeR1_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_3}" == "\${seqtypeR1}" ]
       then
@@ -878,9 +878,9 @@ process seqwho {
         gzip sampled.2.seed300.fastq &
         wait
         seqwho.py -f sampled.2.seed*.fastq.gz -x SeqWho.ix
-        seqtypeR2_1=\$(cat SeqWho_call.tsv | grep sampled.2.seed100.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-        seqtypeR2_2=\$(cat SeqWho_call.tsv | grep sampled.2.seed200.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-        seqtypeR2_3=\$(cat SeqWho_call.tsv | grep sampled.2.seed300.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_1=\$(cat SeqWho_call.tsv | grep sampled.2.seed100.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_2=\$(cat SeqWho_call.tsv | grep sampled.2.seed200.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_3=\$(cat SeqWho_call.tsv | grep sampled.2.seed300.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
         cp SeqWho_call.tsv SeqWho_call_sampledR2.tsv
         if [ "\${seqtypeR2_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_3}" == "\${seqtypeR1}" ]
         then
