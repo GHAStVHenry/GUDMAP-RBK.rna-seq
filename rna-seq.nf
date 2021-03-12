@@ -720,13 +720,13 @@ process seqwho {
     echo -e "LOG: seqwho ran" >> ${repRID}.seqwho.log
 
     # parse inference from R1
-    speciesR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-    seqtypeR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-    confidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    speciesR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    seqtypeR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+    confidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
     if [ "\${confidenceR1}" == "low" ]
     then
-      speciesConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f3 -d":" | tr -d " ")
-      seqtypeConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f16 -d\$'\t' | cut -f4 -d":" | tr -d " ")
+      speciesConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f3 -d":" | tr -d " ")
+      seqtypeConfidenceR1=\$(cat SeqWho_call.tsv | grep ${fastq[0]} | cut -f17 -d\$'\t' | cut -f4 -d":" | tr -d " ")
     else
       speciesConfidenceR1="1"
       seqtypeConfidenceR1="1"
@@ -736,13 +736,13 @@ process seqwho {
     # parse inference from R2
     if [ "${ends}" == "pe" ]
     then
-      speciesR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      seqtypeR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      confidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      speciesR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      confidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f2 -d":" | tr -d " ")
       if [ "\${confidenceR2}" == "low" ]
       then
-        speciesConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f3 -d":" | tr -d " ")
-        seqtypeConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f16 -d\$'\t' | cut -f4 -d":" | tr -d " ")
+        speciesConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f3 -d":" | tr -d " ")
+        seqtypeConfidenceR2=\$(cat SeqWho_call.tsv | grep ${fastq[1]} | cut -f17 -d\$'\t' | cut -f4 -d":" | tr -d " ")
       else
         speciesConfidenceR2="1"
         seqtypeConfidenceR2="1"
@@ -857,9 +857,9 @@ process seqwho {
       gzip sampled.1.seed300.fastq &
       wait
       seqwho.py -f sampled.1.seed*.fastq.gz -x SeqWho.ix
-      seqtypeR1_1=\$(cat SeqWho_call.tsv | grep sampled.1.seed100.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      seqtypeR1_2=\$(cat SeqWho_call.tsv | grep sampled.1.seed200.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-      seqtypeR1_3=\$(cat SeqWho_call.tsv | grep sampled.1.seed300.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_1=\$(cat SeqWho_call.tsv | grep sampled.1.seed100.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_2=\$(cat SeqWho_call.tsv | grep sampled.1.seed200.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+      seqtypeR1_3=\$(cat SeqWho_call.tsv | grep sampled.1.seed300.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
       cp SeqWho_call.tsv SeqWho_call_sampledR1.tsv
       if [ "\${seqtypeR1_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR1_3}" == "\${seqtypeR1}" ]
       then
@@ -878,9 +878,9 @@ process seqwho {
         gzip sampled.2.seed300.fastq &
         wait
         seqwho.py -f sampled.2.seed*.fastq.gz -x SeqWho.ix
-        seqtypeR2_1=\$(cat SeqWho_call.tsv | grep sampled.2.seed100.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-        seqtypeR2_2=\$(cat SeqWho_call.tsv | grep sampled.2.seed200.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
-        seqtypeR2_3=\$(cat SeqWho_call.tsv | grep sampled.2.seed300.fastq.gz | cut -f18 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_1=\$(cat SeqWho_call.tsv | grep sampled.2.seed100.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_2=\$(cat SeqWho_call.tsv | grep sampled.2.seed200.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
+        seqtypeR2_3=\$(cat SeqWho_call.tsv | grep sampled.2.seed300.fastq.gz | cut -f19 -d\$'\t' | cut -f2 -d":" | tr -d " ")
         cp SeqWho_call.tsv SeqWho_call_sampledR2.tsv
         if [ "\${seqtypeR2_1}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_2}" == "\${seqtypeR1}" ] && [ "\${seqtypeR2_3}" == "\${seqtypeR1}" ]
         then
