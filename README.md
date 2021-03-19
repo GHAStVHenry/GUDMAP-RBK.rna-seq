@@ -122,6 +122,8 @@ This pipeline is also capable of being run on AWS and DNAnexus. To do so:
     --instance-type mem1_ssd1_v2_x16 \
     --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)"
   ```
+### NOTE:
+* File locations used in cloud deployments (auth files and output folder) need to be accessible in that environment (eg s3 location, or DNAnexus location). Local paths cannot be read local locations.
 <hr>
 To generate you own references or new references:
 ------------------------------------------
