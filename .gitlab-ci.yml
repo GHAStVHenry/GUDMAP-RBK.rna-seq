@@ -1080,7 +1080,7 @@ aws:
         --job-name nf-GUDMAP_RBK_ci-env\
         --job-queue default-bicf\
         --job-definition nextflow-bicf-nextflow\
-        --container-overrides command=`cat ../docs/nxf_aws-ci-test.json`)
+        --container-overrides command=`cat ./docs/nxf_aws-ci-test.json`)
       id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
     - >
       status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&

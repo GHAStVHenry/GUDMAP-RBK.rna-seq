@@ -104,7 +104,7 @@ This pipeline is also capable of being run on AWS and DNAnexus. To do so:
     --job-name [Job Name]\
     --job-queue [Queue]\
     --job-definition [Job Definition]\
-    --container-overrides command=`cat ../docs/nxf_aws-ci-test.json`
+    --container-overrides command=`cat ./docs/nxf_aws-ci-test.json`
   ```
 ### [DNAnexus](https://dnanexus.com/) (utilizes the [DNAnexus extension package for Nextflow (XPACK-DNANEXUS)](https://github.com/seqeralabs/xpack-dnanexus))
 * Follow the istructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about installing and authenticating (a valid license must be available for the extension package from Seqera Labs, as well as a subsription with DNAnexus)
