@@ -1080,7 +1080,7 @@ aws:
         --job-name nf-GUDMAP_RBK_ci-env\
         --job-queue default-bicf\
         --job-definition nextflow-bicf-nextflow\
-        --container-overrides command="utsw-bicf/gudmap_rbk.rna-seq","-r","env.ci","-profile","aws","--deriva","s3://bicf-output/ci-env/auth/credential.json","--bdbag","s3://bicf-output/ci-env/auth/cookies.txt","--repRID","Q-Y5F6","--source","staging","--upload","false","--dev","false","--ci","true","--track","false","-with-report","s3://bicf-output/ci-env/output/Q-Y5F6_fastqoverride_report.html","--refSource","datahub","--outDir","s3://bicf-output/ci-env/output/Q-Y5F6_fastqoverride","--fastqsForce","s3://bicf-output/ci-env/input/*.fastq.gz")
+        --container-overrides command=`cat ../docs/nxf_aws-ci-test.json`)
       id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
     - >
       status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
@@ -1091,9 +1091,9 @@ aws:
       done
     - >
       if [ "${status}" == "SUCCEEDED" ]; then
-        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20succesful-success?style=flat > ./badges/env/dnanexus.svg
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20succesful-success?style=flat > ./badges/env/aws.svg
       else
-        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20failed-critical?style=flat > ./badges/env/dnanexus.svg
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20failed-critical?style=flat > ./badges/env/aws.svg
       fi
   after_script:
     - module load awscli/1.11.139

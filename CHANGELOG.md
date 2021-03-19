@@ -36,6 +36,7 @@
 * Override fastq count to override counts
 * Change ambiguous species ci to wrong species
 * Add test for DNAnexus env
+* Add test for AWS env
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity

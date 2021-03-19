@@ -1,0 +1,1 @@
+["https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq","-r","[Version]","-profile","aws","--deriva","[credential.json]","--bdbag","[cookies.txt]","--repRID","[repRID]","--outDir","[outDir]"]

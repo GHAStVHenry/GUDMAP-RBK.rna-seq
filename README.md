@@ -74,29 +74,40 @@ FULL EXAMPLE:
 ```
 nextflow run workflow/rna-seq.nf --repRID Q-Y5JA --source production --deriva ./data/credential.json --bdbag ./data/cookies.txt --dev false --upload true -profile biohpc
 ```
-
+<hr>
 Cloud Compatibility:
 --------------------
 This pipeline is also capable of being run on AWS and DNAnexus. To do so:
-### [AWS](https://aws.amazon.com/)
-* Build a AWS batch queue and environment either manually or with [aws-cloudformantion](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Nextflow&templateURL=https://s3.amazonaws.com/aws-genomics-workflows/templates/nextflow/nextflow-aio.template.yaml)
-* Edit one of the aws configs in workflow/config/
-  * Replace workDir with the S3 bucket generated
-  * Change region if different
-  * Change queue to the aws batch queue generated
-* The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow will be run
-* Add `-profile` with the name aws config which was customized
-### DNAnexus (utilizes the [DNAnexus extension package for Nextflow (XPACK-DNANEXUS)](https://github.com/seqeralabs/xpack-dnanexus))
-* Follow the istructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about installing and authenticating (a valid license must be available for the extension package from Seqera Labs, as well as a subsription with DNAnexus)
-* The nf-dxapp needs to be built with a custom scm config to allow nextflow to pull the pipeline from the UTSW self-hosted GitLab server (git.biohpc.swmed.edu)
-```
-providers {
+* The Nextflow binary needs to contain a custom scm config to allow nextflow to pull the pipeline from the UTSW self-hosted GitLab server (git.biohpc.swmed.edu)
+  ```
+  providers {
     bicf {
         server = 'https://git.biohpc.swmed.edu'
         platform = 'gitlab'
     }
-}
-```
+  }
+  ```
+  This is required for the use of `nextflow run` or `nextflow pull` pointed directly to the git repo, but also the use in AWS or DNAnexus environments as those both use `nextflow run` directly to that repo. To get around this requirement, there is a clone of the repo hosted on [GitHub](https://github.com/utsw-bicf/gudmap_rbk.rna-seq) which can be used... but the currency of that clone cannot be guarnteed!
+### [AWS](https://aws.amazon.com/)
+* Build a AWS batch queue and environment either manually or with a template, such as: [Genomics Workflows on AWS](https://docs.opendata.aws/genomics-workflows/)
+* The user must have awscli configured with an appropriate authentication (with `aws configure` and access keys) in the environment which nextflow
+* Follow the instructions from [AWS](https://docs.aws.amazon.com/cli/latest/reference/batch/submit-job.html) about launching runs, using AWS cli. A template *json* file has been included ([awsExample.json](docs/awsExample.json))
+  * `[version]` should be replaced with the pipeline version required (eg: `v2.0.0`)
+  * `[credential.json]` should be replaced with the location of the credential file outpted by authentification with Deriva
+  * `[cookies.txt]` should be replaced with the location of the cookies file outpted by authentification with Deriva for BDBag
+  * `[repRID]` should be replaced with the replicate RID to be analized (eg: `Q-Y5F6`)
+  * `[outDir]` should be replaced with the location to save local outputs of the pipeline
+
+  example `aws batch submit-job` command (replaceing the parameters in `[]` with the appropriate values)
+  ```
+  aws batch submit-job\
+    --job-name [Job Name]\
+    --job-queue [Queue]\
+    --job-definition [Job Definition]\
+    --container-overrides command=`cat ../docs/nxf_aws-ci-test.json`
+  ```
+### [DNAnexus](https://dnanexus.com/) (utilizes the [DNAnexus extension package for Nextflow (XPACK-DNANEXUS)](https://github.com/seqeralabs/xpack-dnanexus))
+* Follow the istructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about installing and authenticating (a valid license must be available for the extension package from Seqera Labs, as well as a subsription with DNAnexus)
 * Follow the instructions from [XPACK-DNANEXUS](https://github.com/seqeralabs/xpack-dnanexus) about launching runs. A template *json* file has been included ([dnanexusExample.json](docs/dnanexusExample.json))
   * `[version]` should be replaced with the pipeline version required (eg: `v2.0.0`)
   * `[credential.json]` should be replaced with the location of the credential file outpted by authentification with Deriva
@@ -104,12 +115,19 @@ providers {
   * `[repRID]` should be replaced with the replicate RID to be analized (eg: `Q-Y5F6`)
   * `[outDir]` should be replaced with the location to save local outputs of the pipeline
 
+  example `dx-run` command
+  ```
+  dx run nf-dxapp-bicf \
+    --delay-workspace-destruction \
+    --instance-type mem1_ssd1_v2_x16 \
+    --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)"
+  ```
+<hr>
 To generate you own references or new references:
 ------------------------------------------
 Download the [reference creation script](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/snippets/31).
 This script will auto create human and mouse references from GENCODE. It can also create ERCC92 spike-in references as well as concatenate them to GENCODE references automatically. In addition, it can create references from manually downloaded FASTA and GTF files.
-
-
+<hr>
 Errors:
 -------
 Error reported back to the data-hub are (they aren't thrown on the command line by the pipeline, but rather are submitted (if `--upload true`) to the data-hub for that replicate in the execution run submission):
