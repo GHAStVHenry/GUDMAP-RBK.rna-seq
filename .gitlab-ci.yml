@@ -1087,7 +1087,7 @@ aws:
       until [[ "${status}" == "SUCCEEDED" || "${status}" == "FAILED" ]]; do
         status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',') &&
         echo ${status} &&
-        sleep 30
+        sleep 5m
       done
     - >
       if [ "${status}" == "SUCCEEDED" ]; then
