@@ -246,7 +246,7 @@ process getData {
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
     path ("**/File.csv") into fileMeta
-    path ("**/ExperimentSettings.csv") into experimentSettingsMeta
+    path ("ExperimentSettings.csv") into experimentSettingsMeta
     path ("**/Experiment.csv") into experimentMeta
     path "fastqCount.csv" into fastqCount_fl
 
