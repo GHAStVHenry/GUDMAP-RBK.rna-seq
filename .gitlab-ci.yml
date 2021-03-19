@@ -1083,9 +1083,9 @@ aws:
         --container-overrides command="utsw-bicf/gudmap_rbk.rna-seq","-r","env.ci","-profile","aws","--deriva","s3://bicf-output/ci-env/auth/credential.json","--bdbag","s3://bicf-output/ci-env/auth/cookies.txt","--repRID","Q-Y5F6","--source","staging","--upload","false","--dev","false","--ci","true","--track","false","-with-report","s3://bicf-output/ci-env/output/Q-Y5F6_fastqoverride_report.html","--refSource","datahub","--outDir","s3://bicf-output/ci-env/output/Q-Y5F6_fastqoverride","--fastqsForce","s3://bicf-output/ci-env/input/*.fastq.gz")
       id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
     - >
-      status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',') &&
-      until [[ "${status}" == "SUCCEEDED" ]]; do
-        status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',') &&
+      status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
+      until [[ "${status}" == "SUCCEEDED" || "${status}" == "FAILED" ]]; do
+        status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
         echo ${status} &&
         sleep 5m
       done
