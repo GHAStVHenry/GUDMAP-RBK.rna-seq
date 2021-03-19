@@ -1069,7 +1069,7 @@ aws:
     - ulimit -a
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-inactive-critical?style=flat > ./badges/env/aws.svg
-    - module load awscli/1.19.17
+    - module load awscli/1.11.139
     - export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
     - export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
     - aws configure set region ${aws_region}
