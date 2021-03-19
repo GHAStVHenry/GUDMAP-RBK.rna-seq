@@ -278,6 +278,7 @@ process getData {
     if [ "\${fastqCount}" == "0" ]
     then
       touch dummy.R1.fastq.gz
+      touch dummy.R2.fastq.gz
     fi
     echo "\${fastqCount}" > fastqCount.csv
 
