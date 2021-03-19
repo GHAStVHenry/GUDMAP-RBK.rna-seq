@@ -1070,10 +1070,9 @@ aws:
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-inactive-critical?style=flat > ./badges/env/aws.svg
     - module load awscli/1.19.17
-    - >
-      export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
-      export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
-      aws configure set region ${aws_region}
+    - export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
+    - export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
+    - aws configure set region ${aws_region}
     - aws s3 cp ./test_data/auth/ s3://bicf-output/ci-env/auth/ --exclude "*" --include "c*" --recursive
     - aws s3 cp ./test_data/fastq/xsmall/ s3://bicf-output/ci-env/input/ --exclude "*" --include "Q-Y5F6_10K.R*.fastq.gz" --recursive
     - >
