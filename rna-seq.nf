@@ -246,7 +246,7 @@ process getData {
   output:
     path ("*.R{1,2}.fastq.gz") into fastqs
     path ("**/File.csv") into fileMeta
-    path ("**/Experiment Settings.csv") into experimentSettingsMeta
+    path ("**/ExperimentSettings.csv") into experimentSettingsMeta
     path ("**/Experiment.csv") into experimentMeta
     path "fastqCount.csv" into fastqCount_fl
 
@@ -280,6 +280,8 @@ process getData {
       touch dummy.R1.fastq.gz
     fi
     echo "\${fastqCount}" > fastqCount.csv
+
+    cp "${repRID}_inputBag/data/Experiment Settings.csv" ExperimentSettings.csv
     """
 }
 
