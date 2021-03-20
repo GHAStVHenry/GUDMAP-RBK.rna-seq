@@ -51,3 +51,22 @@ curl --request GET https://img.shields.io/badge/FastQC%20Version-${fastqc_versio
 curl --request GET https://img.shields.io/badge/SeqWho%20Version-${seqwho_version}-blueviolet?style=flat > ./badges/tools/seqwho.svg
 curl --request GET https://img.shields.io/badge/RSeQC%20Version-${rseqc_version}-blueviolet?style=flat > ./badges/tools/rseqc.svg
 curl --request GET https://img.shields.io/badge/MultiQC%20Version-${multiqc_version}-blueviolet?style=flat > ./badges/tools/multiqc.svg
+
+echo "creating blank env badges if not tested"
+mkdir -p ./badges/env
+if [ ! -f ./badges/env/dnanexus.svg ]
+then
+curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-not_tested-important?style=flat > ./badges/env/dnanexus.svg
+fi
+if [ ! -f ./badges/env/aws.svg ]
+then
+curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-not_tested-important?style=flat > ./badges/env/aws.svg
+fi
+if [ ! -f ./badges/env/azure.svg ]
+then
+curl --request GET https://img.shields.io/badge/Envronment%3A%20Azure-not_tested-important?style=flat > ./badges/env/azure.svg
+fi
+if [ ! -f ./badges/env/gcp.svg ]
+then
+curl --request GET https://img.shields.io/badge/Envronment%3A%20GCP-not_tested-important?style=flat > ./badges/env/gcp.svg
+fi

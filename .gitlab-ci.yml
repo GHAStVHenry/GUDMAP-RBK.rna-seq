@@ -18,6 +18,7 @@ variables:
   dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
 
 stages:
+  - environment
   - singularity
   - versions
   - aggregation
@@ -138,6 +139,7 @@ build_badges:
     - master
     - develop
     - tags
+    - schedules
   before_script:
     - module load singularity/3.5.3
     - chmod +x ./workflow/scripts/get_updated_badge_info.sh
@@ -158,6 +160,7 @@ pages:
     - master
     - develop
     - tags
+    - schedules
   dependencies:
     - build_badges
   script:
@@ -601,7 +604,7 @@ human_dev:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -630,7 +633,7 @@ mouse_dev:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -659,7 +662,7 @@ human_staging:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -689,7 +692,7 @@ mouse_staging:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -718,7 +721,7 @@ human_prod:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -748,7 +751,7 @@ mouse_prod:
     - curl --request GET ${query} > refQuery.json
     - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
     - loc=$(dirname ${refURL})
-    - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
     - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
     - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
     - test=$(echo ${test} | grep -o ${filename})
@@ -916,7 +919,7 @@ override_fastq:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6    --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./fastqOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename fastqOverride_multiqc_data.json
@@ -1024,3 +1027,102 @@ consistency:
       - SE_multiqc_data.json
       - PE_multiqc_data.json
     expire_in: 7 days
+
+
+dnanexus:
+  stage: environment
+  only:
+    variables:
+      - $dnanexusEnv == "true"
+  except:
+    - push
+    - tags
+    - merge_requests
+  script:
+    - hostname
+    - ulimit -a
+    - mkdir -p ./badges/env
+    - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
+    - module load dxtoolkit/python27/0.294.0
+    - export NXF_XPACK_LICENSE=${nxf_license}
+    - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx upload ./test_data/fastq/xsmall/Q-Y5F6_10K.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - >
+      dx run nf-dxapp-bicf --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} \
+        --delay-workspace-destruction \
+        --instance-type mem1_ssd1_v2_x16 \
+        --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)" \
+        > dx.log
+    - >
+      jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
+    - dx watch ${jobID} --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - status=$(dx find executions --id ${jobID} --state failed --brief --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace})
+    - >
+      if [ "${status}" == "" ]; then
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20succesful-success?style=flat > ./badges/env/dnanexus.svg
+      else
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20failed-critical?style=flat > ./badges/env/dnanexus.svg
+      fi
+  after_script:
+    - module load dxtoolkit/python27/0.294.0
+    - dx rm /ci-env/auth/* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx rm /ci-env/input/* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+  artifacts:
+    when: always
+    paths:
+      - badges/
+  allow_failure: true
+
+aws:
+  stage: environment
+  only:
+    variables:
+      - $awsEnv == "true"
+  except:
+    - push
+    - tags
+    - merge_requests
+  script:
+    - hostname
+    - ulimit -a
+    - mkdir -p ./badges/env
+    - curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-inactive-critical?style=flat > ./badges/env/aws.svg
+    - module load awscli/1.11.139
+    - export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
+    - export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
+    - aws configure set region ${aws_region}
+    - aws s3 cp ./test_data/auth/ s3://bicf-output/ci-env/auth/ --exclude "*" --include "c*" --recursive
+    - aws s3 cp ./test_data/fastq/xsmall/ s3://bicf-output/ci-env/input/ --exclude "*" --include "Q-Y5F6_10K.R*.fastq.gz" --recursive
+    - >
+      id=$(aws batch submit-job\
+        --job-name nf-GUDMAP_RBK_ci-env\
+        --job-queue default-bicf\
+        --job-definition nextflow-bicf-nextflow\
+        --container-overrides command=$(envsubst < ./docs/nxf_aws-ci-test.json))
+      id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
+    - >
+      status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
+      until [[ "${status}" == "SUCCEEDED" || "${status}" == "FAILED" ]]; do
+        status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
+        echo ${status} &&
+        sleep 5m
+      done
+    - >
+      if [ "${status}" == "SUCCEEDED" ]; then
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20succesful-success?style=flat > ./badges/env/aws.svg
+      else
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20failed-critical?style=flat > ./badges/env/aws.svg
+      fi
+  after_script:
+    - module load awscli/1.11.139
+    - >
+      export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
+      export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
+      aws configure set region ${aws_region}
+    - aws s3 rm s3://bicf-output/ci-env/auth/ --recursive
+    - aws s3 rm s3://bicf-output/ci-env/input/ --recursive
+  artifacts:
+    when: always
+    paths:
+      - badges/
+  allow_failure: true
