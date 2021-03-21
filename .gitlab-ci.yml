@@ -1041,13 +1041,16 @@ dnanexus:
   script:
     - hostname
     - ulimit -a
+    - baseImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f1)
+    - baseVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${baseImg}_${baseVar}.sif
+    - latest_release_tag=$(singularity run ${dir}${baseImg}_${baseVar}.sif git tag --sort=-committerdate -l *.*.* | head -1)
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
     - module load dxtoolkit/python27/0.294.0
     - export NXF_XPACK_LICENSE=${nxf_license}
     - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
     - dx upload ./test_data/fastq/xsmall/Q-Y5F6_10K.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
-    - latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
     - >
       dx run nf-dxapp-bicf --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} \
         --delay-workspace-destruction \
@@ -1086,6 +1089,10 @@ aws:
   script:
     - hostname
     - ulimit -a
+    - baseImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f1)
+    - baseVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${baseImg}_${baseVar}.sif
+    - latest_release_tag=$(singularity run ${dir}${baseImg}_${baseVar}.sif git tag --sort=-committerdate -l *.*.* | head -1)
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-inactive-critical?style=flat > ./badges/env/aws.svg
     - module load awscli/1.11.139
@@ -1094,7 +1101,6 @@ aws:
     - aws configure set region ${aws_region}
     - aws s3 cp ./test_data/auth/ s3://bicf-output/ci-env/auth/ --exclude "*" --include "c*" --recursive
     - aws s3 cp ./test_data/fastq/xsmall/ s3://bicf-output/ci-env/input/ --exclude "*" --include "Q-Y5F6_10K.R*.fastq.gz" --recursive
-    - latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
     - >
       id=$(aws batch submit-job\
         --job-name nf-GUDMAP_RBK_ci-env\
