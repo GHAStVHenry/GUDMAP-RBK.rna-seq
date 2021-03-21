@@ -1,0 +1,5 @@
+{
+	"pipeline_url": "https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq.git -r ${latest_release_tag}",
+	"args": "-profile dnanexus --deriva dx://NextFlow_Prototype:/ci-env/auth/credential.json --bdbag dx://NextFlow_Prototype:/ci-env/auth/cookies.txt --repRID Q-Y5F6 --source staging --upload false --dev false --ci true --track false -with-report dx://NextFlow_Prototype:/ci-env/output/Q-Y5F6_fastqoverride_report.html --refSource datahub --outDir dx://NextFlow_Prototype:ci-env/output/Q-Y5F6_fastqoverride --fastqsForce dx://NextFlow_Prototype:/ci-env/input/*.fastq.gz",
+	"license": "${NXF_XPACK_LICENSE}"
+}

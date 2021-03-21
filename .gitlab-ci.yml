@@ -2,24 +2,136 @@ before_script:
   - module load python/3.6.4-anaconda
   - pip install --user attrs==20.3.0 pytest==6.2.2 pytest-pythonpath==0.7.3 pytest-cov==2.11.1
   - module load singularity/3.5.3
+  - export SINGULARITY_CACHEDIR=${dir}cache/
   - module load nextflow/20.01.0
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
   - mkdir -p ~/.deriva
   - mkdir -p ~/.bdbag
 
+after_script:
+  - unset SINGULARITY_CACHEDIR
+
 variables:
   refMoVersion: "38.p6.vM25"
   refHuVersion: "38.p13.v36"
   refERCCVersion: "92"
+  dir: "/project/BICF/BICF_Core/shared/gudmap/singularity_cache/"
 
 stages:
+  - environment
+  - singularity
+  - versions
+  - aggregation
   - badges
   - deploy
   - unit
-  - aggregation
   - reference
   - integration
   - consistency
+
+
+img_cache:
+  stage: singularity
+  script:
+    - mkdir -p ${dir}cache/
+    - cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | xargs -P 1 -I {} bash -c "singularity pull --dir ${dir} 'docker://'{} || true"
+    - wait
+    - echo images cached
+
+collect:
+  stage: versions
+  script:
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-download-cli --version > version_deriva.txt
+    - singularity run ${dir}${derivaImg}_${derivaVar}.sif bdbag --version > version_bdbag.txt
+    - pythonImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep python | cut -d"/" -f2 | cut -d":" -f1)
+    - pythonVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep python | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${pythonImg}_${pythonVar}.sif
+    - singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 --version > version_python.txt
+    - fastqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep fastqc | cut -d"/" -f2 | cut -d":" -f1)
+    - fastqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep fastqc | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${fastqcImg}_${fastqcVar}.sif
+    - singularity run ${dir}${fastqcImg}_${fastqcVar}.sif fastqc --version > version_fastqc.txt
+    - seqwhoImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f1)
+    - seqwhoVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${seqwhoImg}_${seqwhoVar}.sif
+    - singularity run ${dir}${seqwhoImg}_${seqwhoVar}.sif seqwho.py -h | grep -o Version.* > version_seqwho.txt &
+    - trimgaloreImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f1)
+    - trimgaloreVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${trimgaloreImg}_${trimgaloreVar}.sif
+    - singularity run ${dir}${trimgaloreImg}_${trimgaloreVar}.sif trim_galore --version > version_trimgalore.txt
+    - seqtkImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqtk | cut -d"/" -f2 | cut -d":" -f1)
+    - seqtkVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqtk | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${seqtkImg}_${seqtkVar}.sif
+    - singularity run ${dir}${seqtkImg}_${seqtkVar}.sif seqtk 2>&1 | grep -o Version.* > version_seqtk.txt &
+    - rseqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f1)
+    - rseqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${rseqcImg}_${rseqcVar}.sif
+    - singularity run ${dir}${rseqcImg}_${rseqcVar}.sif infer_experiment.py --version > version_rseqc.txt
+    - hisatImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep hisat | cut -d"/" -f2 | cut -d":" -f1)
+    - hisatVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep hisat | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${hisatImg}_${hisatVar}.sif
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif hisat2 --version > version_hisat2.txt
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif samtools --version > version_samtools.txt
+    - picardImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep picard | cut -d"/" -f2 | cut -d":" -f1)
+    - picardVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep picard | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${picardImg}_${picardVar}.sif
+    - singularity run ${dir}${picardImg}_${picardVar}.sif java -jar /picard/build/libs/picard.jar MarkDuplicates --version 2> version_markdups.txt &
+    - subreadImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep subread | cut -d"/" -f2 | cut -d":" -f1)
+    - subreadVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep subread | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${subreadImg}_${subreadVar}.sif
+    - singularity run ${dir}${subreadImg}_${subreadVar}.sif featureCounts -v &> version_featurecounts.txt
+    - singularity run ${dir}${subreadImg}_${subreadVar}.sif R --version > version_r.txt
+    - deeptoolsImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deeptools | cut -d"/" -f2 | cut -d":" -f1)
+    - deeptoolsVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deeptools | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${deeptoolsImg}_${deeptoolsVar}.sif
+    - singularity run ${dir}${deeptoolsImg}_${deeptoolsVar}.sif deeptools --version > version_deeptools.txt
+    - multiqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep multiqc | cut -d"/" -f2 | cut -d":" -f1)
+    - multiqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep multiqc | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${multiqcImg}_${multiqcVar}.sif
+    - singularity run ${dir}${multiqcImg}_${multiqcVar}.sif multiqc --version > version_multiqc.txt
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - version_deriva.txt
+      - version_bdbag.txt
+      - version_python.txt
+      - version_fastqc.txt
+      - version_seqwho.txt
+      - version_trimgalore.txt
+      - version_seqtk.txt
+      - version_rseqc.txt
+      - version_hisat2.txt
+      - version_samtools.txt
+      - version_markdups.txt
+      - version_featurecounts.txt
+      - version_r.txt
+      - version_deeptools.txt
+      - version_multiqc.txt
+    expire_in: 7 days
+
+generateVersions:
+  stage: aggregation
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - python ./workflow/scripts/generate_versions.py -o software_versions
+    - python ./workflow/scripts/generate_references.py -r ./docs/references.md -o software_references
+  artifacts:
+    name: "$CI_JOB_NAME"
+    when: always
+    paths:
+      - software_references_mqc.yaml
+      - software_versions_mqc.yaml
+    expire_in: 7 days
+
 
 build_badges:
   stage: badges
@@ -27,13 +139,17 @@ build_badges:
     - master
     - develop
     - tags
+    - schedules
   before_script:
     - module load singularity/3.5.3
     - chmod +x ./workflow/scripts/get_updated_badge_info.sh
   script:
     - echo "Building badges"
-    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_badge_info.sh
-    - singularity run 'docker://gudmaprbk/gudmap-rbk_base:1.0.0' bash ./workflow/scripts/get_updated_rep_count.sh
+    - baseImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f1)
+    - baseVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${baseImg}_${baseVar}.sif
+    - singularity run ${dir}${baseImg}_${baseVar}.sif bash ./workflow/scripts/get_updated_badge_info.sh
+    - singularity run ${dir}${baseImg}_${baseVar}.sif bash ./workflow/scripts/get_updated_rep_count.sh
   artifacts:
     paths:
       - badges/
@@ -44,6 +160,7 @@ pages:
     - master
     - develop
     - tags
+    - schedules
   dependencies:
     - build_badges
   script:
@@ -62,16 +179,12 @@ getBag:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
-  - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli --version > version_deriva.txt
-  - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
-  - pytest -m getBag
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_deriva.txt
-    expire_in: 7 days
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
+    - singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
+    - pytest -m getBag
 
 getData:
   stage: unit
@@ -82,17 +195,13 @@ getData:
     - merge_requests
     - schedules
   script:
-  - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag --version > version_bdbag.txt
-  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - unzip ./test_data/bag/Q-Y5F6_inputBag_xxxxtest.zip
-  - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
-  - pytest -m getData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_bdbag.txt
-    expire_in: 7 days
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    -  echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+    - unzip ./test_data/bag/Q-Y5F6_inputBag_xxxxtest.zip
+    - singularity run ${dir}${derivaImg}_${derivaVar}.sif bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
+    - pytest -m getData
 
 parseMetadata:
   stage: unit
@@ -103,184 +212,21 @@ parseMetadata:
     - merge_requests
     - schedules
   script:
-  - singularity run 'docker://gudmaprbk/python3:1.0.0' python3 --version > version_python.txt
-  - rep=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
-  - exp=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
-  - study=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
-  - endsRaw=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
-  - endsMeta="uk"
-  - endsManual="se"
-  - stranded=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
-  - spike=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
-  - species=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
-  - readLength=$(singularity run 'docker://gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p readLength)
-  - echo -e "${endsMeta},${endsRaw},${endsManual},${stranded},${spike},${species},${readLength},${exp},${study},${rep}" > design.csv
-  - pytest -m parseMetadata
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_python.txt
-    expire_in: 7 days
-
-inferMetadata:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py --version > version_rseqc.txt
-  - >
-    align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5F6_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
-    if [[ ${align} == "" ]]; then exit 1; fi
-  - >
-    singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
-    ended=`singularity run 'gudmaprbk/python3:1.0.0' python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
-    if [[ ${ended} == "" ]]; then exit 1; fi
-  - pytest -m inferMetadata
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_rseqc.txt
-    expire_in: 7 days
-
-trimData:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --version > version_trimgalore.txt
-  - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --length 35 --basename Q-Y5F6_1M.se ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
-  - singularity run 'docker://gudmaprbk/trimgalore0.6.5:1.0.0' trim_galore --gzip -q 25 --length 35 --paired --basename Q-Y5F6_1M.pe ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
-  - readLengthSE=$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
-  - readLengthPE=$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
-  - pytest -m trimData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_trimgalore.txt
-    expire_in: 7 days
-
-downsampleData:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/seqtk1.3:1.0.0' seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz 1000 1> sampled.1.fq
-  - pytest -m downsampleData
-
-alignData:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 --version > version_hisat2.txt
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools --version > version_samtools.txt
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.se.unal.gz -S Q-Y5F6_1M.se.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness F -U ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz --summary-file Q-Y5F6_1M.se.alignSummary.txt --new-summary
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.se.bam Q-Y5F6_1M.se.sam
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.bam
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.sorted.bam.bai
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.pe.unal.gz -S Q-Y5F6_1M.pe.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness FR --no-mixed --no-discordant -1 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_1.fq.gz -2 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_2.fq.gz --summary-file Q-Y5F6_1M.pe.alignSummary.txt --new-summary
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.pe.bam Q-Y5F6_1M.pe.sam
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.bam
-  - singularity run 'docker://gudmaprbk/hisat2.2.1:1.0.0' samtools index -@ 20 -b Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.sorted.bam.bai
-  - pytest -m alignData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_hisat2.txt
-      - version_samtools.txt
-    expire_in: 7 days
-
-dedupData:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools --version > version_samtools.txt
-  - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates --version 2> version_markdups.txt&
-  - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' java -jar /picard/build/libs/picard.jar MarkDuplicates I=./test_data/bam/small/Q-Y5F6_1M.se.sorted.bam O=Q-Y5F6_1M.se.deduped.bam M=Q-Y5F6_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
-  - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.deduped.bam ./test_data/bam/small/Q-Y5F6_1M.se.deduped.bam
-  - singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' samtools index -@ 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.sorted.deduped.bam.bai
-  - >
-    for i in {"chr8","chr4","chrY"}; do
-      echo "samtools view -b Q-Y5F6_1M.se.sorted.deduped.bam ${i} > Q-Y5F6_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.${i}.bam Q-Y5F6_1M.se.sorted.deduped.${i}.bam.bai;";
-    done | singularity run 'docker://gudmaprbk/picard2.23.9:1.0.0' parallel -j 20 -k
-  - pytest -m dedupData
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_markdups.txt
-      - version_samtools.txt
-    expire_in: 7 days
-
-countData:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/geneID.tsv
-  - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/Entrez.tsv
-  - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/sequence/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se_countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
-  - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/calculateTPM.R --count ./test_data/counts/small/Q-Y5F6_1M.se_countData
-  - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
-  - assignedReads=$(grep -m 1 'Assigned' *.summary | grep -oe '\([0-9.]*\)')
-  - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' featureCounts -v &> version_featurecounts.txt
-  - singularity run 'docker://gudmaprbk/subread2.0.1:1.0.0' R --version > version_r.txt
-  - pytest -m makeFeatureCounts
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_featurecounts.txt
-      - version_r.txt
-    expire_in: 7 days
-
-makeBigWig:
-  stage: unit
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' deeptools --version > version_deeptools.txt
-  - singularity run 'docker://gudmaprbk/deeptools3.5.0:1.0.0' bamCoverage -p 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam -o Q-Y5F6_1M.se.bw
-  - pytest -m makeBigWig
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_deeptools.txt
-    expire_in: 7 days
+    - pythonImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep python | cut -d"/" -f2 | cut -d":" -f1)
+    - pythonVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep python | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${pythonImg}_${pythonVar}.sif
+    - rep=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p repRID)
+    - exp=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p expRID)
+    - study=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p studyRID)
+    - endsRaw=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p endsMeta)
+    - stranded=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p stranded)
+    - spike=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p spike)
+    - species=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p species)
+    - readLength=$(singularity run ${dir}${pythonImg}_${pythonVar}.sif python3 ./workflow/scripts/parse_meta.py -r Replicate_RID -m "./test_data/meta/metaTest.csv" -p readLength)
+    - endsMeta="uk"
+    - endsManual="se" 
+    - echo -e "${endsMeta},${endsRaw},${endsManual},${stranded},${spike},${species},${readLength},${exp},${study},${rep}" > design.csv
+    - pytest -m parseMetadata
 
 fastqc:
   stage: unit
@@ -291,16 +237,158 @@ fastqc:
     - merge_requests
     - schedules
   script:
-  - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc --version > version_fastqc.txt
-  - singularity run 'docker://gudmaprbk/fastqc0.11.9:1.0.0' fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
-  - pytest -m fastqc
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - version_fastqc.txt
-    expire_in: 7 days
+    - fastqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep fastqc | cut -d"/" -f2 | cut -d":" -f1)
+    - fastqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep fastqc | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${fastqcImg}_${fastqcVar}.sif
+    - singularity run ${dir}${fastqcImg}_${fastqcVar}.sif fastqc ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -o .
+    - pytest -m fastqc
 
+seqwho:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - seqwhoImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f1)
+    - seqwhoVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${seqwhoImg}_${seqwhoVar}.sif
+    - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
+    - mkdir -p SeqWho_call_plots/test_data/fastq/small/
+    - singularity run ${dir}${seqwhoImg}_${seqwhoVar}.sif seqwho.py -f test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
+    - pytest -m seqwho
+
+trimData:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - trimgaloreImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f1)
+    - trimgaloreVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep trimgalore | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${trimgaloreImg}_${trimgaloreVar}.sif
+    - singularity run ${dir}${trimgaloreImg}_${trimgaloreVar}.sif trim_galore --gzip -q 25 --length 35 --basename Q-Y5F6_1M.se ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz
+    - singularity run ${dir}${trimgaloreImg}_${trimgaloreVar}.sif trim_galore --gzip -q 25 --length 35 --paired --basename Q-Y5F6_1M.pe ./test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz ./test_data/fastq/small/Q-Y5F6_1M.R2.fastq.gz
+    - readLengthSE=$(zcat *_trimmed.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
+    - readLengthPE=$(zcat *_1.fq.gz | awk '{if(NR%4==2) print length($1)}' | sort -n | awk '{a[NR]=$0}END{print(NR%2==1)?a[int(NR/2)+1]:(a[NR/2]+a[NR/2+1])/2}')
+    - pytest -m trimData
+
+downsampleData:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - seqtkImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqtk | cut -d"/" -f2 | cut -d":" -f1)
+    - seqtkVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqtk | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${seqtkImg}_${seqtkVar}.sif
+    - singularity run ${dir}${seqtkImg}_${seqtkVar}.sif seqtk sample -s100 ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz 1000 1> sampled.1.fq
+    - pytest -m downsampleData
+
+inferMetadata:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - rseqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f1)
+    - rseqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${rseqcImg}_${rseqcVar}.sif
+    - >
+      align=$(echo $(grep "Overall alignment rate" ./test_data/meta/Q-Y5F6_1M.se.alignSummary.txt | cut -f2 -d ':' | cut -f2 -d ' ' | tr -d '%')) &&
+      if [[ ${align} == "" ]]; then exit 1; fi
+    - singularity run ${dir}${rseqcImg}_${rseqcVar}.sif infer_experiment.py -r "/project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed" -i "./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam" 1>> Q-Y5F6_1M.se.inferMetadata.log &&
+    - ended=`singularity run ${dir}${rseqcImg}_${rseqcVar}.sif python3 ./workflow/scripts/infer_meta.sh endness Q-Y5F6_1M.se.inferMetadata.log` &&
+      if [[ ${ended} == "" ]]; then exit 1; fi
+    - pytest -m inferMetadata
+  
+alignData:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - hisatImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep hisat | cut -d"/" -f2 | cut -d":" -f1)
+    - hisatVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep hisat | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${hisatImg}_${hisatVar}.sif
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.se.unal.gz -S Q-Y5F6_1M.se.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness F -U ./test_data/fastq/small/Q-Y5F6_1M.se_trimmed.fq.gz --summary-file Q-Y5F6_1M.se.alignSummary.txt --new-summary
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.se.bam Q-Y5F6_1M.se.sam
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.bam
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.bam Q-Y5F6_1M.se.sorted.bam.bai
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif hisat2 -p 20 --add-chrname --un-gz Q-Y5F6_1M.pe.unal.gz -S Q-Y5F6_1M.pe.sam -x /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2/genome --rna-strandness FR --no-mixed --no-discordant -1 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_1.fq.gz -2 ./test_data/fastq/small/Q-Y5F6_1M.pe_val_2.fq.gz --summary-file Q-Y5F6_1M.pe.alignSummary.txt --new-summary
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif samtools view -1 -@ 20 -F 4 -F 8 -F 256 -o Q-Y5F6_1M.pe.bam Q-Y5F6_1M.pe.sam
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.bam
+    - singularity run ${dir}${hisatImg}_${hisatVar}.sif samtools index -@ 20 -b Q-Y5F6_1M.pe.sorted.bam Q-Y5F6_1M.pe.sorted.bam.bai
+    - pytest -m alignData
+
+dedupData:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - picardImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep picard | cut -d"/" -f2 | cut -d":" -f1)
+    - picardVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep picard | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${picardImg}_${picardVar}.sif
+    - singularity run ${dir}${picardImg}_${picardVar}.sif java -jar /picard/build/libs/picard.jar MarkDuplicates I=./test_data/bam/small/Q-Y5F6_1M.se.sorted.bam O=Q-Y5F6_1M.se.deduped.bam M=Q-Y5F6_1M.se.deduped.Metrics.txt REMOVE_DUPLICATES=true
+    - singularity run ${dir}${picardImg}_${picardVar}.sif samtools sort -@ 20 -O BAM -o Q-Y5F6_1M.se.sorted.deduped.bam ./test_data/bam/small/Q-Y5F6_1M.se.deduped.bam
+    - singularity run ${dir}${picardImg}_${picardVar}.sif samtools index -@ 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam Q-Y5F6_1M.se.sorted.deduped.bam.bai
+    - for i in {"chr8","chr4","chrY"}; do
+        echo "samtools view -b Q-Y5F6_1M.se.sorted.deduped.bam ${i} > Q-Y5F6_1M.se.sorted.deduped.${i}.bam; samtools index -@ 20 -b Q-Y5F6_1M.se.sorted.deduped.${i}.bam Q-Y5F6_1M.se.sorted.deduped.${i}.bam.bai;";
+      done | singularity run ${dir}${picardImg}_${picardVar}.sif parallel -j 20 -k
+    - pytest -m dedupData
+
+countData:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/geneID.tsv
+    - ln -s /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/metadata/Entrez.tsv
+    - subreadImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep subread | cut -d"/" -f2 | cut -d":" -f1)
+    - subreadVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep subread | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${subreadImg}_${subreadVar}.sif
+    - singularity run ${dir}${subreadImg}_${subreadVar}.sif featureCounts -T 20 -a /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.gtf -G /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/sequence/genome.fna -g 'gene_name' --extraAttributes 'gene_id' -o Q-Y5F6_1M.se_countData -s 1 -R SAM --primary --ignoreDup ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam
+    - singularity run ${dir}${subreadImg}_${subreadVar}.sif Rscript ./workflow/scripts/calculateTPM.R --count ./test_data/counts/small/Q-Y5F6_1M.se_countData
+    - singularity run ${dir}${subreadImg}_${subreadVar}.sif Rscript ./workflow/scripts/convertGeneSymbols.R --repRID Q-Y5F6_1M.se
+    - assignedReads=$(grep -m 1 'Assigned' *.summary | grep -oe '\([0-9.]*\)')
+    - pytest -m makeFeatureCounts
+
+makeBigWig:
+  stage: unit
+  only:
+    - push
+    - tags
+  except:
+    - merge_requests
+    - schedules
+  script:
+    - deeptoolsImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deeptools | cut -d"/" -f2 | cut -d":" -f1)
+    - deeptoolsVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deeptools | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${deeptoolsImg}_${deeptoolsVar}.sif
+    - singularity run ${dir}${deeptoolsImg}_${deeptoolsVar}.sif bamCoverage -p 20 -b ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.bam -o Q-Y5F6_1M.se.bw
+    - pytest -m makeBigWig
 
 dataQC:
   stage: unit
@@ -310,12 +398,15 @@ dataQC:
   except:
     - merge_requests
   script:
-  - echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > Q-Y5F6_1M.se.sorted.deduped.tin.xls
-  - >
-    for i in {"chr8","chr4","chrY"}; do
-      echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
-    done | singularity run 'docker://gudmaprbk/rseqc4.0.0:1.0.0' parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
-  - pytest -m dataQC
+    - rseqcImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f1)
+    - rseqcVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep rseqc | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${rseqcImg}_${rseqcVar}.sif
+    - echo -e  "geneID\tchrom\ttx_start\ttx_end\tTIN" > Q-Y5F6_1M.se.sorted.deduped.tin.xls
+    - >
+      for i in {"chr8","chr4","chrY"}; do
+        echo "tin.py -i ./test_data/bam/small/Q-Y5F6_1M.se.sorted.deduped.${i}.bam -r /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/annotation/genome.bed; cat Q-Y5F6_1M.se.sorted.deduped.${i}.tin.xls | tr -s \"\\w\" \"\\t\" | grep -P \"\\t${i}\\t\";"
+      done | singularity run ${dir}${rseqcImg}_${rseqcVar}.sif parallel -j 20 -k >> Q-Y5F6_1M.se.sorted.deduped.tin.xls
+    - pytest -m dataQC
 
 uploadInputBag:
   stage: unit
@@ -326,23 +417,26 @@ uploadInputBag:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - echo THIS IS A TEST FILE > test.txt
-  - >
-    md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
-    size=$(wc -c < ./test.txt) &&
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5}) &&
-    if [ "${exist}" == "[]" ]; then
-      cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-      cookie=${cookie:11:-1} &&
-      loc=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt --parents) &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_input_bag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test input bag' -o staging.gudmap.org -c ${cookie}) &&
-      echo ${rid} test input bag created
-    else
-      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
-      rid=${rid:8:-6} &&
-      echo ${rid} test input bag already exists
-    fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+    - echo THIS IS A TEST FILE > test.txt
+    - md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
+    - size=$(wc -c < ./test.txt) &&
+    - >
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=${md5}) &&
+      if [ "${exist}" == "[]" ]; then
+        cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+        cookie=${cookie:11:-1} &&
+        loc=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/input_bag/TEST/test.txt --parents) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_input_bag.py -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test input bag' -o staging.gudmap.org -c ${cookie}) &&
+        echo ${rid} test input bag created
+      else
+        rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
+        rid=${rid:8:-6} &&
+        echo ${rid} test input bag already exists
+      fi
 
 uploadExecutionRun:
   stage: unit
@@ -353,20 +447,23 @@ uploadExecutionRun:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - >
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Replicate=17-BTFJ) &&
-    cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-    cookie=${cookie:11:-1} &&
-    if [ "${exist}" == "[]" ]; then
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
-      echo ${rid} test execution run created
-    else
-      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
-      rid=${rid:7:-6} &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
-      echo ${rid} test execution run already exists
-    fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+    - >
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Replicate=17-BTFJ) &&
+      cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+      cookie=${cookie:11:-1} &&
+      if [ "${exist}" == "[]" ]; then
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
+        echo ${rid} test execution run created
+      else
+        rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
+        rid=${rid:7:-6} &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
+        echo ${rid} test execution run already exists
+      fi
 
 uploadQC:
   stage: unit
@@ -377,20 +474,23 @@ uploadQC:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - >
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=17-BTFJ) &&
-    cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-    cookie=${cookie:11:-1} &&
-    if [ "${exist}" != "[]" ]; then
-      rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
-      for rid in ${rids}; do
-        singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t mRNA_QC -o staging.gudmap.org -c ${cookie}
-      done
-      echo all old mRNA QC RIDs deleted
-    fi
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_qc.py -r 17-BTFJ -e 17-BVDJ -p "Single End" -s forward -l 35 -w 5 -f 1 -t 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
-      echo ${rid} test mRNA QC created
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+    - >
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=17-BTFJ) &&
+      cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+      cookie=${cookie:11:-1} &&
+      if [ "${exist}" != "[]" ]; then
+        rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
+        for rid in ${rids}; do
+          singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/delete_entry.py -r ${rid} -t mRNA_QC -o staging.gudmap.org -c ${cookie}
+        done
+        echo all old mRNA QC RIDs deleted
+      fi
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_qc.py -r 17-BTFJ -e 17-BVDJ -p "Single End" -s forward -l 35 -w 5 -f 1 -t 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
+        echo ${rid} test mRNA QC created
 
 uploadProcessedFile:
   stage: unit
@@ -401,27 +501,30 @@ uploadProcessedFile:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - echo THIS IS A TEST FILE > 17-BTFJ_test.csv
-  - mkdir -p ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/
-  - mv 17-BTFJ_test.csv ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/17-BTFJ_test.csv
-  - >
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
-    cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-    cookie=${cookie:11:-1} &&
-    if [ "${exist}" != "[]" ]; then
-      rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
-      for rid in ${rids}; do
-        singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/delete_entry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie}
-      done
-      echo all old processed file RIDs deleted
-    fi
-      singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-upload-cli --catalog 2 --token ${cookie:9} staging.gudmap.org ./deriva
-      echo test processed file uploaded
-  - mkdir test
-  - singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' bdbag test --archiver zip
-  - echo test output bag created
-  - pytest -m outputBag
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+    - echo THIS IS A TEST FILE > 17-BTFJ_test.csv
+    - mkdir -p ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/
+    - mv 17-BTFJ_test.csv ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/17-BTFJ_test.csv
+    - >
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
+      cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+      cookie=${cookie:11:-1} &&
+      if [ "${exist}" != "[]" ]; then
+        rids=$(echo ${exist} | grep -o '\"RID\":\".\{7\}' | sed 's/^.\{7\}//') &&
+        for rid in ${rids}; do
+          singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/delete_entry.py -r ${rid} -t Processed_File -o staging.gudmap.org -c ${cookie}
+        done
+        echo all old processed file RIDs deleted
+      fi
+        singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-upload-cli --catalog 2 --token ${cookie:9} staging.gudmap.org ./deriva
+        echo test processed file uploaded
+    - mkdir test
+    - singularity run ${dir}${derivaImg}_${derivaVar}.sif bdbag test --archiver zip
+    - echo test output bag created
+    - pytest -m outputBag
 
 uploadOutputBag:
   stage: unit
@@ -432,44 +535,26 @@ uploadOutputBag:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-  - echo THIS IS A TEST FILE > test.txt
-  - >
-    md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
-    size=$(wc -c < ./test.txt) &&
-    exist=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=${md5}) &&
-    if [ "${exist}" == "[]" ]; then
-      cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
-      cookie=${cookie:11:-1} &&
-      loc=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
-      rid=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' python3 ./workflow/scripts/upload_output_bag.py -e 17-BVDJ -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
-      echo ${rid} test output bag created
-    else
-      rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
-      rid=${rid:8:-6} &&
-      echo ${rid} test output bag already exists
-    fi
-
-
-generateVersions:
-  stage: aggregation
-  only:
-    - push
-    - tags
-  except:
-    - merge_requests
-    - schedules
-  script:
-  - singularity run 'docker://gudmaprbk/multiqc1.9:1.0.0' multiqc --version > version_multiqc.txt
-  - python ./workflow/scripts/generate_versions.py -o software_versions
-  - python ./workflow/scripts/generate_references.py -r ./docs/references.md -o software_references
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - software_references_mqc.yaml
-      - software_versions_mqc.yaml
-    expire_in: 7 days
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
+    - echo THIS IS A TEST FILE > test.txt
+    - >
+      md5=$(md5sum ./test.txt | awk '{ print $1 }') &&
+      size=$(wc -c < ./test.txt) &&
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Output_Bag/File_MD5=${md5}) &&
+      if [ "${exist}" == "[]" ]; then
+        cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
+        cookie=${cookie:11:-1} &&
+        loc=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_output_bag.py -e 17-BVDJ -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
+        echo ${rid} test output bag created
+      else
+        rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
+        rid=${rid:8:-6} &&
+        echo ${rid} test output bag already exists
+      fi
 
 
 human_BioHPC:
@@ -481,8 +566,8 @@ human_BioHPC:
     - merge_requests
     - schedules
   script:
-  - mkdir -p hu
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2 ./hu/
+    - mkdir -p hu
+    - cp -R /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2 ./hu/
 
 mouse_BioHPC:
   stage: reference
@@ -493,8 +578,8 @@ mouse_BioHPC:
     - merge_requests
     - schedules
   script:
-  - mkdir -p mo
-  - cp -R /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2 ./mo/
+    - mkdir -p mo
+    - cp -R /project/BICF/BICF_Core/shared/gudmap/references/new/GRCh38.p13.v36/data/hisat2 ./mo/
 
 human_dev:
   stage: reference
@@ -505,22 +590,25 @@ human_dev:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - referenceBase=dev.gudmap.org
-  - refName=GRCh
-  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
-  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
-  - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
-  - loc=$(dirname ${refURL})
-  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
-  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
-  - test=$(echo ${test} | grep -o ${filename})
-  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+    - referenceBase=dev.gudmap.org
+    - refName=GRCh
+    - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+    - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
+    - curl --request GET ${query} > refQuery.json
+    - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
+    - loc=$(dirname ${refURL})
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+    - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(echo ${test} | grep -o ${filename})
+    - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
 mouse_dev:
   stage: reference
@@ -531,22 +619,25 @@ mouse_dev:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - referenceBase=dev.gudmap.org
-  - refName=GRCm
-  - references=$(echo ${referenceBase}/${refName}${refMoVersion})
-  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
-  - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
-  - loc=$(dirname ${refURL})
-  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
-  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
-  - test=$(echo ${test} | grep -o ${filename})
-  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+    - referenceBase=dev.gudmap.org
+    - refName=GRCm
+    - references=$(echo ${referenceBase}/${refName}${refMoVersion})
+    - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
+    - curl --request GET ${query} > refQuery.json
+    - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
+    - loc=$(dirname ${refURL})
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+    - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(echo ${test} | grep -o ${filename})
+    - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
 human_staging:
   stage: reference
@@ -557,22 +648,25 @@ human_staging:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - referenceBase=staging.gudmap.org
-  - refName=GRCh
-  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
-  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
-  - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
-  - loc=$(dirname ${refURL})
-  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
-  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
-  - test=$(echo ${test} | grep -o ${filename})
-  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+    - referenceBase=staging.gudmap.org
+    - refName=GRCh
+    - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+    - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
+    - curl --request GET ${query} > refQuery.json
+    - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
+    - loc=$(dirname ${refURL})
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+    - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(echo ${test} | grep -o ${filename})
+    - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
 mouse_staging:
   stage: reference
@@ -583,23 +677,26 @@ mouse_staging:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - referenceBase=staging.gudmap.org
-  - refName=GRCm
-  - refHuVersion=38.p6.vM22
-  - references=$(echo ${referenceBase}/${refName}${refMoVersion})
-  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
-  - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
-  - loc=$(dirname ${refURL})
-  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
-  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
-  - test=$(echo ${test} | grep -o ${filename})
-  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+    - referenceBase=staging.gudmap.org
+    - refName=GRCm
+    - refHuVersion=38.p6.vM22
+    - references=$(echo ${referenceBase}/${refName}${refMoVersion})
+    - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
+    - curl --request GET ${query} > refQuery.json
+    - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
+    - loc=$(dirname ${refURL})
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+    - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(echo ${test} | grep -o ${filename})
+    - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
 human_prod:
   stage: reference
@@ -610,22 +707,25 @@ human_prod:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - referenceBase=www.gudmap.org
-  - refName=GRCh
-  - references=$(echo ${referenceBase}/${refName}${refHuVersion})
-  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
-  - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
-  - loc=$(dirname ${refURL})
-  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
-  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
-  - test=$(echo ${test} | grep -o ${filename})
-  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+    - referenceBase=www.gudmap.org
+    - refName=GRCh
+    - references=$(echo ${referenceBase}/${refName}${refHuVersion})
+    - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
+    - curl --request GET ${query} > refQuery.json
+    - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
+    - loc=$(dirname ${refURL})
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+    - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(echo ${test} | grep -o ${filename})
+    - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
 mouse_prod:
   stage: reference
@@ -636,23 +736,26 @@ mouse_prod:
     - merge_requests
     - schedules
   script:
-  - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
-  - referenceBase=www.gudmap.org
-  - refName=GRCm
-  - refHuVersion=38.p6.vM22
-  - references=$(echo ${referenceBase}/${refName}${refMoVersion})
-  - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
-  - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
-  - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
-  - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
-  - curl --request GET ${query} > refQuery.json
-  - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
-  - loc=$(dirname ${refURL})
-  - if [ "${loc}" = "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
-  - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
-  - test=$(singularity run 'docker://gudmaprbk/deriva1.4:1.0.0' deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
-  - test=$(echo ${test} | grep -o ${filename})
-  - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
+    - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
+    - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
+    - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
+    - referenceBase=www.gudmap.org
+    - refName=GRCm
+    - refHuVersion=38.p6.vM22
+    - references=$(echo ${referenceBase}/${refName}${refMoVersion})
+    - GRCv=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f1)
+    - GRCp=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f2)
+    - GENCODE=$(echo ${references} | grep -o ${refName}.* | cut -d '.' -f3)
+    - query=$(echo 'https://'${referenceBase}'/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Reference_Version='${GRCv}'.'${GRCp}'/Annotation_Version=GENCODE%20'${GENCODE}/Used_Spike_Ins=false)
+    - curl --request GET ${query} > refQuery.json
+    - refURL=$(python ./workflow/scripts/extract_ref_data.py --returnParam URL)
+    - loc=$(dirname ${refURL})
+    - if [ "${loc}" == "/hatrac/*" ]; then echo "reference not present in hatrac"; exit 1; fi
+    - filename=$(echo $(basename ${refURL}) | grep -oP '.*(?=:)')
+    - test=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host ${referenceBase} ls ${loc}/)
+    - test=$(echo ${test} | grep -o ${filename})
+    - if [ "${test}" == "" ]; then echo "reference file not present"; exit 1; fi
 
 
 integration_se:
@@ -662,11 +765,11 @@ integration_se:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./SE_report.html
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
-  - pytest -m completionMultiqc --filename SE_multiqc_data.json
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --refSource datahub --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./SE_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
+    - pytest -m completionMultiqc --filename SE_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -687,11 +790,11 @@ integration_pe:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./PE_report.html
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
-  - pytest -m completionMultiqc --filename PE_multiqc_data.json
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./PE_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
+    - pytest -m completionMultiqc --filename PE_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -707,21 +810,6 @@ integration_pe:
       - always
 
 
-failAmbiguousSpecies:
-  stage: integration
-  only: [merge_requests]
-  except:
-    variables:
-      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
-  script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ER --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failAmbiguousSpecies_report.html
-  retry:
-    max: 0
-    when:
-      - always
-
 failTrunkation:
   stage: integration
   only: [merge_requests]
@@ -729,9 +817,9 @@ failTrunkation:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failTrunkation_report.html
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failTrunkation_report.html
   retry:
     max: 0
     when:
@@ -744,9 +832,9 @@ failMismatchR1R2:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-CWH4 --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failMismatchR1R2_report.html
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-CWH4 --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failMismatchR1R2_report.html
   retry:
     max: 0
     when:
@@ -759,9 +847,9 @@ failUnexpectedMeta:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 14-3R4R --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failUnexpectedMeta_report.html
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 14-3R4R --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failUnexpectedMeta_report.html
   retry:
     max: 0
     when:
@@ -774,9 +862,24 @@ failFileStructure:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5HT --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failFileStructure_report.html
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5HT --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failFileStructure_report.html
+  retry:
+    max: 0
+    when:
+      - always
+
+failSeqType:
+  stage: integration
+  only: [merge_requests]
+  except:
+    variables:
+      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
+  script:
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-DNDJ --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failSeqType_report.html
   retry:
     max: 0
     when:
@@ -789,12 +892,12 @@ override_inputBag:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --dev false --ci true --track false -with-report ./inputBagOverride_report.html
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_multiqc_data.json \;
-  - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./inputBagOverride_multiqc.html \;
-  - pytest -m completionMultiqc --filename inputBagOverride_multiqc_data.json
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --dev false --ci true --track false -with-report ./inputBagOverride_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_multiqc_data.json \;
+    - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./inputBagOverride_multiqc.html \;
+    - pytest -m completionMultiqc --filename inputBagOverride_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -814,12 +917,12 @@ override_fastq:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_multiqc_data.json \;
-  - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./fastqOverride_multiqc.html \;
-  - pytest -m completionMultiqc --filename fastqOverride_multiqc_data.json
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_multiqc_data.json \;
+    - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./fastqOverride_multiqc.html \;
+    - pytest -m completionMultiqc --filename fastqOverride_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -839,12 +942,12 @@ override_species:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_multiqc_data.json \;
-  - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./speciesOverride_multiqc.html \;
-  - pytest -m completionMultiqc --filename speciesOverride_multiqc_data.json
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_multiqc_data.json \;
+    - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./speciesOverride_multiqc.html \;
+    - pytest -m completionMultiqc --filename speciesOverride_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -864,12 +967,12 @@ override_stranded:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EY --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./strandedOverride_multiqc_data.json \;
-  - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./strandedOverride_multiqc.html \;
-  - pytest -m completionMultiqc --filename strandedOverride_multiqc_data.json
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EY --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./strandedOverride_multiqc_data.json \;
+    - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./strandedOverride_multiqc.html \;
+    - pytest -m completionMultiqc --filename strandedOverride_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -889,12 +992,12 @@ override_spike:
     variables:
       - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - hostname
-  - ulimit -a
-  - nextflow -q run ./workflow/rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce true --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
-  - find . -type f -name "multiqc_data.json" -exec cp {} ./spikeOverride_multiqc_data.json \;
-  - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./spikeOverride_multiqc.html \;
-  - pytest -m completionMultiqc --filename spikeOverride_multiqc_data.json
+    - hostname
+    - ulimit -a
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce true --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
+    - find . -type f -name "multiqc_data.json" -exec cp {} ./spikeOverride_multiqc_data.json \;
+    - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./spikeOverride_multiqc.html \;
+    - pytest -m completionMultiqc --filename spikeOverride_multiqc_data.json
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -915,8 +1018,8 @@ consistency:
     variables:
         - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
   script:
-  - pytest -m consistencySE
-  - pytest -m consistencyPE
+    - pytest -m consistencySE
+    - pytest -m consistencyPE
   artifacts:
     name: "$CI_JOB_NAME"
     when: always
@@ -924,3 +1027,104 @@ consistency:
       - SE_multiqc_data.json
       - PE_multiqc_data.json
     expire_in: 7 days
+
+
+dnanexus:
+  stage: environment
+  only:
+    variables:
+      - $dnanexusEnv == "true"
+  except:
+    - push
+    - tags
+    - merge_requests
+  script:
+    - hostname
+    - ulimit -a
+    - mkdir -p ./badges/env
+    - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
+    - module load dxtoolkit/python27/0.294.0
+    - export NXF_XPACK_LICENSE=${nxf_license}
+    - dx upload ./test_data/auth/c* --path /ci-env/auth/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx upload ./test_data/fastq/xsmall/Q-Y5F6_10K.R{1,2}.fastq.gz --path /ci-env/input/ --parents --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
+    - >
+      dx run nf-dxapp-bicf --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace} \
+        --delay-workspace-destruction \
+        --instance-type mem1_ssd1_v2_x16 \
+        --input-json "$(envsubst < ./docs/nxf_dnanexus-ci-test.json)" \
+        > dx.log
+    - >
+      jobID=$(cat dx.log | grep -oP "Job ID: \K.*")
+    - dx watch ${jobID} --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - status=$(dx find executions --id ${jobID} --state failed --brief --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace})
+    - >
+      if [ "${status}" == "" ]; then
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20succesful-success?style=flat > ./badges/env/dnanexus.svg
+      else
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-run%20failed-critical?style=flat > ./badges/env/dnanexus.svg
+      fi
+  after_script:
+    - module load dxtoolkit/python27/0.294.0
+    - dx rm /ci-env/auth/* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+    - dx rm /ci-env/input/* --all --auth-token ${dnanexus_authToken} --project-context-id ${dnanexus_workspace}
+  artifacts:
+    when: always
+    paths:
+      - badges/
+  allow_failure: true
+
+aws:
+  stage: environment
+  only:
+    variables:
+      - $awsEnv == "true"
+  except:
+    - push
+    - tags
+    - merge_requests
+  script:
+    - hostname
+    - ulimit -a
+    - mkdir -p ./badges/env
+    - curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-inactive-critical?style=flat > ./badges/env/aws.svg
+    - module load awscli/1.11.139
+    - export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
+    - export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
+    - aws configure set region ${aws_region}
+    - aws s3 cp ./test_data/auth/ s3://bicf-output/ci-env/auth/ --exclude "*" --include "c*" --recursive
+    - aws s3 cp ./test_data/fastq/xsmall/ s3://bicf-output/ci-env/input/ --exclude "*" --include "Q-Y5F6_10K.R*.fastq.gz" --recursive
+    - latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
+    - >
+      id=$(aws batch submit-job\
+        --job-name nf-GUDMAP_RBK_ci-env\
+        --job-queue default-bicf\
+        --job-definition nextflow-bicf-nextflow\
+        --container-overrides command=$(envsubst < ./docs/nxf_aws-ci-test.json))
+      id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
+    - >
+      status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
+      until [[ "${status}" == "SUCCEEDED" || "${status}" == "FAILED" ]]; do
+        status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
+        echo ${status} &&
+        sleep 5m
+      done
+    - >
+      if [ "${status}" == "SUCCEEDED" ]; then
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20succesful-success?style=flat > ./badges/env/aws.svg
+      else
+        curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20failed-critical?style=flat > ./badges/env/aws.svg
+      fi
+  after_script:
+    - module load awscli/1.11.139
+    - >
+      export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
+      export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
+      aws configure set region ${aws_region}
+    - aws s3 rm s3://bicf-output/ci-env/auth/ --recursive
+    - aws s3 rm s3://bicf-output/ci-env/input/ --recursive
+  artifacts:
+    when: always
+    paths:
+      - badges/
+  allow_failure: true

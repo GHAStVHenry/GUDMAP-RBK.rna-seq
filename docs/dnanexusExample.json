@@ -1,0 +1,5 @@
+{
+	"pipeline_url": "https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq -r [version]",
+	"args": "-profile dnanexus --deriva [credential.json] --bdbag [cookies.txt] --repRID [repRID] --outDir [outDir],
+	"license": "$NXF_XPACK_LICENSE"
+}
