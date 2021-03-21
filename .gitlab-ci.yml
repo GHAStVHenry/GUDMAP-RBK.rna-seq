@@ -1041,10 +1041,6 @@ dnanexus:
   script:
     - hostname
     - ulimit -a
-    - baseImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f1)
-    - baseVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f2)
-    - echo ${dir}${baseImg}_${baseVar}.sif
-    - latest_release_tag=$(singularity run ${dir}${baseImg}_${baseVar}.sif git tag --sort=-committerdate -l *.*.* | head -1)
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20DNAnexus-inactive-critical?style=flat > ./badges/env/dnanexus.svg
     - module load dxtoolkit/python27/0.294.0
@@ -1089,10 +1085,6 @@ aws:
   script:
     - hostname
     - ulimit -a
-    - baseImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f1)
-    - baseVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep gudmap-rbk_base | cut -d"/" -f2 | cut -d":" -f2)
-    - echo ${dir}${baseImg}_${baseVar}.sif
-    - latest_release_tag=$(singularity run ${dir}${baseImg}_${baseVar}.sif git tag --sort=-committerdate -l *.*.* | head -1)
     - mkdir -p ./badges/env
     - curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-inactive-critical?style=flat > ./badges/env/aws.svg
     - module load awscli/1.11.139
