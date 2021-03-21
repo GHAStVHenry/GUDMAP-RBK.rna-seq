@@ -2,7 +2,7 @@
 
 echo "collecting stats for badges"
 latest_release_tag=$(git tag --sort=-committerdate -l *.*.* | head -1)
-current_pipeline_version=$(git show ${latest_release_tag}:workflow/nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
+current_pipeline_version=$(git show ${latest_release_tag}:nextflow.config | grep -o version.* | grep -oP "(?<=').*(?=')")
 current_pipeline_versionMajor=$(echo ${current_pipeline_version} | cut -f1 -d".")
 current_pipeline_versionMajor=$(echo ${current_pipeline_versionMajor}".")
 echo "Major pipeline version for search: "${current_pipeline_versionMajor}

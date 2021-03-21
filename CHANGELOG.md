@@ -1,9 +1,15 @@
-# v2.0.0rc02
+# v2.0.0
 **User Facing**
 * Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle (#110) ("Single Read" still acceptable for backwards compatibility)
 * Strandedness metadata "yes"/"no" changed to boolean "t"/"f" in data-hub, pipeline updated to handle (#70) ("yes"/"no" still acceptable for backwards compatibility)
 * Upload empty mRNA_QC entry if data error (#111)
 * Allow forcing of strandedness and spike (#100)
+* Add seqwho
+* Add seqwho results to multiqc report
+* Modify repository structure to allow for use with XPACK-DNANEXUS
+* Add override for endness
+* Add seqtk to references
+* Update software versions to latest (containers)
 
 **Background**
 * Add memory limit (75%) per thread for samtools sort (#108)
@@ -25,11 +31,21 @@
 * Change uploadOutputBag logic to change reuse hatrac file if alread exists (re-uses Output_Bag entry by reassigning Execution_Run RID) (#112)
 * Add new CI py tests for override and integration
 * Fix fastq file and species error status detail bub (#118)
+* Make compatible with XPACK-DNANEXUS
+* Don't download fastq's if fastq override present
+* Override fastq count to override counts
+* Change ambiguous species ci to wrong species
+* Add test for DNAnexus env
+* Add test for AWS env
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
 * Authentication files and tokens must be active (active auth client) for the duration of the pipeline run (until long-lived token utilization included)
 * Check for outputBag in hatrac doesn't check for any uploaded by chaise
+* CI container cache will fail if cache folder is not owned by CI runner user
+* CI container cache will not error if container failed to pull
+* CI (container cache, version collection, and unit tests) will not work correctly if containers reffered to in nextflow.config aren't prefixed perfectly with: "container = "
+  * also, it is assumed that the containers are on dockerhub and don't have the "docker://" prefix
 
 <hr>
 
