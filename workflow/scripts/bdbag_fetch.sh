@@ -14,10 +14,6 @@ then
         sleep 15
     done
 fi
-if [ "${validate}" != "is valid" ]
-then
-    exit 1
-fi
 count=$(find */ -name "*[_.]R[1-2].fastq.gz" | wc -l)
 for i in $(find */ -name "*[_.]R[1-2].fastq.gz")
 do
@@ -25,3 +21,7 @@ do
     cp ${i} ./${path}
 done
 echo ${count}
+if [ "${validate}" != "is valid" ]
+then
+    exit 1
+fi
