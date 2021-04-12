@@ -1102,10 +1102,10 @@ aws:
       id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
     - >
       status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
-      until [[ "${status}" == "SUCCEEDED" ] || [ "${status}" == "FAILED" ]]; do
+      until [[ "${status}" == "SUCCEEDED" || "${status}" == "FAILED" ]]; do
         status=$(aws batch describe-jobs --jobs ${id} | grep -oP "status\": \K.*" | tr -d '"' | tr -d ',' | tr -d " " ) &&
-        echo ${status} &&
-        if [[ "${status}" != "SUCCEEDED" && "${status}" != "FAILED" ]]; then
+        echo ${status}
+        if [[ "${status}" != "SUCCEEDED" ] && [ "${status}" != "FAILED" ]]; then
           sleep 1m
         fi
       done
@@ -1114,6 +1114,7 @@ aws:
         curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20succesful-success?style=flat > ./badges/env/aws.svg
       else
         curl --request GET https://img.shields.io/badge/Envronment%3A%20AWS-run%20failed-critical?style=flat > ./badges/env/aws.svg
+        exit 1
       fi
   after_script:
     - module load awscli/1.11.139
