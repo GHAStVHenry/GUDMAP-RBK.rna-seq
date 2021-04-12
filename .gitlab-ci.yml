@@ -1096,7 +1096,7 @@ aws:
     - >
       id=$(aws batch submit-job\
         --job-name nf-GUDMAP_RBK_ci-env\
-        --job-queue default-bicf\
+        --job-queue priority-bicf\
         --job-definition nextflow-bicf-nextflow\
         --container-overrides command=$(envsubst < ./docs/nxf_aws-ci-test.json))
       id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
