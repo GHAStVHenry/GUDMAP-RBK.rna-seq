@@ -113,6 +113,47 @@ script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/dele
 script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 
+/*
+ * trackStart: track start of pipeline
+ */
+process trackStart {
+  script:
+    """
+    hostname
+    ulimit -a
+
+    curl -H 'Content-Type: application/json' -X PUT -d \
+      '{ \
+        "sessionId": "${workflow.sessionId}", \
+        "pipeline": "gudmap.rbk_rnaseq", \
+        "start": "${workflow.start}", \
+        "repRID": "${repRID}", \
+        "astrocyte": false, \
+        "status": "started", \
+        "nextflowVersion": "${workflow.nextflow.version}", \
+        "pipelineVersion": "${workflow.manifest.version}", \
+        "ci": ${params.ci}, \
+        "dev": ${params.dev} \
+      }' \
+      "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
+
+    if [ ${params.track} == true ]
+    then
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "repRID": "${repRID}", \
+          "PipelineVersion": "${workflow.manifest.version}", \
+          "Server": "${params.source}", \
+          "Queued": "NA", \
+          "CheckedOut": "NA", \
+          "Started": "${workflow.start}" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    fi
+    """
+}
+
 log.info """\
 ====================================
 BICF RNA-seq Pipeline for GUDMAP/RBK
