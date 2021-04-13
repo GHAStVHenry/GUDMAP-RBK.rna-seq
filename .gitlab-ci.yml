@@ -1091,13 +1091,13 @@ aws:
     - export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
     - export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
     - aws configure set region ${aws_region}
-    - aws s3 cp ./test_data/auth/ s3://bicf-output/ci-env/auth/ --exclude "*" --include "c*" --recursive
-    - aws s3 cp ./test_data/fastq/xsmall/ s3://bicf-output/ci-env/input/ --exclude "*" --include "Q-Y5F6_10K.R*.fastq.gz" --recursive
+    - aws s3 cp ./test_data/auth/ s3://bicf-nf-output/ci-env/auth/ --exclude "*" --include "c*" --recursive
+    - aws s3 cp ./test_data/fastq/xsmall/ s3://bicf-nf-output/ci-env/input/ --exclude "*" --include "Q-Y5F6_10K.R*.fastq.gz" --recursive
     - >
       id=$(aws batch submit-job\
         --job-name nf-GUDMAP_RBK_ci-env\
-        --job-queue priority-bicf\
-        --job-definition nextflow-bicf-nextflow\
+        --job-queue default-bicf\
+        --job-definition nextflow-nf\
         --container-overrides command=$(envsubst < ./docs/nxf_aws-ci-test.json))
       id=$(echo ${id}| grep -oP "jobId\K.*" | tr -d '"' | tr -d ":" | tr -d " " | tr -d "}")
     - >
@@ -1121,8 +1121,8 @@ aws:
     - export AWS_ACCESS_KEY_ID=${aws_accesskeyid}
     - export AWS_SECRET_ACCESS_KEY=${aws_secretaccesskey}
     - aws configure set region ${aws_region}
-    - aws s3 rm s3://bicf-output/ci-env/auth/ --recursive
-    - aws s3 rm s3://bicf-output/ci-env/input/ --recursive
+    - aws s3 rm s3://bicf-nf-output/ci-env/auth/ --recursive
+    - aws s3 rm s3://bicf-nf-output/ci-env/input/ --recursive
   artifacts:
     when: always
     paths:
