@@ -2715,19 +2715,19 @@ process failPreExecutionRun {
     errorDetails=""
     if [ ${fastqCountError} == true ]
     then
-      errorDetails=\$(echo ${fastqCountError_details}"\\n")
+      errorDetails=\$(echo "${fastqCountError_details}"\\n")
     elif [ ${fastqReadError} == true ]
     then
-      errorDetails=\$(echo \$(errorDetails)${fastqReadError_details}"\\n")
+      errorDetails=\$(echo "\${errorDetails}${fastqReadError_details}\\n")
     elif [ ${fastqFileError} == true ]
     then
-      errorDetails=\$(echo \$(errorDetails)${fastqFileError_details}"\\n")
+      errorDetails=\$(echo "\${errorDetails}${fastqFileError_details}\\n")
     elif [ ${seqtypeError} == true ]
     then
-      errorDetails=\$(echo \$(errorDetails)${seqtypeError_details}"\\n")
+      errorDetails=\$(echo "\${errorDetails}${seqtypeError_details}\\n")
     elif [ ${speciesError} == true ]
     then
-      errorDetails=\$(echo \$(errorDetails)${speciesError_details}"\\n")
+      errorDetails=\$(echo "\${errorDetails}${speciesError_details}\\n")
     fi
 
     echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun.log
