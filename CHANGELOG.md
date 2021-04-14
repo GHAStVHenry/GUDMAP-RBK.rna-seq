@@ -37,6 +37,7 @@
 * Change ambiguous species ci to wrong species
 * Add test for DNAnexus env
 * Add test for AWS env
+* Fix fetch fastq count
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
@@ -44,7 +45,7 @@
 * Check for outputBag in hatrac doesn't check for any uploaded by chaise
 * CI container cache will fail if cache folder is not owned by CI runner user
 * CI container cache will not error if container failed to pull
-* CI (container cache, version collection, and unit tests) will not work correctly if containers reffered to in nextflow.config aren't prefixed perfectly with: "container = "
+* CI (container cache, version collection, and unit tests) will not work correctly if containers referred to in nextflow.config aren't prefixed perfectly with: "container = "
   * also, it is assumed that the containers are on dockerhub and don't have the "docker://" prefix
 
 <hr>

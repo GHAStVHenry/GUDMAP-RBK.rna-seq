@@ -269,7 +269,8 @@ process getData {
     then
       echo -e "LOG: fetching replicate bdbag" >> ${repRID}.getData.log
       fastqCount=\$(sh ${script_bdbagFetch} \${replicate::-13} ${repRID})
-      echo -e "LOG: fetched" >> ${repRID}.getData.log
+      fastqCount=\$(echo \${fastqCount} | tail -n1)
+      echo -e "LOG: \${fastqCount} fastqs fetched" >> ${repRID}.getData.log
     else
       echo -e "LOG: fastq override detected, not fetching fastqs" >> ${repRID}.getData.log
       fastqCount="0"
