@@ -38,6 +38,7 @@
 * Add test for DNAnexus env
 * Add test for AWS env
 * Fix fetch fastq count
+* Fix failPreExecutionRun error collection
 
 *Known Bugs*
 * Override params (inputBag, fastq, species) aren't checked for integrity
