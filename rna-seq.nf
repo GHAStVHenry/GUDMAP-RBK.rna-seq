@@ -896,7 +896,7 @@ process seqwho {
       if [ \${consensus} == false ]
       then
         seqtypeError=true
-        seqtypeError_details=\$(echo "**Infered species confidence is low:**\\n")
+        seqtypeError_details=\$(echo "**Infered sequence-type confidence is low:**\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|Infered seq type|Infered seq type confidence|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|:--|:--:|:--:|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|Read 1|\${seqtypeR1}|\${seqtypeConfidenceR1}|\\n")
@@ -952,6 +952,7 @@ speciesInfer.into {
   speciesInfer_aggrQC
   speciesInfer_uploadExecutionRun
   speciesInfer_uploadProcessedFile
+  speciesInfer_failPreExecutionRun
   speciesInfer_failExecutionRun
 }
 
@@ -2695,10 +2696,11 @@ process failPreExecutionRun {
     path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun
     path credential, stageAs: "credential.json" from deriva_failPreExecutionRun
     val spike from spikeMeta_failPreExecutionRun
-    val species from speciesMeta_failPreExecutionRun
+    val speciesMeta from speciesMeta_failPreExecutionRun
+    val speciesInfer from speciesInfer_failPreExecutionRun
     val inputBagRID from inputBagRID_failPreExecutionRun
     tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesErrorSeqwho), val (speciesError), val (pipelineError) from error_failPreExecutionRun
-    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeError_details), val (speciesError_details) from errorDetails
+    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeError_details), val (speciesErrorSeqwho_details) from errorDetails
 
   output:
     path ("executionRunRID.csv") into executionRunRID_preFail_fl
@@ -2715,7 +2717,7 @@ process failPreExecutionRun {
     errorDetails=""
     if [ ${fastqCountError} == true ]
     then
-      errorDetails=\$(echo "${fastqCountError_details}"\\n")
+      errorDetails=\$(echo "${fastqCountError_details}\\n")
     elif [ ${fastqReadError} == true ]
     then
       errorDetails=\$(echo "\${errorDetails}${fastqReadError_details}\\n")
@@ -2727,7 +2729,10 @@ process failPreExecutionRun {
       errorDetails=\$(echo "\${errorDetails}${seqtypeError_details}\\n")
     elif [ ${speciesError} == true ]
     then
-      errorDetails=\$(echo "\${errorDetails}${speciesError_details}\\n")
+      errorDetails=\$(echo "\${errorDetails}**Submitted metadata does not match inferred:**\\n")
+      errorDetails=\$(echo "\${errorDetails}|Metadata|Submitted value|Inferred value|\\n")
+      errorDetails=\$(echo "\${errorDetails}|:-:|-:|-:|\\n")
+      errorDetails=\$(echo "\${errorDetails}|Species|${speciesMeta}|${speciesInfer}|\\n")
     fi
 
     echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun.log
@@ -2736,10 +2741,10 @@ process failPreExecutionRun {
     workflow=\${workflow:7:-6}
     echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun.log
 
-    if [ "${species}" == "Homo sapiens" ]
+    if [ "${speciesMeta}" == "Homo sapiens" ]
     then
       genomeName=\$(echo GRCh${refHuVersion})
-    elif [ "${species}" == "Mus musculus" ]
+    elif [ "${speciesMeta}" == "Mus musculus" ]
     then
       genomeName=\$(echo GRCm${refMoVersion})
     fi
