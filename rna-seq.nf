@@ -942,6 +942,7 @@ process seqwho {
 
 // Extract infered sepecies metadata into channel and replicate them for multiple process inputs
 speciesInfer = Channel.create()
+speciesInfer_failPreExecutionRun = Channel.create()
 inferSpecies_fl.splitCsv(sep: ",", header: false).separate(
   speciesInfer
 )
