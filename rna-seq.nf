@@ -51,6 +51,7 @@ deriva.into {
   deriva_uploadOutputBag
   deriva_finalizeExecutionRun
   deriva_failPreExecutionRun
+  deriva_failPreExecutionRun_seqwho
   deriva_failExecutionRun
 }
 bdbag = Channel
@@ -105,6 +106,7 @@ script_uploadInputBag = Channel.fromPath("${baseDir}/workflow/scripts/upload_inp
 script_uploadExecutionRun_uploadExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
 script_uploadExecutionRun_finalizeExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failPreExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
+script_uploadExecutionRun_failPreExecutionRun_seqwho = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
 script_uploadExecutionRun_failExecutionRun = Channel.fromPath("${baseDir}/workflow/scripts/upload_execution_run.py")
 script_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/upload_qc.py")
 script_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/upload_qc.py")
@@ -523,6 +525,7 @@ spikeMeta.into {
   spikeMeta_aggrQC
   spikeMeta_uploadExecutionRun
   spikeMeta_failPreExecutionRun
+  spikeMeta_failPreExecutionRun_seqwho
   spikeMeta_failExecutionRun
 }
 speciesMeta.into {
@@ -530,6 +533,7 @@ speciesMeta.into {
   speciesMeta_checkMetadata
   speciesMeta_aggrQC
   speciesMeta_failPreExecutionRun
+  speciesMeta_failPreExecutionRun_seqwho
   speciesMeta_failExecutionRun
 }
 studyRID.into {
@@ -954,7 +958,7 @@ speciesInfer.into {
   speciesInfer_aggrQC
   speciesInfer_uploadExecutionRun
   speciesInfer_uploadProcessedFile
-  speciesInfer_failPreExecutionRun
+  speciesInfer_failPreExecutionRun_seqwho
   speciesInfer_failExecutionRun
 }
 
@@ -2257,6 +2261,7 @@ inputBagRID.into {
   inputBagRID_uploadExecutionRun
   inputBagRID_finalizeExecutionRun
   inputBagRID_failPreExecutionRun
+  inputBagRID_failPreExecutionRun_seqwho
   inputBagRID_failExecutionRun
 }
 
@@ -2681,11 +2686,17 @@ process finalizeExecutionRun {
 
 // Combine errors
 error_meta = fastqCountError_uploadQC_fail.ifEmpty(false).combine(fastqReadError_uploadQC_fail.ifEmpty(false).combine(fastqFileError_uploadQC_fail.ifEmpty(false).combine(seqtypeError_uploadQC_fail.ifEmpty(false).combine(speciesErrorSeqwho_uploadQC_fail.ifEmpty(false).combine(speciesError_uploadQC_fail.ifEmpty(false).combine(pipelineError_uploadQC_fail.ifEmpty(false)))))))
-error_meta. into {
+error_meta.into {
   error_failPreExecutionRun
+  error_failPreExecutionRun_seqwho
   error_uploadQC_fail
 }
 errorDetails = fastqCountError_details.ifEmpty("").combine(fastqReadError_details.ifEmpty("").combine(fastqFileError_details.ifEmpty("").combine(seqtypeError_details.ifEmpty("").combine(speciesErrorSeqwho_details.ifEmpty("")))))
+errorDetails.into {
+  errorDetails_failPreExecutionRun
+  errorDetails_failPreExecutionRun_seqwho
+}
+
 
 /* 
  * failPreExecutionRun: fail the execution run prematurely for fastq errors
@@ -2698,17 +2709,16 @@ process failPreExecutionRun {
     path credential, stageAs: "credential.json" from deriva_failPreExecutionRun
     val spike from spikeMeta_failPreExecutionRun
     val speciesMeta from speciesMeta_failPreExecutionRun
-    val speciesInfer from speciesInfer_failPreExecutionRun
     val inputBagRID from inputBagRID_failPreExecutionRun
     tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesErrorSeqwho), val (speciesError), val (pipelineError) from error_failPreExecutionRun
-    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeError_details), val (speciesErrorSeqwho_details) from errorDetails
+    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeError_details), val (speciesErrorSeqwho_details) from errorDetails_failPreExecutionRun
 
   output:
     path ("executionRunRID.csv") into executionRunRID_preFail_fl
 
   when:
     upload
-    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true" || seqtypeError == "true" || speciesError == "true"
+    fastqCountError == "true" || fastqReadError == "true" || fastqFileError == "true"
 
   script:
     """
@@ -2725,7 +2735,99 @@ process failPreExecutionRun {
     elif [ ${fastqFileError} == true ]
     then
       errorDetails=\$(echo "\${errorDetails}${fastqFileError_details}\\n")
-    elif [ ${seqtypeError} == true ]
+    fi
+
+    echo LOG: searching for workflow RID - BICF mRNA ${workflow.manifest.version} >> ${repRID}.failPreExecutionRun.log
+    workflow=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Workflow/Name=BICF%20mRNA%20Replicate/Version=${workflow.manifest.version})
+    workflow=\$(echo \${workflow} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    workflow=\${workflow:7:-6}
+    echo LOG: workflow RID extracted - \${workflow} >> ${repRID}.failPreExecutionRun.log
+
+    if [ "${speciesMeta}" == "Homo sapiens" ]
+    then
+      genomeName=\$(echo GRCh${refHuVersion})
+    elif [ "${speciesMeta}" == "Mus musculus" ]
+    then
+      genomeName=\$(echo GRCm${refMoVersion})
+    fi
+    if [ "${spike}" == "true" ]
+    then
+      genomeName=\$(echo \${genomeName}-S)
+    fi
+    echo LOG: searching for genome name - \${genomeName} >> ${repRID}.failPreExecutionRun.log
+    genome=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Reference_Genome/Name=\${genomeName})
+    genome=\$(echo \${genome} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+    genome=\${genome:7:-6}
+    echo LOG: genome RID extracted - \${genome} >> ${repRID}.failPreExecutionRun.log
+
+    cookie=\$(cat credential.json | grep -A 1 '\\"${source}\\": {' | grep -o '\\"cookie\\": \\".*\\"')
+    cookie=\${cookie:11:-1}
+
+    exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Execution_Run/Workflow=\${workflow}/Replicate=${repRID}/Input_Bag=${inputBagRID})
+    echo \${exist} >> ${repRID}.failPreExecutionRun.log
+    if [ "\${exist}" == "[]" ]
+    then
+      rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u F)
+      echo LOG: execution run RID uploaded - \${rid} >> ${repRID}.failPreExecutionRun.log
+    else
+      rid=\$(echo \${exist} | grep -o '\\"RID\\":\\".*\\",\\"RCT')
+      rid=\${rid:7:-6}
+      echo \${rid} >> ${repRID}.failPreExecutionRun.log
+      executionRun_rid=\$(python3 ${script_uploadExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${errorDetails}" -o ${source} -c \${cookie} -u \${rid})
+      echo LOG: execution run RID updated - \${executionRun_rid} >> ${repRID}.failPreExecutionRun.log
+    fi
+
+    echo "\${rid}" > executionRunRID.csv
+
+    if [ ${params.track} == true ]
+    then
+    dt=`date +%FT%T.%3N%:z`
+      curl -H 'Content-Type: application/json' -X PUT -d \
+        '{ \
+          "ID": "${workflow.sessionId}", \
+          "ExecutionRunRID": "'\${rid}'", \
+          "Failure": "'\${dt}'" \
+        }' \
+        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
+    fi
+  """
+}
+// Extract execution run RID into channel
+executionRunRID_preFail = Channel.create()
+executionRunRID_preFail_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID_preFail
+)
+
+/* 
+ * failPreExecutionRun_seqwho: fail the execution run prematurely for seqwho errors
+ */
+process failPreExecutionRun_seqwho {
+  tag "${repRID}"
+
+  input:
+    path script_uploadExecutionRun from script_uploadExecutionRun_failPreExecutionRun_seqwho
+    path credential, stageAs: "credential.json" from deriva_failPreExecutionRun_seqwho
+    val spike from spikeMeta_failPreExecutionRun_seqwho
+    val speciesMeta from speciesMeta_failPreExecutionRun_seqwho
+    val speciesInfer from speciesInfer_failPreExecutionRun_seqwho
+    val inputBagRID from inputBagRID_failPreExecutionRun_seqwho
+    tuple val (fastqCountError), val (fastqReadError), val (fastqFileError), val (seqtypeError), val (speciesErrorSeqwho), val (speciesError), val (pipelineError) from error_failPreExecutionRun_seqwho
+    tuple val (fastqCountError_details), val (fastqReadError_details), val (fastqFileError_details), val (seqtypeError_details), val (speciesErrorSeqwho_details) from errorDetails_failPreExecutionRun_seqwho
+
+  output:
+    path ("executionRunRID.csv") into executionRunRID_preFailseqwho_fl
+
+  when:
+    upload
+    seqtypeError == "true" || speciesError == "true"
+
+  script:
+    """
+    hostname > ${repRID}.failPreExecutionRun.log
+    ulimit -a >> ${repRID}.failPreExecutionRun.log
+
+    errorDetails=""
+    if [ ${seqtypeError} == true ]
     then
       errorDetails=\$(echo "\${errorDetails}${seqtypeError_details}\\n")
     elif [ ${speciesError} == true ]
@@ -2792,12 +2894,13 @@ process failPreExecutionRun {
   """
 }
 // Extract execution run RID into channel
-executionRunRID_preFail = Channel.create()
-executionRunRID_preFail_fl.splitCsv(sep: ",", header: false).separate(
-  executionRunRID_preFail
+executionRunRID_preFailseqwho = Channel.create()
+executionRunRID_preFailseqwho_fl.splitCsv(sep: ",", header: false).separate(
+  executionRunRID_preFailseqwho
 )
 
-failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFail.ifEmpty('')).filter { it != "" }
+
+failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFail.ifEmpty('').mix(executionRunRID_preFailseqwho.ifEmpty('')).filter { it != "" }
 
 /* 
  * failExecutionRun: fail the execution run
