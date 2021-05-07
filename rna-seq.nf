@@ -2900,7 +2900,7 @@ executionRunRID_preFailseqwho_fl.splitCsv(sep: ",", header: false).separate(
 )
 
 
-failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFail.ifEmpty('').mix(executionRunRID_preFailseqwho.ifEmpty('')).filter { it != "" }
+failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFail.ifEmpty('').mix(executionRunRID_preFailseqwho.ifEmpty(''))).filter { it != "" }
 
 /* 
  * failExecutionRun: fail the execution run
