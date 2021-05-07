@@ -521,6 +521,7 @@ strandedMeta.into {
 spikeMeta.into {
   spikeMeta_checkMetadata
   spikeMeta_aggrQC
+  spikeMeta_uploadExecutionRun
   spikeMeta_failPreExecutionRun
   spikeMeta_failExecutionRun
 }
@@ -1297,7 +1298,6 @@ spikeInfer.into {
   spikeInfer_getRef
   spikeInfer_checkMetadata
   spikeInfer_aggrQC
-  spikeInfer_uploadExecutionRun
   spikeInfer_failExecutionRun
 }
 
@@ -2269,7 +2269,7 @@ process uploadExecutionRun {
   input:
     path script_uploadExecutionRun_uploadExecutionRun
     path credential, stageAs: "credential.json" from deriva_uploadExecutionRun
-    val spike from spikeInfer_uploadExecutionRun
+    val spike from spikeMeta_uploadExecutionRun
     val species from speciesInfer_uploadExecutionRun
     val inputBagRID from inputBagRID_uploadExecutionRun
     val fastqCountError from fastqCountError_uploadExecutionRun
