@@ -1,3 +1,9 @@
+# v.2.0.1
+**User Facing**
+
+**Background**
+* Corrected file search parameters due to name inconsistency (#129)
+
 # v2.0.0
 **User Facing**
 * Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle (#110) ("Single Read" still acceptable for backwards compatibility)
