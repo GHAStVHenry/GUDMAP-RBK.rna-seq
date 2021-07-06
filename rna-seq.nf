@@ -634,7 +634,7 @@ process fastqc {
     # run fastqc
     echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
     fastqc *.fastq.gz -o . &> fastqc.out || true
-    fastqcErrorOut=\$(cat fastqc.out | grep -c 'Failed to process file') || fastqcErrorOut=0
+    fastqcErrorOut=\$(cat fastqc.out | grep -c 'Failed to process') || fastqcErrorOut=0
     fastqFileError=false
     fastqFileError_details=""
     if [ "\${fastqcErrorOut}" -ne "0" ]
