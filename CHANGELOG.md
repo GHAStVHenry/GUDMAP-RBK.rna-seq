@@ -1,5 +1,6 @@
 # v.2.x.x (indev)
 **User Facing**
+* Corrected spelling of inferred (#125)
 
 **Background**
 * Corrected file search parameters due to name inconsistency (#129)
