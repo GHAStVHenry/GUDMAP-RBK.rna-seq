@@ -17,7 +17,13 @@ This pipeline was created to be a standard mRNA-sequencing analysis pipeline whi
 
 Authentication:
 ----------------
-The consortium server used must be authentificated with the [deriva authentication client](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/), and remain authentificated till the end of the pipeline run. Prematurely closing the client will result in invalidation of the tokens, and may result in the pipeline failure. The use of long-lived "globus" tokens is on the roadmap for use in the future.
+The consortium server used must be authentificated with the [deriva authentication client](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/), and remain authentificated till the end of the pipeline run. Prematurely closing the client will result in invalidation of the tokens, and may result in the pipeline failure. The use of long-lived "globus" tokens is on the roadmap for use in the future. If you are using [v2.0.0](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tags/v2.0.0) you will be required to make a link for bdbag cookie. Below is the code to run:
+
+```sh
+mkdir -p ~/.bdbag
+ln -sf cookies.txt ~/.bdbag/deriva-cookies.txt
+```
+
 
 To Run:
 -------

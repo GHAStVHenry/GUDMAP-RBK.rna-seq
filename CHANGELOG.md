@@ -3,6 +3,7 @@
 
 **Background**
 * Corrected file search parameters due to name inconsistency (#129)
+* Re-implemented sym-link for deriva cookie into ~/.bdbag/ for bdbag fetch to use (#132)
 
 # v2.0.0
 **User Facing**
