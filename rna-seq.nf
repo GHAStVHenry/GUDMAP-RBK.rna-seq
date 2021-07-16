@@ -812,7 +812,7 @@ process seqwho {
       echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details="**Inferred species does not match for R1 and R2:** Inferred R1 = \${speciesR1} and inferred R2 = \${speciesR2}"
+      speciesErrorSeqwho_details="**Inferred species does not match for R1 and R2:** Inferred R1 = \${speciesR1} and Inferred R2 = \${speciesR2}"
       echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
     fi
 
@@ -851,7 +851,7 @@ process seqwho {
         fi
       else
         seqtypeError=true
-        seqtypeError_details="**Inferred sequencing type does not match for R1 and R2:** Inferred R1 = \${seqtypeR1} and inferred R2 = \${seqtypeR2}"
+        seqtypeError_details="**Inferred sequencing type does not match for R1 and R2:** Inferred R1 = \${seqtypeR1} and Inferred R2 = \${seqtypeR2}"
         echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
       consensus="-"
