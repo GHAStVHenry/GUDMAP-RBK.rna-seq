@@ -206,7 +206,7 @@ process getBag {
     mkdir -p ~/.deriva
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json
     echo -e "LOG: linked" >> ${repRID}.getBag.log
-
+    
     # deriva-download replicate RID
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
     deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
