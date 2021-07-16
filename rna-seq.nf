@@ -220,7 +220,7 @@ process getBag {
     """
 }
 
-// Set inputBag to downloaded or forced input and replicate them for multiple process inputs 
+// Set inputBag to downloaded or forced input and replicate them for multiple process inputs
 if (inputBagForce != "") {
   inputBag = Channel
     .fromPath(inputBagForce)
@@ -723,7 +723,7 @@ process seqwho {
     # get seqwho index
     wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
     echo -e "LOG: seqwho index downloaded" >> ${repRID}.seqwho.log
-    
+
     # run seqwho
     seqwho.py -f *.fastq.gz -x SeqWho.ix
     echo -e "LOG: seqwho ran" >> ${repRID}.seqwho.log
@@ -812,7 +812,7 @@ process seqwho {
       echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details="**Infered species does not match for R1 and R2:** Infered R1 = \${speciesR1} and infered R2 = \${speciesR2}"
+      speciesErrorSeqwho_details="**inferred species does not match for R1 and R2:** inferred R1 = \${speciesR1} and inferred R2 = \${speciesR2}"
       echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
     fi
 
@@ -822,8 +822,8 @@ process seqwho {
       echo -e "LOG: high confidence species inference detected" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details=\$(echo "**Infered species confidence is low:**\\n")
-      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|Infered species confidence|\\n")
+      speciesErrorSeqwho_details=\$(echo "**inferred species confidence is low:**\\n")
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|inferred species confidence|\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|:--|:--:|\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 1|\${speciesConfidenceR1}|\\n")
       if [ "${ends}" == "pe" ]
@@ -846,12 +846,12 @@ process seqwho {
           echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
         else
           seqtypeError=true
-          seqtypeError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
+          seqtypeError_details="**inferred sequencing type is not mRNA-seq:** inferred = \${seqtypeR1}"
           echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
         fi
       else
         seqtypeError=true
-        seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
+        seqtypeError_details="**inferred sequencing type does not match for R1 and R2:** inferred R1 = \${seqtypeR1} and inferred R2 = \${seqtypeR2}"
         echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
       consensus="-"
@@ -901,8 +901,8 @@ process seqwho {
       if [ \${consensus} == false ]
       then
         seqtypeError=true
-        seqtypeError_details=\$(echo "**Infered sequence-type confidence is low:**\\n")
-        seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|Infered seq type|Infered seq type confidence|\\n")
+        seqtypeError_details=\$(echo "**inferred sequence-type confidence is low:**\\n")
+        seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|inferred seq type|inferred seq type confidence|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|:--|:--:|:--:|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|Read 1|\${seqtypeR1}|\${seqtypeConfidenceR1}|\\n")
         if [ "${ends}" == "pe" ]
@@ -936,7 +936,7 @@ process seqwho {
     then
       echo -e "Read 2\t\${seqtypeR2}\t\${speciesR2}\t\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
     fi
-    
+
     # save species file
     echo "\${speciesInfer}" > inferSpecies.csv
 
@@ -945,7 +945,7 @@ process seqwho {
     """
 }
 
-// Extract infered sepecies metadata into channel and replicate them for multiple process inputs
+// Extract inferred sepecies metadata into channel and replicate them for multiple process inputs
 speciesInfer = Channel.create()
 speciesInfer_failPreExecutionRun = Channel.create()
 inferSpecies_fl.splitCsv(sep: ",", header: false).separate(
@@ -1581,7 +1581,7 @@ strandedInfer.into {
   strandedInfer_failExecutionRun
 }
 
-/* 
+/*
  * checkMetadata: checks the submitted metadata against inferred
  */
 process checkMetadata {
@@ -2192,7 +2192,7 @@ process aggrQC {
     """
 }
 
-/* 
+/*
  * uploadInputBag: uploads the input bag
  */
 process uploadInputBag {
@@ -2230,7 +2230,7 @@ process uploadInputBag {
     echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
     size=\$(wc -c < ./\${file})
     echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
-    
+
     exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
     if [ "\${exist}" == "[]" ]
     then
@@ -2265,7 +2265,7 @@ inputBagRID.into {
   inputBagRID_failExecutionRun
 }
 
-/* 
+/*
  * uploadExecutionRun: uploads the execution run
  */
 process uploadExecutionRun {
@@ -2283,7 +2283,7 @@ process uploadExecutionRun {
     val seqtypeError from seqtypeError_uploadExecutionRun
     val speciesErrorSeqwho from speciesErrorSeqwho_uploadExecutionRun
     val speciesError from speciesError_uploadExecutionRun
-    
+
   output:
     path ("executionRunRID.csv") into executionRunRID_fl
 
@@ -2370,7 +2370,7 @@ executionRunRID.into {
   executionRunRID_fail
 }
 
-/* 
+/*
  * uploadQC: uploads the mRNA QC
  */
 process uploadQC {
@@ -2480,7 +2480,7 @@ process uploadProcessedFile {
 
   script:
     """
-    
+
     hostname > ${repRID}.uploadProcessedFile.log
     ulimit -a >> ${repRID}.uploadProcessedFile.log
 
@@ -2550,7 +2550,7 @@ process uploadProcessedFile {
     """
 }
 
-/* 
+/*
  * uploadOutputBag: uploads the output bag
  */
 process uploadOutputBag {
@@ -2597,7 +2597,7 @@ process uploadOutputBag {
     echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
     size=\$(wc -c < ./\${file})
     echo LOG: ${repRID} output bag size - \${size} bytes >> ${repRID}.uploadOutputBag.log
-    
+
     loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
     echo LOG: output bag uploaded - \${loc} >> ${repRID}.uploadOutputBag.log
     # url-ify the location
@@ -2632,7 +2632,7 @@ outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
   outputBagRID
 )
 
-/* 
+/*
  * finalizeExecutionRun: finalizes the execution run
  */
 process finalizeExecutionRun {
@@ -2698,7 +2698,7 @@ errorDetails.into {
 }
 
 
-/* 
+/*
  * failPreExecutionRun: fail the execution run prematurely for fastq errors
  */
 process failPreExecutionRun {
@@ -2798,7 +2798,7 @@ executionRunRID_preFail_fl.splitCsv(sep: ",", header: false).separate(
   executionRunRID_preFail
 )
 
-/* 
+/*
  * failPreExecutionRun_seqwho: fail the execution run prematurely for seqwho errors
  */
 process failPreExecutionRun_seqwho {
@@ -2902,7 +2902,7 @@ executionRunRID_preFailseqwho_fl.splitCsv(sep: ",", header: false).separate(
 
 failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFail.ifEmpty('').mix(executionRunRID_preFailseqwho.ifEmpty(''))).filter { it != "" }
 
-/* 
+/*
  * failExecutionRun: fail the execution run
  */
 process failExecutionRun {
@@ -2982,7 +2982,7 @@ process failExecutionRun {
       rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
       echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
     fi
-    
+
     if [ ${params.track} == true ]
     then
       dt=`date +%FT%T.%3N%:z`
@@ -2997,7 +2997,7 @@ process failExecutionRun {
   """
 }
 
-/* 
+/*
  * uploadQC_fail: uploads the mRNA QC on failed execution run
  */
 process uploadQC_fail {
