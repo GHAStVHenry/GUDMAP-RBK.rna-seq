@@ -812,7 +812,7 @@ process seqwho {
       echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details="**inferred species does not match for R1 and R2:** inferred R1 = \${speciesR1} and inferred R2 = \${speciesR2}"
+      speciesErrorSeqwho_details="**Inferred species does not match for R1 and R2:** Inferred R1 = \${speciesR1} and inferred R2 = \${speciesR2}"
       echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
     fi
 
@@ -822,8 +822,8 @@ process seqwho {
       echo -e "LOG: high confidence species inference detected" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details=\$(echo "**inferred species confidence is low:**\\n")
-      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|inferred species confidence|\\n")
+      speciesErrorSeqwho_details=\$(echo "**Inferred species confidence is low:**\\n")
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|Inferred species confidence|\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|:--|:--:|\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 1|\${speciesConfidenceR1}|\\n")
       if [ "${ends}" == "pe" ]
@@ -846,12 +846,12 @@ process seqwho {
           echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
         else
           seqtypeError=true
-          seqtypeError_details="**inferred sequencing type is not mRNA-seq:** inferred = \${seqtypeR1}"
+          seqtypeError_details="**Inferred sequencing type is not mRNA-seq:** Inferred = \${seqtypeR1}"
           echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
         fi
       else
         seqtypeError=true
-        seqtypeError_details="**inferred sequencing type does not match for R1 and R2:** inferred R1 = \${seqtypeR1} and inferred R2 = \${seqtypeR2}"
+        seqtypeError_details="**Inferred sequencing type does not match for R1 and R2:** Inferred R1 = \${seqtypeR1} and inferred R2 = \${seqtypeR2}"
         echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
       consensus="-"
@@ -901,8 +901,8 @@ process seqwho {
       if [ \${consensus} == false ]
       then
         seqtypeError=true
-        seqtypeError_details=\$(echo "**inferred sequence-type confidence is low:**\\n")
-        seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|inferred seq type|inferred seq type confidence|\\n")
+        seqtypeError_details=\$(echo "**Inferred sequence-type confidence is low:**\\n")
+        seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|Inferred seq type|Inferred seq type confidence|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|:--|:--:|:--:|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|Read 1|\${seqtypeR1}|\${seqtypeConfidenceR1}|\\n")
         if [ "${ends}" == "pe" ]
