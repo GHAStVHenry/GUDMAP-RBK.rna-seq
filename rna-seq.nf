@@ -206,7 +206,7 @@ process getBag {
     mkdir -p ~/.deriva
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json
     echo -e "LOG: linked" >> ${repRID}.getBag.log
-
+    
     # deriva-download replicate RID
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
     deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
@@ -256,6 +256,13 @@ process getData {
     """
     hostname > ${repRID}.getData.log
     ulimit -a >> ${repRID}.getData.log
+
+    # link deriva cookie for authentication
+    echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
+    mkdir -p ~/.bdbag
+    ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
+    echo -e "LOG: linked" >> ${repRID}.getData.log
+
 
     # get bag basename
     replicate=\$(basename "${inputBag}")
