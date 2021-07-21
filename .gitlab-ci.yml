@@ -456,12 +456,12 @@ uploadExecutionRun:
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" == "[]" ]; then
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r ${ci_staging_rid_test_rep} -w ${ci_staging_rid_wf} -g ${ci_staging_rid_genome} -i ${ci_staging_rid_test_ibag} -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
         echo ${rid} test execution run created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
         rid=${rid:7:-6} &&
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r ${ci_staging_rid_test_rep} -w ${ci_staging_rid_wf} -g ${ci_staging_rid_genome} -i ${ci_staging_rid_test_ibag} -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
         echo ${rid} test execution run already exists
       fi
 
