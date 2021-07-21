@@ -505,11 +505,11 @@ uploadProcessedFile:
     - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
     - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-    - echo THIS IS A TEST FILE > 17-BTFJ_test.csv
-    - mkdir -p ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/
-    - mv 17-BTFJ_test.csv ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/17-BTFJ_test.csv
+    - echo THIS IS A TEST FILE > ${ci_staging_rid_test_rep}_test.csv
+    - mkdir -p ./deriva/Seq/pipeline/${ci_staging_rid_test_study}/${ci_staging_rid_test_erun}/
+    - mv ${ci_staging_rid_test_rep}_test.csv ./deriva/Seq/pipeline/${ci_staging_rid_test_study}/${ci_staging_rid_test_erun}/${ci_staging_rid_test_rep}_test.csv
     - >
-      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${ci_staging_rid_test_study}) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" != "[]" ]; then
