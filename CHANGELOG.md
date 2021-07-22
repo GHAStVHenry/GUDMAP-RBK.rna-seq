@@ -1,10 +1,14 @@
-# v.2.x.x (indev)
+# v.2.0.1 (indev)
 **User Facing**
 * Corrected spelling of inferred (#125)
 
 **Background**
 * Corrected file search parameters due to name inconsistency (#129)
 * Re-implemented sym-link for deriva cookie into ~/.bdbag/ for bdbag fetch to use (#132)
+* Add CI variables for staging RIDs (#133)
+* Use CI staging RIDs for CI unit tests: getBag, uploadInputBag, uploadExecutionRun, uploadQC, uploadProcessedFiles, uploadOutputBag (#133)
+* Add `-u "F"` to CI unit test uploadOutputBag `upload_output_bag.py`
+* Remove "fail" integration CI tests (#133 addendum)
 
 # v2.0.0
 **User Facing**

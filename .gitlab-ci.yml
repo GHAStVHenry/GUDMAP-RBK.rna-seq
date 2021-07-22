@@ -183,7 +183,7 @@ getBag:
     - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
     - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
-    - singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
+    - singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=${ci_staging_rid_rep}
     - pytest -m getBag
 
 getData:
@@ -197,7 +197,7 @@ getData:
   script:
     - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
     - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
-    -  echo ${dir}${derivaImg}_${derivaVar}.sif
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
     - unzip ./test_data/bag/Q-Y5F6_inputBag_xxxxtest.zip
     - singularity run ${dir}${derivaImg}_${derivaVar}.sif bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
@@ -452,16 +452,16 @@ uploadExecutionRun:
     - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
     - >
-      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Replicate=17-BTFJ) &&
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Execution_Run/Replicate=${ci_staging_rid_test_rep}) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" == "[]" ]; then
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r ${ci_staging_rid_test_rep} -w ${ci_staging_rid_wf} -g ${ci_staging_rid_genome} -i ${ci_staging_rid_test_ibag} -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u F) &&
         echo ${rid} test execution run created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
         rid=${rid:7:-6} &&
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r 17-BTFJ -w 17-BV2Y -g 17-BV90 -i 17-BTFT -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_execution_run.py -r ${ci_staging_rid_test_rep} -w ${ci_staging_rid_wf} -g ${ci_staging_rid_genome} -i ${ci_staging_rid_test_ibag} -s Success -d 'This is a test execution run' -o staging.gudmap.org -c ${cookie} -u ${rid}) &&
         echo ${rid} test execution run already exists
       fi
 
@@ -479,7 +479,7 @@ uploadQC:
     - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
     - >
-      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=17-BTFJ) &&
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:mRNA_QC/Replicate=${ci_staging_rid_test_rep}) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" != "[]" ]; then
@@ -489,7 +489,7 @@ uploadQC:
         done
         echo all old mRNA QC RIDs deleted
       fi
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_qc.py -r 17-BTFJ -e 17-BVDJ -p "Single End" -s forward -l 35 -w 5 -f 1 -t 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_qc.py -r ${ci_staging_rid_test_rep} -e ${ci_staging_rid_test_erun} -p "Single End" -s forward -l 35 -w 5 -f 1 -t 1 -n "This is a test mRNA QC" -o staging.gudmap.org -c ${cookie} -u F)
         echo ${rid} test mRNA QC created
 
 uploadProcessedFile:
@@ -505,11 +505,11 @@ uploadProcessedFile:
     - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
     - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ./credential.json
-    - echo THIS IS A TEST FILE > 17-BTFJ_test.csv
-    - mkdir -p ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/
-    - mv 17-BTFJ_test.csv ./deriva/Seq/pipeline/17-BTFE/17-BVDJ/17-BTFJ_test.csv
+    - echo THIS IS A TEST FILE > ${ci_staging_rid_test_rep}_test.csv
+    - mkdir -p ./deriva/Seq/pipeline/${ci_staging_rid_test_study}/${ci_staging_rid_test_erun}/
+    - mv ${ci_staging_rid_test_rep}_test.csv ./deriva/Seq/pipeline/${ci_staging_rid_test_study}/${ci_staging_rid_test_erun}/${ci_staging_rid_test_rep}_test.csv
     - >
-      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=17-BTFJ) &&
+      exist=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif curl -s https://staging.gudmap.org/ermrest/catalog/2/entity/RNASeq:Processed_File/Replicate=${ci_staging_rid_test_rep}) &&
       cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
       cookie=${cookie:11:-1} &&
       if [ "${exist}" != "[]" ]; then
@@ -548,7 +548,7 @@ uploadOutputBag:
         cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
         cookie=${cookie:11:-1} &&
         loc=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_output_bag.py -e 17-BVDJ -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_output_bag.py -e ${ci_staging_rid_test_erun} -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie} -u "F") &&
         echo ${rid} test output bag created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
@@ -809,81 +809,6 @@ integration_pe:
     when:
       - always
 
-
-failTrunkation:
-  stage: integration
-  only: [merge_requests]
-  except:
-    variables:
-      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
-  script:
-    - hostname
-    - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5ET --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failTrunkation_report.html
-  retry:
-    max: 0
-    when:
-      - always
-
-failMismatchR1R2:
-  stage: integration
-  only: [merge_requests]
-  except:
-    variables:
-      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
-  script:
-    - hostname
-    - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-CWH4 --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failMismatchR1R2_report.html
-  retry:
-    max: 0
-    when:
-      - always
-
-failUnexpectedMeta:
-  stage: integration
-  only: [merge_requests]
-  except:
-    variables:
-      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
-  script:
-    - hostname
-    - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 14-3R4R --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failUnexpectedMeta_report.html
-  retry:
-    max: 0
-    when:
-      - always
-
-failFileStructure:
-  stage: integration
-  only: [merge_requests]
-  except:
-    variables:
-      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
-  script:
-    - hostname
-    - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5HT --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failFileStructure_report.html
-  retry:
-    max: 0
-    when:
-      - always
-
-failSeqType:
-  stage: integration
-  only: [merge_requests]
-  except:
-    variables:
-      - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /master/
-  script:
-    - hostname
-    - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-DNDJ --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./failSeqType_report.html
-  retry:
-    max: 0
-    when:
-      - always
 
 override_inputBag:
   stage: integration
