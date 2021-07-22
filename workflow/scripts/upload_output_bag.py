@@ -42,7 +42,7 @@ def main(hostname, catalog_number, credential):
             "Notes": args.notes,
             "Bag_Type": "mRNA_Replicate_Analysis"
         }
-        entities = outputBag_table.insert([outputBag_data], nondefaults={"RCB", "RMB"})
+        entities = outputBag_table.insert([outputBag_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
         rid = entities[0]["RID"]
 
     else:
@@ -50,7 +50,7 @@ def main(hostname, catalog_number, credential):
             "RID": args.update,
             "Execution_Run": args.executionRunRID
         }
-        entities = outputBag_table.insert([outputBag_data], nondefaults={"RCB", "RMB"})
+        entities = outputBag_table.insert([outputBag_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
         rid = entities[0]["RID"]
 
     print(rid)

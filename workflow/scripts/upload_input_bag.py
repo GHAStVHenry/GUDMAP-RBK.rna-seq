@@ -39,7 +39,7 @@ def main(hostname, catalog_number, credential):
         "Bag_Type": "Replicate_Input_Seq"
         }
 
-    entities = inputBag_table.insert([inputBag_data], nondefaults={"RCB", "RMB"})
+    entities = inputBag_table.insert([inputBag_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
     rid = entities[0]["RID"]
 
     print(rid)
