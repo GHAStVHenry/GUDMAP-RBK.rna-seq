@@ -183,7 +183,7 @@ getBag:
     - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
     - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/credential.json` ~/.deriva/credential.json
-    - singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=Q-Y5F6
+    - singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-download-cli staging.gudmap.org --catalog 2 ./workflow/conf/Replicate_For_Input_Bag.json . rid=${ci_staging_rid_rep}
     - pytest -m getBag
 
 getData:
@@ -197,7 +197,7 @@ getData:
   script:
     - derivaImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f1)
     - derivaVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep deriva | cut -d"/" -f2 | cut -d":" -f2)
-    -  echo ${dir}${derivaImg}_${derivaVar}.sif
+    - echo ${dir}${derivaImg}_${derivaVar}.sif
     - ln -sfn `readlink -e ./test_data/auth/cookies.txt` ~/.bdbag/deriva-cookies.txt
     - unzip ./test_data/bag/Q-Y5F6_inputBag_xxxxtest.zip
     - singularity run ${dir}${derivaImg}_${derivaVar}.sif bash ./workflow/scripts/bdbag_fetch.sh Q-Y5F6_inputBag Q-Y5F6
@@ -548,7 +548,7 @@ uploadOutputBag:
         cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
         cookie=${cookie:11:-1} &&
         loc=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_output_bag.py -e ${ci_staging_rid_test_erun} -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}  -u "F") &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_output_bag.py -e ${ci_staging_rid_test_erun} -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie} -u "F") &&
         echo ${rid} test output bag created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
