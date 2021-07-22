@@ -10,7 +10,7 @@
 * Add `-u "F"` to CI unit test uploadOutputBag `upload_output_bag.py`
 * Remove "fail" integration CI tests (#133 addendum)
 * Add licence header to nf file,  R and python scriptsand pytest scripts
-* add nodefaults to deriva.core insert calls to match server update (#134)
+* Stop using RCB and RMB (default) with deriva.core insert calls to match server update (#134)
 
 # v2.0.0
 **User Facing**
