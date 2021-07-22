@@ -548,7 +548,7 @@ uploadOutputBag:
         cookie=$(cat credential.json | grep -A 1 '\"staging.gudmap.org\": {' | grep -o '\"cookie\": \".*\"') &&
         cookie=${cookie:11:-1} &&
         loc=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif deriva-hatrac-cli --host staging.gudmap.org put ./test.txt /hatrac/resources/rnaseq/pipeline/output_bag/TEST/test.txt --parents) &&
-        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_output_bag.py -e 17-BVDJ -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
+        rid=$(singularity run ${dir}${derivaImg}_${derivaVar}.sif python3 ./workflow/scripts/upload_output_bag.py -e ${ci_staging_rid_test_erun} -f test.txt -l ${loc} -s ${md5} -b ${size} -n 'This is a test output bag' -o staging.gudmap.org -c ${cookie}) &&
         echo ${rid} test output bag created
       else
         rid=$(echo ${exist} | grep -o '\"RID\":\".*\",\"RCT') &&
