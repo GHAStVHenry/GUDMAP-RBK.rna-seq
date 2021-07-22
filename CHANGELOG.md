@@ -8,6 +8,7 @@
 * Add CI variables for staging RIDs (#133)
 * Use CI staging RIDs for CI unit tests: getBag, uploadInputBag, uploadExecutionRun, uploadQC, uploadProcessedFiles, uploadOutputBag (#133)
 * Add `-u "F"` to CI unit test uploadOutputBag `upload_output_bag.py`
+* Remove "fail" integration CI tests (#133 addendum)
 
 # v2.0.0
 **User Facing**
