@@ -45,14 +45,14 @@ def main(hostname, catalog_number, credential):
             "Median_TIN": args.tin,
             "Notes": args.notes
         }
-        entities = run_table.insert([run_data])
+        entities = run_table.insert([run_data], nondefaults=["RCB", "RMB"])
         rid = entities[0]["RID"]
     elif args.update == "E":
         run_data = {
             "Execution_Run": args.executionRunRID,
             "Replicate": args.repRID
         }
-        entities = run_table.insert([run_data])
+        entities = run_table.insert([run_data], nondefaults=["RCB", "RMB"])
         rid = entities[0]["RID"]
     else:
         run_data = {

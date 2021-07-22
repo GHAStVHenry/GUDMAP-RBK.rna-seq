@@ -41,7 +41,7 @@ def main(hostname, catalog_number, credential):
             "Execution_Status": args.status,
             "Execution_Status_Detail": args.statusDetail.replace('\\n','\n')
         }
-        entities = run_table.insert([run_data])
+        entities = run_table.insert([run_data], nondefaults=["RCB", "RMB"])
         rid = entities[0]["RID"]
     else:
         run_data = {
