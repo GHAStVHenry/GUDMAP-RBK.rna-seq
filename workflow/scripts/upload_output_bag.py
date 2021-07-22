@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+#upload_output_bag.py
+#*
+#* --------------------------------------------------------------------------
+#* Licensed under MIT (https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/14a1c222e53f59391d96a2a2e1fd4995474c0d15/LICENSE)
+#* --------------------------------------------------------------------------
+#*
+
 import argparse
 from deriva.core import ErmrestCatalog, get_credential, BaseCLI
 import sys
@@ -34,7 +42,7 @@ def main(hostname, catalog_number, credential):
             "Notes": args.notes,
             "Bag_Type": "mRNA_Replicate_Analysis"
         }
-        entities = outputBag_table.insert([outputBag_data])
+        entities = outputBag_table.insert([outputBag_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
         rid = entities[0]["RID"]
 
     else:
@@ -42,7 +50,7 @@ def main(hostname, catalog_number, credential):
             "RID": args.update,
             "Execution_Run": args.executionRunRID
         }
-        entities = outputBag_table.insert([outputBag_data])
+        entities = outputBag_table.insert([outputBag_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
         rid = entities[0]["RID"]
 
     print(rid)
