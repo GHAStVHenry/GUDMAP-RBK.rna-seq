@@ -1,6 +1,7 @@
 # v.2.0.1 (indev)
 **User Facing**
 * Corrected spelling of inferred (#125)
+* Add seqtype force parameter (#131)
 
 **Background**
 * Corrected file search parameters due to name inconsistency (#129)

@@ -36,6 +36,7 @@ params.endsForce = ""
 params.speciesForce = ""
 params.strandedForce = ""
 params.spikeForce = ""
+params.seqtypeForce = ""
 
 // Define tracking input variables
 params.ci = false
@@ -76,6 +77,7 @@ endsForce = params.endsForce
 speciesForce = params.speciesForce
 strandedForce = params.strandedForce
 spikeForce = params.spikeForce
+seqtypeForce = params.seqtypeForce
 email = params.email
 
 // Define fixed files and variables
@@ -924,6 +926,14 @@ process seqwho {
         fi
         echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
+    fi
+
+    # override seqtype if forced
+    if [ "${params.seqtypeForce}" == "mRNAseq" ]
+    then
+      seqtypeError=false
+      seqtypeError_details=""
+      echo -e "LOG: seqtype Inferred R1=\${seqtypeR1}; Inferred R2=\${seqtypeR2}; Forced=mRNAseq" >> ${repRID}.seqwho.log
     fi
 
     # check for species match error
@@ -2117,7 +2127,7 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.log
 
     # make run table
-    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ] && [ "${params.strandedForce}" == "" ] && [ "${params.spikeForce}" == "" ]
+    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.seqtypeForce}" == "" ] && [ "${params.speciesForce}" == "" ] && [ "${params.strandedForce}" == "" ] && [ "${params.spikeForce}" == "" ]
     then
       input="default"
     else
@@ -2129,6 +2139,10 @@ process aggrQC {
       if [ "${params.fastqsForce}" != "" ]
       then
         input=\$(echo \${input} fastq)
+      fi
+      if [ "${params.seqtypeForce}" == "mRNAseq" ]
+      then
+        input=\$(echo \${input} seqtype)
       fi
       if [ "${params.speciesForce}" != "" ]
       then
