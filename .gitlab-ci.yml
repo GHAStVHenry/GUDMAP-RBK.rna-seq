@@ -255,7 +255,7 @@ seqwho:
     - seqwhoImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f1)
     - seqwhoVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f2)
     - echo ${dir}${seqwhoImg}_${seqwhoVar}.sif
-    - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
+    - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/sP48taKmymSkJBM/download
     - mkdir -p SeqWho_call_plots/test_data/fastq/small/
     - singularity run ${dir}${seqwhoImg}_${seqwhoVar}.sif seqwho.py -f test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
     - pytest -m seqwho
