@@ -3,7 +3,7 @@ before_script:
   - pip install --user attrs==20.3.0 pytest==6.2.2 pytest-pythonpath==0.7.3 pytest-cov==2.11.1
   - module load singularity/3.5.3
   - export SINGULARITY_CACHEDIR=${dir}cache/
-  - module load nextflow/21.04.1
+  - module load nextflow/21.02.0
   - ln -sfn /project/BICF/BICF_Core/shared/gudmap/test_data/* ./test_data/
   - mkdir -p ~/.deriva
   - mkdir -p ~/.bdbag
