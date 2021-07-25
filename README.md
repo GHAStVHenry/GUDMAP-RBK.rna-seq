@@ -72,9 +72,6 @@ To Run:
     * eg: `--strandedForce 'unstranded'`
   * `--spikeForce` forces the spike-in to be "false", or "true", it bypasses a metadata mismatch error
     * eg: `--spikeForce 'true'`
-* Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
-  * `--ci` boolean (default = false)
-  * `--dev` boolean (default = true)
 
 FULL EXAMPLE:
 -------------

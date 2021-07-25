@@ -2,6 +2,7 @@
 **User Facing**
 * Corrected spelling of inferred (#125)
 * Add param for seqwho reference (#127)
+* Remove tracking param and all tracking code
 
 **Background**
 * Corrected file search parameters due to name inconsistency (#129)

@@ -27,7 +27,6 @@ params.seqwhoRef = "https://cloud.biohpc.swmed.edu/index.php/s/sP48taKmymSkJBM/d
 params.outDir = "${baseDir}/output"
 params.upload = false
 params.email = ""
-params.track = false
 
 // Define override input variable
 params.refSource = "biohpc"
@@ -37,10 +36,6 @@ params.endsForce = ""
 params.speciesForce = ""
 params.strandedForce = ""
 params.spikeForce = ""
-
-// Define tracking input variables
-params.ci = false
-params.dev = true
 
 // Parse input variables
 deriva = Channel
@@ -123,47 +118,6 @@ script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/dele
 script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 
-/*
- * trackStart: track start of pipeline
- */
-process trackStart {
-  script:
-    """
-    hostname
-    ulimit -a
-
-    curl -H 'Content-Type: application/json' -X PUT -d \
-      '{ \
-        "sessionId": "${workflow.sessionId}", \
-        "pipeline": "gudmap.rbk_rnaseq", \
-        "start": "${workflow.start}", \
-        "repRID": "${repRID}", \
-        "astrocyte": false, \
-        "status": "started", \
-        "nextflowVersion": "${workflow.nextflow.version}", \
-        "pipelineVersion": "${workflow.manifest.version}", \
-        "ci": ${params.ci}, \
-        "dev": ${params.dev} \
-      }' \
-      "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
-
-    if [ ${params.track} == true ]
-    then
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "repRID": "${repRID}", \
-          "PipelineVersion": "${workflow.manifest.version}", \
-          "Server": "${params.source}", \
-          "Queued": "NA", \
-          "CheckedOut": "NA", \
-          "Started": "${workflow.start}" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
-    """
-}
-
 log.info """\
 ====================================
 BICF RNA-seq Pipeline for GUDMAP/RBK
@@ -176,14 +130,10 @@ ERCC Reference Version : ${params.refERCCVersion}
 Reference source       : ${params.refSource}
 Output Directory       : ${params.outDir}
 Upload                 : ${upload}
-Track                  : ${params.track}
 ------------------------------------
 Nextflow Version       : ${workflow.nextflow.version}
 Pipeline Version       : ${workflow.manifest.version}
 Session ID             : ${workflow.sessionId}
-------------------------------------
-CI                     : ${params.ci}
-Development            : ${params.dev}
 ------------------------------------
 """
 
@@ -2198,13 +2148,6 @@ process aggrQC {
     echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
-
-    if [ ${params.track} == true ]
-    then
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        @./${repRID}.multiqc_data.json \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
-    fi
     """
 }
 
@@ -2359,16 +2302,6 @@ process uploadExecutionRun {
     fi
 
     echo "\${executionRun_rid}" > executionRunRID.csv
-
-    if [ ${params.track} == true ]
-    then
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${executionRun_rid}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
     """
 }
 
@@ -2686,17 +2619,6 @@ process finalizeExecutionRun {
 
     rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
-
-    if [ ${params.track} == true ]
-    then
-    dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "Complete": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
     """
 }
 
@@ -2794,18 +2716,6 @@ process failPreExecutionRun {
     fi
 
     echo "\${rid}" > executionRunRID.csv
-
-    if [ ${params.track} == true ]
-    then
-    dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${rid}'", \
-          "Failure": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
   """
 }
 // Extract execution run RID into channel
@@ -2895,18 +2805,6 @@ process failPreExecutionRun_seqwho {
     fi
 
     echo "\${rid}" > executionRunRID.csv
-
-    if [ ${params.track} == true ]
-    then
-    dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${rid}'", \
-          "Failure": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
   """
 }
 // Extract execution run RID into channel
@@ -2997,18 +2895,6 @@ process failExecutionRun {
       pipelineError_details=\${pipelineError_details::-2}
       rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
       echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
-    fi
-
-    if [ ${params.track} == true ]
-    then
-      dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${rid}'", \
-          "Failure": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
     fi
   """
 }
