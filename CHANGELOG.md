@@ -14,6 +14,7 @@
 * Stop using RCB and RMB (default) with deriva.core insert calls to match server update (#134)
 * Replace default seqwho reference location to one provided by source lab (#127)
 * Update NF Tower access token to BICF user
+* Disable NF Tower
 
 # v2.0.0
 **User Facing**
