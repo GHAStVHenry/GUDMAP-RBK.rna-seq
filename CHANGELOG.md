@@ -1,6 +1,7 @@
 # v.2.0.1 (indev)
 **User Facing**
 * Corrected spelling of inferred (#125)
+* Add param for seqwho reference (#127)
 
 **Background**
 * Corrected file search parameters due to name inconsistency (#129)
@@ -11,6 +12,7 @@
 * Remove "fail" integration CI tests (#133 addendum)
 * Add licence header to nf file,  R and python scriptsand pytest scripts
 * Stop using RCB and RMB (default) with deriva.core insert calls to match server update (#134)
+* Replace default seqwho reference location to one provided by source lab (#127)
 
 # v2.0.0
 **User Facing**

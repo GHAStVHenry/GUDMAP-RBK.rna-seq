@@ -23,6 +23,7 @@ params.source = "dev"
 params.refMoVersion = "38.p6.vM25"
 params.refHuVersion = "38.p13.v36"
 params.refERCCVersion = "92"
+params.seqwhoRef = "https://cloud.biohpc.swmed.edu/index.php/s/sP48taKmymSkJBM/download"
 params.outDir = "${baseDir}/output"
 params.upload = false
 params.email = ""
@@ -67,6 +68,7 @@ repRID = params.repRID
 refMoVersion = params.refMoVersion
 refHuVersion = params.refHuVersion
 refERCCVersion = params.refERCCVersion
+seqwhoRef = params.seqwhoRef
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
 upload = params.upload
@@ -714,6 +716,7 @@ process seqwho {
   tag "${repRID}"
 
   input:
+    val seqwhoRef
     path (fastq) from fastqs_seqwho
     val ends from endsManual_seqwho
     val speciesMeta from speciesMeta_seqwho
@@ -734,7 +737,7 @@ process seqwho {
     ulimit -a >> ${repRID}.seqwho.log
 
     # get seqwho index
-    wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
+    wget -O SeqWho.ix ${seqwhoRef}
     echo -e "LOG: seqwho index downloaded" >> ${repRID}.seqwho.log
 
     # run seqwho
