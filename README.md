@@ -64,6 +64,8 @@ To Run:
     * eg: `--inputBagForce test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip` (must be the expected bag structure, this example will not work because it is a test bag)
   * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)
     * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order, also consider using `endsForce` if the endness doesn't match submitted value)
+  * `--seqtypeForce` forces the sequencing type to be mRNAseq, it bypasses a inferred mismatch or an ambiguous error
+    * eg: `--seqtypeForce 'mRNAseq'`
   * `--speciesForce` forces the species to be "Mus musculus" or "Homo sapiens", it bypasses a metadata mismatch or an ambiguous species error
     * eg: `--speciesForce 'Mus musculus'`
   * `--endsForce` forces the endness to be "se", or "pe", it bypasses a metadata mismatch error
