@@ -255,7 +255,7 @@ seqwho:
     - seqwhoImg=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f1)
     - seqwhoVar=$(cat nextflow.config | grep -oP "container = \K.*" | tr -d "'" | sort | uniq | grep seqwho | cut -d"/" -f2 | cut -d":" -f2)
     - echo ${dir}${seqwhoImg}_${seqwhoVar}.sif
-    - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
+    - wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/sP48taKmymSkJBM/download
     - mkdir -p SeqWho_call_plots/test_data/fastq/small/
     - singularity run ${dir}${seqwhoImg}_${seqwhoVar}.sif seqwho.py -f test_data/fastq/small/Q-Y5F6_1M.R1.fastq.gz -x SeqWho.ix
     - pytest -m seqwho
@@ -767,7 +767,7 @@ integration_se:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --refSource datahub --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./SE_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID 16-1ZX4 --source staging --refSource datahub --upload true -with-dag dag.png -with-report ./SE_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./SE_multiqc_data.json \;
     - pytest -m completionMultiqc --filename SE_multiqc_data.json
   artifacts:
@@ -792,7 +792,7 @@ integration_pe:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging --upload true -with-dag dag.png --dev false --ci true --track true -with-report ./PE_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5JA --source staging --upload true -with-dag dag.png -with-report ./PE_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./PE_multiqc_data.json \;
     - pytest -m completionMultiqc --filename PE_multiqc_data.json
   artifacts:
@@ -819,7 +819,7 @@ override_inputBag:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false --dev false --ci true --track false -with-report ./inputBagOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6 --source staging --inputBagForce ./test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip --upload false -with-report ./inputBagOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./inputBagOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./inputBagOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename inputBagOverride_multiqc_data.json
@@ -844,7 +844,7 @@ override_fastq:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false --dev false --ci true --track false -with-report ./fastqOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F6  --source staging --fastqsForce './test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz' --upload false -with-report ./fastqOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./fastqOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./fastqOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename fastqOverride_multiqc_data.json
@@ -869,7 +869,7 @@ override_species:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true --dev false --ci true --track false -with-report ./speciesOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EW --source staging --speciesForce 'Homo sapiens' --upload true -with-report ./speciesOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./speciesOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./speciesOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename speciesOverride_multiqc_data.json
@@ -894,7 +894,7 @@ override_stranded:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EY --source staging --strandedForce unstranded --upload true --dev false --ci true --track false -with-report ./strandedOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5EY --source staging --strandedForce unstranded --upload true -with-report ./strandedOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./strandedOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./strandedOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename strandedOverride_multiqc_data.json
@@ -919,7 +919,7 @@ override_spike:
   script:
     - hostname
     - ulimit -a
-    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce true --upload true --dev false --ci true --track false -with-report ./spikeOverride_report.html
+    - nextflow -q run ./rna-seq.nf --deriva ./test_data/auth/credential.json --bdbag ./test_data/auth/cookies.txt --repRID Q-Y5F0 --source staging --spikeForce true --upload true -with-report ./spikeOverride_report.html
     - find . -type f -name "multiqc_data.json" -exec cp {} ./spikeOverride_multiqc_data.json \;
     - find ./**/report/ -type f -name "*multiqc.html" -exec cp {} ./spikeOverride_multiqc.html \;
     - pytest -m completionMultiqc --filename spikeOverride_multiqc_data.json
