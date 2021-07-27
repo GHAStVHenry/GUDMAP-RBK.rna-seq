@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+#test_consistency.py
+#*
+#* --------------------------------------------------------------------------
+#* Licensed under MIT (https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/14a1c222e53f59391d96a2a2e1fd4995474c0d15/LICENSE)
+#* --------------------------------------------------------------------------
+#*
 
 import pytest
 import pandas as pd

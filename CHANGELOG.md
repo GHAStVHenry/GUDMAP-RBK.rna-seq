@@ -1,3 +1,25 @@
+# v.2.0.1 (indev)
+**User Facing**
+* Corrected spelling of inferred (#125)
+ce
+* Add seqtype force parameter (#131)
+* Add param for seqwho reference (#127)
+* Remove tracking param and all tracking code
+
+
+**Background**
+* Corrected file search parameters due to name inconsistency (#129)
+* Re-implemented sym-link for deriva cookie into ~/.bdbag/ for bdbag fetch to use (#132)
+* Add CI variables for staging RIDs (#133)
+* Use CI staging RIDs for CI unit tests: getBag, uploadInputBag, uploadExecutionRun, uploadQC, uploadProcessedFiles, uploadOutputBag (#133)
+* Add `-u "F"` to CI unit test uploadOutputBag `upload_output_bag.py`
+* Remove "fail" integration CI tests (#133 addendum)
+* Add licence header to nf file,  R and python scriptsand pytest scripts
+* Stop using RCB and RMB (default) with deriva.core insert calls to match server update (#134)
+* Replace default seqwho reference location to one provided by source lab (#127)
+* Update NF Tower access token to BICF user
+* Disable NF Tower
+
 # v2.0.0
 **User Facing**
 * Endness metadata "Single Read" changed to "Single End" in data-hub, pipeline updated to handle (#110) ("Single Read" still acceptable for backwards compatibility)

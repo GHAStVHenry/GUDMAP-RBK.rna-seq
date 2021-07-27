@@ -1,4 +1,10 @@
 #!/usr/bin/env nextflow
+//rna-seq.nf
+//*
+//* --------------------------------------------------------------------------
+//* Licensed under MIT (https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/14a1c222e53f59391d96a2a2e1fd4995474c0d15/LICENSE)
+//* --------------------------------------------------------------------------
+//*
 
 //  ########  ####  ######  ########
 //  ##     ##  ##  ##    ## ##
@@ -17,10 +23,10 @@ params.source = "dev"
 params.refMoVersion = "38.p6.vM25"
 params.refHuVersion = "38.p13.v36"
 params.refERCCVersion = "92"
+params.seqwhoRef = "https://cloud.biohpc.swmed.edu/index.php/s/sP48taKmymSkJBM/download"
 params.outDir = "${baseDir}/output"
 params.upload = false
 params.email = ""
-params.track = false
 
 // Define override input variable
 params.refSource = "biohpc"
@@ -30,10 +36,7 @@ params.endsForce = ""
 params.speciesForce = ""
 params.strandedForce = ""
 params.spikeForce = ""
-
-// Define tracking input variables
-params.ci = false
-params.dev = true
+params.seqtypeForce = ""
 
 // Parse input variables
 deriva = Channel
@@ -61,6 +64,7 @@ repRID = params.repRID
 refMoVersion = params.refMoVersion
 refHuVersion = params.refHuVersion
 refERCCVersion = params.refERCCVersion
+seqwhoRef = params.seqwhoRef
 outDir = params.outDir
 logsDir = "${outDir}/Logs"
 upload = params.upload
@@ -70,6 +74,7 @@ endsForce = params.endsForce
 speciesForce = params.speciesForce
 strandedForce = params.strandedForce
 spikeForce = params.spikeForce
+seqtypeForce = params.seqtypeForce
 email = params.email
 
 // Define fixed files and variables
@@ -115,47 +120,6 @@ script_deleteEntry_uploadQC = Channel.fromPath("${baseDir}/workflow/scripts/dele
 script_deleteEntry_uploadQC_fail = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 script_deleteEntry_uploadProcessedFile = Channel.fromPath("${baseDir}/workflow/scripts/delete_entry.py")
 
-/*
- * trackStart: track start of pipeline
- */
-process trackStart {
-  script:
-    """
-    hostname
-    ulimit -a
-
-    curl -H 'Content-Type: application/json' -X PUT -d \
-      '{ \
-        "sessionId": "${workflow.sessionId}", \
-        "pipeline": "gudmap.rbk_rnaseq", \
-        "start": "${workflow.start}", \
-        "repRID": "${repRID}", \
-        "astrocyte": false, \
-        "status": "started", \
-        "nextflowVersion": "${workflow.nextflow.version}", \
-        "pipelineVersion": "${workflow.manifest.version}", \
-        "ci": ${params.ci}, \
-        "dev": ${params.dev} \
-      }' \
-      "https://xku43pcwnf.execute-api.us-east-1.amazonaws.com/ProdDeploy/pipeline-tracking"
-
-    if [ ${params.track} == true ]
-    then
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "repRID": "${repRID}", \
-          "PipelineVersion": "${workflow.manifest.version}", \
-          "Server": "${params.source}", \
-          "Queued": "NA", \
-          "CheckedOut": "NA", \
-          "Started": "${workflow.start}" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
-    """
-}
-
 log.info """\
 ====================================
 BICF RNA-seq Pipeline for GUDMAP/RBK
@@ -168,14 +132,10 @@ ERCC Reference Version : ${params.refERCCVersion}
 Reference source       : ${params.refSource}
 Output Directory       : ${params.outDir}
 Upload                 : ${upload}
-Track                  : ${params.track}
 ------------------------------------
 Nextflow Version       : ${workflow.nextflow.version}
 Pipeline Version       : ${workflow.manifest.version}
 Session ID             : ${workflow.sessionId}
-------------------------------------
-CI                     : ${params.ci}
-Development            : ${params.dev}
 ------------------------------------
 """
 
@@ -206,7 +166,7 @@ process getBag {
     mkdir -p ~/.deriva
     ln -sf `readlink -e credential.json` ~/.deriva/credential.json
     echo -e "LOG: linked" >> ${repRID}.getBag.log
-
+    
     # deriva-download replicate RID
     echo -e "LOG: fetching bag for ${repRID} in GUDMAP" >> ${repRID}.getBag.log
     deriva-download-cli ${source} --catalog 2 ${replicateExportConfig} . rid=${repRID}
@@ -220,7 +180,7 @@ process getBag {
     """
 }
 
-// Set inputBag to downloaded or forced input and replicate them for multiple process inputs 
+// Set inputBag to downloaded or forced input and replicate them for multiple process inputs
 if (inputBagForce != "") {
   inputBag = Channel
     .fromPath(inputBagForce)
@@ -256,6 +216,13 @@ process getData {
     """
     hostname > ${repRID}.getData.log
     ulimit -a >> ${repRID}.getData.log
+
+    # link deriva cookie for authentication
+    echo -e "LOG: linking deriva cookie" >> ${repRID}.getData.log
+    mkdir -p ~/.bdbag
+    ln -sf `readlink -e deriva-cookies.txt` ~/.bdbag/deriva-cookies.txt
+    echo -e "LOG: linked" >> ${repRID}.getData.log
+
 
     # get bag basename
     replicate=\$(basename "${inputBag}")
@@ -634,7 +601,7 @@ process fastqc {
     # run fastqc
     echo -e "LOG: running fastq on raw fastqs" >> ${repRID}.fastqc.log
     fastqc *.fastq.gz -o . &> fastqc.out || true
-    fastqcErrorOut=\$(cat fastqc.out | grep -c 'Failed to process file') || fastqcErrorOut=0
+    fastqcErrorOut=\$(cat fastqc.out | grep -c 'Failed to process') || fastqcErrorOut=0
     fastqFileError=false
     fastqFileError_details=""
     if [ "\${fastqcErrorOut}" -ne "0" ]
@@ -701,6 +668,7 @@ process seqwho {
   tag "${repRID}"
 
   input:
+    val seqwhoRef
     path (fastq) from fastqs_seqwho
     val ends from endsManual_seqwho
     val speciesMeta from speciesMeta_seqwho
@@ -721,9 +689,9 @@ process seqwho {
     ulimit -a >> ${repRID}.seqwho.log
 
     # get seqwho index
-    wget -O SeqWho.ix https://cloud.biohpc.swmed.edu/index.php/s/eeNWqZz8jqN5zWY/download
+    wget -O SeqWho.ix ${seqwhoRef}
     echo -e "LOG: seqwho index downloaded" >> ${repRID}.seqwho.log
-    
+
     # run seqwho
     seqwho.py -f *.fastq.gz -x SeqWho.ix
     echo -e "LOG: seqwho ran" >> ${repRID}.seqwho.log
@@ -812,7 +780,7 @@ process seqwho {
       echo -e "LOG: concordant species inference: \${speciesInfer}" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details="**Infered species does not match for R1 and R2:** Infered R1 = \${speciesR1} and infered R2 = \${speciesR2}"
+      speciesErrorSeqwho_details="**Inferred species does not match for R1 and R2:** Inferred R1 = \${speciesR1} and Inferred R2 = \${speciesR2}"
       echo -e "LOG: inference error: \${speciesErrorSeqwho_details}" >> ${repRID}.seqwho.log
     fi
 
@@ -822,8 +790,8 @@ process seqwho {
       echo -e "LOG: high confidence species inference detected" >> ${repRID}.seqwho.log
     else
       speciesErrorSeqwho=true
-      speciesErrorSeqwho_details=\$(echo "**Infered species confidence is low:**\\n")
-      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|Infered species confidence|\\n")
+      speciesErrorSeqwho_details=\$(echo "**Inferred species confidence is low:**\\n")
+      speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|fastq|Inferred species confidence|\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|:--|:--:|\\n")
       speciesErrorSeqwho_details=\$(echo \${speciesErrorSeqwho_details}"|Read 1|\${speciesConfidenceR1}|\\n")
       if [ "${ends}" == "pe" ]
@@ -846,12 +814,12 @@ process seqwho {
           echo -e "LOG: concordant rnaseq seq type inference detected" >> ${repRID}.seqwho.log
         else
           seqtypeError=true
-          seqtypeError_details="**Infered sequencing type is not mRNA-seq:** Infered = \${seqtypeR1}"
+          seqtypeError_details="**Inferred sequencing type is not mRNA-seq:** Inferred = \${seqtypeR1}"
           echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
         fi
       else
         seqtypeError=true
-        seqtypeError_details="**Infered sequencing type does not match for R1 and R2:** Infered R1 = \${seqtypeR1} and infered R2 = \${seqtypeR2}"
+        seqtypeError_details="**Inferred sequencing type does not match for R1 and R2:** Inferred R1 = \${seqtypeR1} and Inferred R2 = \${seqtypeR2}"
         echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
       consensus="-"
@@ -901,8 +869,8 @@ process seqwho {
       if [ \${consensus} == false ]
       then
         seqtypeError=true
-        seqtypeError_details=\$(echo "**Infered sequence-type confidence is low:**\\n")
-        seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|Infered seq type|Infered seq type confidence|\\n")
+        seqtypeError_details=\$(echo "**Inferred sequence-type confidence is low:**\\n")
+        seqtypeError_details=\$(echo \${seqtypeError_details}"|fastq|Inferred seq type|Inferred seq type confidence|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|:--|:--:|:--:|\\n")
         seqtypeError_details=\$(echo \${seqtypeError_details}"|Read 1|\${seqtypeR1}|\${seqtypeConfidenceR1}|\\n")
         if [ "${ends}" == "pe" ]
@@ -911,6 +879,14 @@ process seqwho {
         fi
         echo -e "LOG: inference error: \${seqtypeError_details}" >> ${repRID}.seqwho.log
       fi
+    fi
+
+    # override seqtype if forced
+    if [ "${params.seqtypeForce}" == "mRNAseq" ]
+    then
+      seqtypeError=false
+      seqtypeError_details=""
+      echo -e "LOG: seqtype Inferred R1=\${seqtypeR1}; Inferred R2=\${seqtypeR2}; Forced=mRNAseq" >> ${repRID}.seqwho.log
     fi
 
     # check for species match error
@@ -936,7 +912,7 @@ process seqwho {
     then
       echo -e "Read 2\t\${seqtypeR2}\t\${speciesR2}\t\${seqtypeConfidenceR2}\t\${consensus}\t\${speciesConfidenceR2}" >> seqwhoInfer.tsv
     fi
-    
+
     # save species file
     echo "\${speciesInfer}" > inferSpecies.csv
 
@@ -945,7 +921,7 @@ process seqwho {
     """
 }
 
-// Extract infered sepecies metadata into channel and replicate them for multiple process inputs
+// Extract inferred sepecies metadata into channel and replicate them for multiple process inputs
 speciesInfer = Channel.create()
 speciesInfer_failPreExecutionRun = Channel.create()
 inferSpecies_fl.splitCsv(sep: ",", header: false).separate(
@@ -1581,7 +1557,7 @@ strandedInfer.into {
   strandedInfer_failExecutionRun
 }
 
-/* 
+/*
  * checkMetadata: checks the submitted metadata against inferred
  */
 process checkMetadata {
@@ -2104,7 +2080,7 @@ process aggrQC {
     ulimit -a >> ${repRID}.aggrQC.log
 
     # make run table
-    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.speciesForce}" == "" ] && [ "${params.strandedForce}" == "" ] && [ "${params.spikeForce}" == "" ]
+    if [ "${params.inputBagForce}" == "" ] && [ "${params.fastqsForce}" == "" ] && [ "${params.seqtypeForce}" == "" ] && [ "${params.speciesForce}" == "" ] && [ "${params.strandedForce}" == "" ] && [ "${params.spikeForce}" == "" ]
     then
       input="default"
     else
@@ -2116,6 +2092,10 @@ process aggrQC {
       if [ "${params.fastqsForce}" != "" ]
       then
         input=\$(echo \${input} fastq)
+      fi
+      if [ "${params.seqtypeForce}" == "mRNAseq" ]
+      then
+        input=\$(echo \${input} seqtype)
       fi
       if [ "${params.speciesForce}" != "" ]
       then
@@ -2182,17 +2162,10 @@ process aggrQC {
     echo -e "LOG: running multiqc" >> ${repRID}.aggrQC.log
     multiqc -c ${multiqcConfig} . -n ${repRID}.multiqc.html
     cp ${repRID}.multiqc_data/multiqc_data.json ${repRID}.multiqc_data.json
-
-    if [ ${params.track} == true ]
-    then
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        @./${repRID}.multiqc_data.json \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/qc"
-    fi
     """
 }
 
-/* 
+/*
  * uploadInputBag: uploads the input bag
  */
 process uploadInputBag {
@@ -2230,7 +2203,7 @@ process uploadInputBag {
     echo LOG: ${repRID} input bag md5 sum - \${md5} >> ${repRID}.uploadInputBag.log
     size=\$(wc -c < ./\${file})
     echo LOG: ${repRID} input bag size - \${size} bytes >> ${repRID}.uploadInputBag.log
-    
+
     exist=\$(curl -s https://${source}/ermrest/catalog/2/entity/RNASeq:Input_Bag/File_MD5=\${md5})
     if [ "\${exist}" == "[]" ]
     then
@@ -2265,7 +2238,7 @@ inputBagRID.into {
   inputBagRID_failExecutionRun
 }
 
-/* 
+/*
  * uploadExecutionRun: uploads the execution run
  */
 process uploadExecutionRun {
@@ -2283,7 +2256,7 @@ process uploadExecutionRun {
     val seqtypeError from seqtypeError_uploadExecutionRun
     val speciesErrorSeqwho from speciesErrorSeqwho_uploadExecutionRun
     val speciesError from speciesError_uploadExecutionRun
-    
+
   output:
     path ("executionRunRID.csv") into executionRunRID_fl
 
@@ -2343,16 +2316,6 @@ process uploadExecutionRun {
     fi
 
     echo "\${executionRun_rid}" > executionRunRID.csv
-
-    if [ ${params.track} == true ]
-    then
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${executionRun_rid}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
     """
 }
 
@@ -2370,7 +2333,7 @@ executionRunRID.into {
   executionRunRID_fail
 }
 
-/* 
+/*
  * uploadQC: uploads the mRNA QC
  */
 process uploadQC {
@@ -2480,7 +2443,7 @@ process uploadProcessedFile {
 
   script:
     """
-    
+
     hostname > ${repRID}.uploadProcessedFile.log
     ulimit -a >> ${repRID}.uploadProcessedFile.log
 
@@ -2550,7 +2513,7 @@ process uploadProcessedFile {
     """
 }
 
-/* 
+/*
  * uploadOutputBag: uploads the output bag
  */
 process uploadOutputBag {
@@ -2597,7 +2560,7 @@ process uploadOutputBag {
     echo LOG: ${repRID} output bag md5 sum - \${md5} >> ${repRID}.uploadOutputBag.log
     size=\$(wc -c < ./\${file})
     echo LOG: ${repRID} output bag size - \${size} bytes >> ${repRID}.uploadOutputBag.log
-    
+
     loc=\$(deriva-hatrac-cli --host ${source} put ./\${file} /hatrac/resources/rnaseq/pipeline/output_bag/study/${studyRID}/replicate/${repRID}/\${file} --parents)
     echo LOG: output bag uploaded - \${loc} >> ${repRID}.uploadOutputBag.log
     # url-ify the location
@@ -2632,7 +2595,7 @@ outputBagRID_fl.splitCsv(sep: ",", header: false).separate(
   outputBagRID
 )
 
-/* 
+/*
  * finalizeExecutionRun: finalizes the execution run
  */
 process finalizeExecutionRun {
@@ -2670,17 +2633,6 @@ process finalizeExecutionRun {
 
     rid=\$(python3 ${script_uploadExecutionRun_finalizeExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Success -d 'Run Successful' -o ${source} -c \${cookie} -u ${executionRunRID})
     echo LOG: execution run RID marked as successful - \${rid} >> ${repRID}.finalizeExecutionRun.log
-
-    if [ ${params.track} == true ]
-    then
-    dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "Complete": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
     """
 }
 
@@ -2698,7 +2650,7 @@ errorDetails.into {
 }
 
 
-/* 
+/*
  * failPreExecutionRun: fail the execution run prematurely for fastq errors
  */
 process failPreExecutionRun {
@@ -2778,18 +2730,6 @@ process failPreExecutionRun {
     fi
 
     echo "\${rid}" > executionRunRID.csv
-
-    if [ ${params.track} == true ]
-    then
-    dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${rid}'", \
-          "Failure": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
   """
 }
 // Extract execution run RID into channel
@@ -2798,7 +2738,7 @@ executionRunRID_preFail_fl.splitCsv(sep: ",", header: false).separate(
   executionRunRID_preFail
 )
 
-/* 
+/*
  * failPreExecutionRun_seqwho: fail the execution run prematurely for seqwho errors
  */
 process failPreExecutionRun_seqwho {
@@ -2879,18 +2819,6 @@ process failPreExecutionRun_seqwho {
     fi
 
     echo "\${rid}" > executionRunRID.csv
-
-    if [ ${params.track} == true ]
-    then
-    dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${rid}'", \
-          "Failure": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
   """
 }
 // Extract execution run RID into channel
@@ -2902,7 +2830,7 @@ executionRunRID_preFailseqwho_fl.splitCsv(sep: ",", header: false).separate(
 
 failExecutionRunRID = executionRunRID_fail.ifEmpty('').mix(executionRunRID_preFail.ifEmpty('').mix(executionRunRID_preFailseqwho.ifEmpty(''))).filter { it != "" }
 
-/* 
+/*
  * failExecutionRun: fail the execution run
  */
 process failExecutionRun {
@@ -2982,22 +2910,10 @@ process failExecutionRun {
       rid=\$(python3 ${script_uploadExecutionRun_failExecutionRun} -r ${repRID} -w \${workflow} -g \${genome} -i ${inputBagRID} -s Error -d "\${pipelineError_details}" -o ${source} -c \${cookie} -u ${executionRunRID})
       echo LOG: execution run RID marked as error - \${rid} >> ${repRID}.failExecutionRun.log
     fi
-    
-    if [ ${params.track} == true ]
-    then
-      dt=`date +%FT%T.%3N%:z`
-      curl -H 'Content-Type: application/json' -X PUT -d \
-        '{ \
-          "ID": "${workflow.sessionId}", \
-          "ExecutionRunRID": "'\${rid}'", \
-          "Failure": "'\${dt}'" \
-        }' \
-        "https://9ouc12dkwb.execute-api.us-east-2.amazonaws.com/prod/db/track"
-    fi
   """
 }
 
-/* 
+/*
  * uploadQC_fail: uploads the mRNA QC on failed execution run
  */
 process uploadQC_fail {

@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+#upload_input_bag.py
+#*
+#* --------------------------------------------------------------------------
+#* Licensed under MIT (https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/14a1c222e53f59391d96a2a2e1fd4995474c0d15/LICENSE)
+#* --------------------------------------------------------------------------
+#*
+
 import argparse
 from deriva.core import ErmrestCatalog, get_credential, BaseCLI
 import sys
@@ -31,7 +39,7 @@ def main(hostname, catalog_number, credential):
         "Bag_Type": "Replicate_Input_Seq"
         }
 
-    entities = inputBag_table.insert([inputBag_data])
+    entities = inputBag_table.insert([inputBag_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
     rid = entities[0]["RID"]
 
     print(rid)

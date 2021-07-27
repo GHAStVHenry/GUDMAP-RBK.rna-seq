@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+#upload_qc.py
+#*
+#* --------------------------------------------------------------------------
+#* Licensed under MIT (https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/blob/14a1c222e53f59391d96a2a2e1fd4995474c0d15/LICENSE)
+#* --------------------------------------------------------------------------
+#*
+
 import argparse
 from deriva.core import ErmrestCatalog, get_credential, BaseCLI
 import sys
@@ -37,14 +45,14 @@ def main(hostname, catalog_number, credential):
             "Median_TIN": args.tin,
             "Notes": args.notes
         }
-        entities = run_table.insert([run_data])
+        entities = run_table.insert([run_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
         rid = entities[0]["RID"]
     elif args.update == "E":
         run_data = {
             "Execution_Run": args.executionRunRID,
             "Replicate": args.repRID
         }
-        entities = run_table.insert([run_data])
+        entities = run_table.insert([run_data], add_system_defaults=False, defaults={"RID", "RCT", "RMT"})
         rid = entities[0]["RID"]
     else:
         run_data = {

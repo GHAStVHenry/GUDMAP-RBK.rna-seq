@@ -17,7 +17,13 @@ This pipeline was created to be a standard mRNA-sequencing analysis pipeline whi
 
 Authentication:
 ----------------
-The consortium server used must be authentificated with the [deriva authentication client](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/), and remain authentificated till the end of the pipeline run. Prematurely closing the client will result in invalidation of the tokens, and may result in the pipeline failure. The use of long-lived "globus" tokens is on the roadmap for use in the future.
+The consortium server used must be authentificated with the [deriva authentication client](https://github.com/informatics-isi-edu/gudmap-rbk/wiki/), and remain authentificated till the end of the pipeline run. Prematurely closing the client will result in invalidation of the tokens, and may result in the pipeline failure. The use of long-lived "globus" tokens is on the roadmap for use in the future. If you are using [v2.0.0](https://git.biohpc.swmed.edu/gudmap_rbk/rna-seq/-/tags/v2.0.0) you will be required to make a link for bdbag cookie. Below is the code to run:
+
+```sh
+mkdir -p ~/.bdbag
+ln -sf cookies.txt ~/.bdbag/deriva-cookies.txt
+```
+
 
 To Run:
 -------
@@ -32,6 +38,7 @@ To Run:
   * `--refMoVersion` mouse reference version ***(optional, default = 38.p6.vM25)***
   * `--refHuVersion` human reference version ***(optional, default = 38.p13.v36)***
   * `--refERCCVersion` human reference version ***(optional, default = 92)***
+  * `--seqwhoRef` seqwho reference location ***(optional, default = https://cloud.biohpc.swmed.edu/index.php/s/sP48taKmymSkJBM/download)***
   * `--upload` option to not upload output back to the data-hub ***(optional, default = false)***
     * **true** = upload outputs to the data-hub
     * **false** = do *NOT* upload outputs to the data-hub
@@ -57,6 +64,8 @@ To Run:
     * eg: `--inputBagForce test_data/bag/Q-Y5F6_inputBag_xxxxxxxx.zip` (must be the expected bag structure, this example will not work because it is a test bag)
   * `--fastqsForce` utilizes local fastq's instead of downloading from the data-hub (still requires accurate repRID input)
     * eg: `--fastqsForce 'test_data/fastq/small/Q-Y5F6_1M.R{1,2}.fastq.gz'` (note the quotes around fastq's which must me named in the correct standard [*\*.R1.fastq.gz and/or \*.R2.fastq.gz*] and in the correct order, also consider using `endsForce` if the endness doesn't match submitted value)
+  * `--seqtypeForce` forces the sequencing type to be mRNAseq, it bypasses a inferred mismatch or an ambiguous error
+    * eg: `--seqtypeForce 'mRNAseq'`
   * `--speciesForce` forces the species to be "Mus musculus" or "Homo sapiens", it bypasses a metadata mismatch or an ambiguous species error
     * eg: `--speciesForce 'Mus musculus'`
   * `--endsForce` forces the endness to be "se", or "pe", it bypasses a metadata mismatch error
@@ -65,9 +74,6 @@ To Run:
     * eg: `--strandedForce 'unstranded'`
   * `--spikeForce` forces the spike-in to be "false", or "true", it bypasses a metadata mismatch error
     * eg: `--spikeForce 'true'`
-* Tracking parameters ([Tracking Site](http://bicf.pipeline.tracker.s3-website-us-east-1.amazonaws.com/)):
-  * `--ci` boolean (default = false)
-  * `--dev` boolean (default = true)
 
 FULL EXAMPLE:
 -------------
