@@ -149,7 +149,7 @@ process getBag {
   input:
     path credential, stageAs: "credential.json" from deriva_getBag
     path replicateExportConfig
-f
+
   output:
     path ("*.zip") into bag
 
