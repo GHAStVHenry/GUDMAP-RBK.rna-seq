@@ -439,7 +439,7 @@ process parseMetadata {
         fastqReadError_details="**Number of reads do not match for R1 and R2:** there may be a trunkation or mismatch of fastq files"
       fi
     fi
-    if [ "${params.endsForce}" != "" ]
+    if [ "${params.endsForce}" -ne "" ]
     then
       fastqReadError=false
       fastqReadError_details=""
