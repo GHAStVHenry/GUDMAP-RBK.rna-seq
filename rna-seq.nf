@@ -439,6 +439,11 @@ process parseMetadata {
         fastqReadError_details="**Number of reads do not match for R1 and R2:** there may be a trunkation or mismatch of fastq files"
       fi
     fi
+    if [ "${params.endsForce}" != "" ]
+    then
+      fastqReadError=false
+      fastqReadError_details=""
+    fi
 
     # save design file
     echo "\${endsMeta},\${endsRaw},\${endsManual},\${stranded},\${spike},\${species},\${readLength},\${exp},\${study}" > design.csv
