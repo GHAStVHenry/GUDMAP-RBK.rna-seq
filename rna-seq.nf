@@ -441,6 +441,7 @@ process parseMetadata {
     fi
     if [ "${params.endsForce}" != "" ]
     then
+      fastqCountError=false
       fastqReadError=false
       fastqReadError_details=""
     fi
